@@ -1,9 +1,9 @@
 # fairness 
-[![CircleCI](https://circleci.com/gh/synthesized-io/synthesized.svg?style=shield&circle-token=a798b03cdec6651b6604af9121cd5ad12a9c691d)](https://circleci.com/gh/synthesized-io/synthesized)
+[![CI](https://github.com/synthesized-io/fairness/workflows/CI/badge.svg)](https://github.com/synthesized-io/fairness/actions)
 [![Documentation Status](https://readthedocs.org/projects/fairness/badge/?version=latest)]()
-[![Python version](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8-blue.svg)]()
+[![Python version](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9-blue.svg)]()
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Gitter chat](https://badges.gitter.im/gitterHQ/gitter.png)](https://gitter.im/gitterHQ/gitter)
-
 
 
 ``fairness`` (working title) is an open source Python library for automatically discovering bias and measuring fairness in data. The package can be used to quickly identify bias, and provides multiple metrics to measure fairness across a range of sensititive and legally protected characteristics such as age, race and sex. 
