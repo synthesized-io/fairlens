@@ -32,9 +32,8 @@ import fairness
 
 ## Contributing
 
-``fairness`` is under active development, and we appreciate community contributions. Here's how you can get involved:
+``fairness`` is under active development, and we appreciate community contributions. See [CONTRIBUTING.md](https://github.com/synthesized-io/fairness/blob/main/.github/CONTRIBUTING.md) for how to get started.
 
-TBD
 
 ## License
 
