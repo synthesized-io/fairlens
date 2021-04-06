@@ -23,7 +23,7 @@ black: venv
 	$(PYTHON) -m black fairness -l 120
 
 isort: venv
-	$(PYTHON) -m isort fairness -l=120 --reverse-relative
+	$(PYTHON) -m isort fairness -m=0 -l=120 --reverse-relative
 
 venv: $(VENV_ACTIVATE)
 
