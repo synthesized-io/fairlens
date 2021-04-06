@@ -19,6 +19,12 @@ lint: venv
 	$(PYTHON) -m mypy --ignore-missing-import fairness
 	$(PYTHON) -m flake8 --max-line-length=120 fairness
 
+black: venv
+	$(PYTHON) -m black fairness -l 120
+
+isort: venv
+	$(PYTHON) -m isort fairness -l=120 --reverse-relative
+
 venv: $(VENV_ACTIVATE)
 
 $(VENV_ACTIVATE): requirements.txt requirements-dev.txt
