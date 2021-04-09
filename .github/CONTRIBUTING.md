@@ -1,18 +1,18 @@
 # Setting up a development environment
 
-We highly recommend using a virtual environment when developing Python software. The most basic approach is to use `venv`, 
-which comes by default in Python 3. Here we create and activate an environment named `.env`  
+We highly recommend using a virtual environment when developing Python software. The most basic approach is to use `venv`,
+which comes by default in Python 3. Here we create and activate an environment named `.env`
 
 ```bash
 python3 -m venv .env
 # activate environment
-source ./.env/bin/activate 
+source ./.env/bin/activate
 ```
 
 Other tools such as `virtualenv` and `conda` are also suitable. Pick your favourite.
 
 
-Once your environemnt is active, you can set up the development environment for fairness by running:
+Once your environemnt is active, you can set up the development environment for FairLens by running:
 ```bash
 pip install -e .[dev]
 ```

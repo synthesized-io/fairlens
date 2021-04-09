@@ -1,14 +1,14 @@
-# fairness
-[![CI](https://github.com/synthesized-io/fairness/workflows/CI/badge.svg)](https://github.com/synthesized-io/fairness/actions)
-[![Documentation Status](https://readthedocs.org/projects/fairness/badge/?version=latest)]()
+# FairLens
+[![CI](https://github.com/synthesized-io/fairlens/workflows/CI/badge.svg)](https://github.com/synthesized-io/fairlens/actions)
+[![Documentation Status](https://readthedocs.org/projects/fairlens/badge/?version=latest)]()
 [![Python version](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9-blue.svg)]()
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 
 
-``fairness`` (working title) is an open source Python library for automatically discovering bias and measuring fairness in data. The package can be used to quickly identify bias, and provides multiple metrics to measure fairness across a range of sensititive and legally protected characteristics such as age, race and sex.
+FairLens is an open source Python library for automatically discovering bias and measuring fairness in data. The package can be used to quickly identify bias, and provides multiple metrics to measure fairness across a range of sensititive and legally protected characteristics such as age, race and sex.
 
-``fairness`` enables data scientists to gain a deeper understanding of their data, and helps to to ensure fair and ethical use of data in analysis and machine learning tasks. The insights gained from ``fairness`` can be harnessed by the [Bias Mitigation](https://www.synthesized.io/post/synthesized-mitigates-bias-in-data) feature of the [Synthesized](https://synthesized.io) platform, which is able to automagically remove bias using the power of synthetic data.
+The goal of FairLens is to enable data scientists to gain a deeper understanding of their data, and helps to to ensure fair and ethical use of data in analysis and machine learning tasks. The insights gained from FairLens can be harnessed by the [Bias Mitigation](https://www.synthesized.io/post/synthesized-mitigates-bias-in-data) feature of the [Synthesized](https://synthesized.io) platform, which is able to automagically remove bias using the power of synthetic data.
 
 See some of our previous blog posts for our take on bias and fairness in ML:
 
@@ -20,21 +20,21 @@ See some of our previous blog posts for our take on bias and fairness in ML:
 
 ## Getting Started
 
-fairness can be installed using pip
+FairLens can be installed using pip
 ```bash
-pip install fairness
+pip install fairlens
 ```
 
 ### Usage
 ```python
-import fairness
+import fairlens
 ```
 
 ## Contributing
 
-``fairness`` is under active development, and we appreciate community contributions. See [CONTRIBUTING.md](https://github.com/synthesized-io/fairness/blob/main/.github/CONTRIBUTING.md) for how to get started.
+FairLens is under active development, and we appreciate community contributions. See [CONTRIBUTING.md](https://github.com/synthesized-io/fairlens/blob/main/.github/CONTRIBUTING.md) for how to get started.
 
 
 ## License
 
-This project is licensed under the terms of the [BSD 3](https://github.com/synthesized-io/fairness/blob/main/LICENSE.md) license.
+This project is licensed under the terms of the [BSD 3](https://github.com/synthesized-io/fairlens/blob/main/LICENSE.md) license.
