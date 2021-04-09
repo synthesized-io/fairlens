@@ -17,7 +17,7 @@
 
 # -- Project information -----------------------------------------------------
 
-project = "fairness"
+project = "FairLens"
 copyright = "2021, Synthesized Ltd."
 author = "Synthesized Ltd."
 

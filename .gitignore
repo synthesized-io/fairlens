@@ -1,0 +1,10 @@
+__pycache__
+*.pyc
+*.egg-info/
+pip-wheel-metadata/
+
+docs/_build/
+
+.env/
+
+.DS_Store
