@@ -8,4 +8,4 @@ def get_version(path):
     return v["__version__"]
 
 
-setup(version=get_version("fairlens/version.py"))
+setup(version=get_version("src/fairlens/version.py"))
