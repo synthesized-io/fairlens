@@ -1,6 +1,7 @@
-from .base import Transformer, SequentialTransformer
+from .base import Transformer
 from .binning import BinningTransformer
 from .dtype import DTypeTransformer
+from .fairness_transformer import FairnessTransformer
 
 
-__all__ = ['Transformer', 'SequentialTransformer', 'BinningTransformer', 'DTypeTransformer']
+__all__ = ['Transformer', 'BinningTransformer', 'DTypeTransformer']

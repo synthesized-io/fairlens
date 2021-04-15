@@ -1,12 +1,10 @@
 import pandas as pd
 import pytest
 
-from fairness.scorer import FairnessScorer
-from fairness.scorer.fairness_transformer import ModelType
-from tests.utils import progress_bar_testing
+from fairlens.scorer import FairnessScorer
+from fairlens.transformer.fairness_transformer import ModelType
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize(
     "file_name,sensitive_attributes,target,mode",
     [
@@ -32,8 +30,7 @@ def test_fairness_scorer_parametrize(file_name, sensitive_attributes, target, mo
     # Distributions Score
     if mode is None:
         mode = 'emd'
-    dist_score, dist_biases = fairness_scorer.distributions_score(data, mode=mode,
-                                                                  progress_callback=progress_bar_testing)
+    dist_score, dist_biases = fairness_scorer.distributions_score(data, mode=mode)
 
     assert 0. <= dist_score <= 1.
     assert not any([dist_biases[c].isna().any() for c in dist_biases.columns])
@@ -42,7 +39,6 @@ def test_fairness_scorer_parametrize(file_name, sensitive_attributes, target, mo
     assert not any(['nan' in v for v in dist_biases['value'].values])  # Shouldn't have biases for NaN values.
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize(
     "file_name,sensitive_attributes,target",
     [
@@ -58,7 +54,7 @@ def test_fairness_scorer_detect_sensitive(file_name, sensitive_attributes, targe
     fairness_scorer = FairnessScorer.init_detect_sensitive(data, target=target)
     assert fairness_scorer.sensitive_attrs == sensitive_attributes
 
-    dist_score, dist_biases = fairness_scorer.distributions_score(data, progress_callback=progress_bar_testing)
+    dist_score, dist_biases = fairness_scorer.distributions_score(data)
 
     assert 0. <= dist_score <= 1.
 

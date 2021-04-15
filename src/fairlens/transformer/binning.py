@@ -69,6 +69,7 @@ class BinningTransformer(Transformer):
 
         return super().fit(df)
 
-    def transform(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        self._assert_fitted()
         df.loc[:, self.name] = pd.cut(df.loc[:, self.name], bins=self._bins, **self.kwargs)
         return df

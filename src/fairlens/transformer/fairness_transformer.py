@@ -1,11 +1,12 @@
 import logging
-from typing import List, Optional, cast, Dict
+from typing import List, Optional, cast, Dict, Tuple
 from enum import Enum
 
 import numpy as np
 import pandas as pd
+from sklearn.pipeline import Pipeline
 
-from ..transformer import BinningTransformer, DTypeTransformer, SequentialTransformer, Transformer
+from ..transformer import BinningTransformer, DTypeTransformer, Transformer
 
 logger = logging.getLogger(__name__)
 
@@ -15,23 +16,8 @@ class ModelType(Enum):
     Binary = "Binary"
     Multinomial = "Multinomial"
 
-    @classmethod
-    def get_type(cls, column: pd.Series, categorical_threshold_log_multiplier: float = 2.5,
-                 min_num_unique: int = 10) -> 'ModelType':
-        num_rows = len(column)
-        n_unique = column.nunique()
 
-        if n_unique > max(min_num_unique, categorical_threshold_log_multiplier * np.log(num_rows)):
-            return cls.Continuous
-
-        elif n_unique == 2:
-            return cls.Binary
-
-        else:
-            return cls.Multinomial
-
-
-class FairnessTransformer(SequentialTransformer):
+class FairnessTransformer(Transformer):
     """
     Fairness transformer
 
@@ -45,6 +31,9 @@ class FairnessTransformer(SequentialTransformer):
         drop_dates: Whether to ignore sensitive attributes containing dates.
     """
 
+    categorical_threshold_log_multiplier: float = 2.5
+    min_num_unique: int = 10
+
     def __init__(
         self,
         sensitive_attrs: List[str],
@@ -53,6 +42,7 @@ class FairnessTransformer(SequentialTransformer):
         target_n_bins: Optional[int] = 5,
         positive_class: Optional[str] = None,
     ):
+        super().__init__(name='fairness_transformer')
 
         self.sensitive_attrs = sensitive_attrs
         self.target = target
@@ -60,9 +50,9 @@ class FairnessTransformer(SequentialTransformer):
         self.target_n_bins = target_n_bins
         self._used_columns = self.sensitive_attrs + [self.target]
 
+        self._transformers: List[Transformer] = []
         self.models: Dict[str, ModelType] = dict()
 
-        super().__init__(name="fairness_transformer")
 
     def fit(self, df: pd.DataFrame) -> "FairnessTransformer":
 
@@ -73,7 +63,9 @@ class FairnessTransformer(SequentialTransformer):
             return self
 
         for c in df.columns:
-            self.models[c] = ModelType.get_type(df[c])
+            self.models[c] = self._infer_column_model(df[c])
+
+        transformers = []
 
         # Transformer for target column
         if self.models[self.target] == ModelType.Continuous and self.target_n_bins:
@@ -83,11 +75,11 @@ class FairnessTransformer(SequentialTransformer):
                     self.target, bins=self.target_n_bins, duplicates="drop", remove_outliers=0.1, include_lowest=True
                 )
             df_target = binning_transformer.fit_transform(df_target)
-            self.append(binning_transformer)
+            self._transformers.append(binning_transformer)
 
-            self.models[self.target] = ModelType.get_type(df_target[self.target].astype(str))
+            self.models[self.target] = self._infer_column_model(df_target[self.target].astype(str))
 
-        self.append(DTypeTransformer(self.target, out_dtype="str"))
+        self._transformers.append(DTypeTransformer(self.target, out_dtype="str"))
 
         # Transformers for sensitive columns
         for col in self.sensitive_attrs:
@@ -96,16 +88,17 @@ class FairnessTransformer(SequentialTransformer):
 
             transformer = self._get_sensitive_attr_transformer(df[col])
             if transformer:
-                self.append(transformer)
+                self._transformers.append(transformer)
 
             # We want to always convert to string otherwise grouping operations can fail
             to_str_transformer = DTypeTransformer(col, out_dtype="str")
-            self.append(to_str_transformer)
+            self._transformers.append(to_str_transformer)
 
-        super().fit(df)
-        return self
+        df = self.fit_transform(df)
 
-    def transform(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+        return super().fit(df)
+
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
 
         df = self._get_dataframe_subset(df)
 
@@ -113,7 +106,18 @@ class FairnessTransformer(SequentialTransformer):
             logger.warning("Empty DataFrame.")
             return df
 
-        return super().transform(df)
+        for t in self._transformers:
+            df = t.transform(df)
+
+        return df
+
+    def fit_transform(self, df: pd.DataFrame) -> pd.DataFrame:
+
+        for t in self._transformers:
+            t.fit(df)
+            df = t.transform(df)
+
+        return df
 
     def _get_sensitive_attr_transformer(self, column: pd.Series) -> Optional[Transformer]:
         column_name = column.name
@@ -131,3 +135,16 @@ class FairnessTransformer(SequentialTransformer):
 
         df = df[self._used_columns].copy()
         return df[~df[self.target].isna()]
+
+    def _infer_column_model(self, column: pd.Series) -> 'ModelType':
+        num_rows = len(column)
+        n_unique = column.nunique()
+
+        if n_unique > max(self.min_num_unique, self.categorical_threshold_log_multiplier * np.log(num_rows)):
+            return ModelType.Continuous
+
+        elif n_unique == 2:
+            return ModelType.Binary
+
+        else:
+            return ModelType.Multinomial

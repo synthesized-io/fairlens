@@ -7,7 +7,7 @@ from .base import Transformer
 
 class DTypeTransformer(Transformer):
     """
-    Infer hidden dtype of data and convert it.
+    Infer hidden dtype of data and convert data to it.
 
     Attributes:
         name (str) : the data frame column to transform.
@@ -49,7 +49,8 @@ class DTypeTransformer(Transformer):
         self.out_dtype = str(column.dtype)
         return super().fit(df)
 
-    def transform(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
+    def transform(self, df: pd.DataFrame) -> pd.DataFrame:
+        self._assert_fitted()
 
         if self.out_dtype == self.in_dtype:
             return df
@@ -57,11 +58,4 @@ class DTypeTransformer(Transformer):
             df[self.name] = pd.to_numeric(df[self.name], errors="coerce")
         else:
             df[self.name] = df[self.name].astype(self.out_dtype, errors="ignore")
-        return df
-
-    def inverse_transform(self, df: pd.DataFrame, **kwargs) -> pd.DataFrame:
-        if self.out_dtype == self.in_dtype:
-            return df
-        else:
-            df[self.name] = df[self.name].astype(self.in_dtype, errors="ignore")
         return df

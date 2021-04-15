@@ -3,10 +3,9 @@ from math import log
 import pandas as pd
 import pytest
 
-from fairness.scorer import FairnessTransformer
+from fairlens.transformer import FairnessTransformer
 
 
-@pytest.mark.slow
 @pytest.mark.parametrize(
     "file_name,sensitive_attributes,target,target_n_bins",
     [
@@ -29,7 +28,7 @@ def test_fairness_transformer(file_name, sensitive_attributes, target, target_n_
 
     ft = FairnessTransformer(sensitive_attrs=sensitive_attributes, target=target, target_n_bins=target_n_bins)
     ft.fit(df)
-    df_t = ft(df)
+    df_t = ft.transform(df)
 
     min_num_unique: int = 10
     categorical_threshold_log_multiplier: float = 2.5

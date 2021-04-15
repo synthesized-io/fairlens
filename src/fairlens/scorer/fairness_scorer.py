@@ -7,10 +7,10 @@ import numpy as np
 import pandas as pd
 from pyemd import emd
 from scipy.stats import binom, ks_2samp
+from tqdm import tqdm
 
-from .fairness_transformer import FairnessTransformer, ModelType
+from ..transformer.fairness_transformer import FairnessTransformer, ModelType
 from .sensitive_attributes import SensitiveNamesDetector, sensitive_attr_concat_name
-from ..transformer import SequentialTransformer
 
 logger = logging.getLogger(__name__)
 
@@ -26,7 +26,7 @@ class FairnessScorer:
         >>> target = "insuranceclaim"
 
         >>> fairness_scorer = FairnessScorer(data, sensitive_attrs=sensitive_attributes, target=target)
-        >>> dist_score, dist_biases = fairness_scorer.distributions_score()
+        >>> dist_score, dist_biases = fairness_scorer.distributions_score(data)
     """
     def __init__(self, df: pd.DataFrame, sensitive_attrs: Optional[Union[List[str], str]], target: str, n_bins: int = 5,
                  target_n_bins: Optional[int] = 5, detect_sensitive: bool = False, detect_hidden: bool = False,
@@ -106,8 +106,8 @@ class FairnessScorer:
     def distributions_score(self, df: pd.DataFrame,
                             mode: str = 'emd', alpha: float = 0.05,
                             min_dist: Optional[float] = None, min_count: Optional[int] = 50,
-                            weighted: bool = True, max_combinations: Optional[int] = 3, condense_output: bool = True,
-                            progress_callback: Optional[Callable[[int], None]] = None) -> Tuple[float, pd.DataFrame]:
+                            weighted: bool = True, max_combinations: Optional[int] = 3,
+                            condense_output: bool = True) -> Tuple[float, pd.DataFrame]:
         """Returns the biases and fairness score by analyzing the distribution difference between
         sensitive variables and the target variable.
 
@@ -121,16 +121,14 @@ class FairnessScorer:
             weighted: Whether to weight the average of biases on the size of each sample.
             max_combinations: Max number of combinations of sensitive attributes to be considered.
             condense_output: Whether to return one row per group or one per group and target
-            progress_callback: Progress bar callback.
         """
+        pbar = tqdm(total=100)
 
-        df_pre = self.transformer(df)
+        df_pre = self.transformer.transform(df)
 
         if len(self.sensitive_attrs) == 0 or len(df_pre) == 0 or len(df_pre.dropna()) == 0:
-            if progress_callback is not None:
-                progress_callback(0)
-                progress_callback(100)
-
+            pbar.update(0)
+            pbar.update(100)
             return 1., pd.DataFrame([], columns=['name', 'value', 'target', 'distance', 'count'])
 
         biases = []
@@ -139,8 +137,7 @@ class FairnessScorer:
         num_combinations = self.get_num_combinations(self.sensitive_attrs, max_combinations)
 
         n = 0
-        if progress_callback is not None:
-            progress_callback(0)
+        pbar.update(0)
 
         # Compute biases for all combinations of sensitive attributes
         for k in range(1, max_combinations + 1):
@@ -152,9 +149,8 @@ class FairnessScorer:
                 df_dist = self.calculate_distance(df_not_nan, list(sensitive_attr), mode=mode, alpha=alpha)
                 biases.extend(self.format_bias(df_dist))
 
-                if progress_callback is not None:
-                    n += 1
-                    progress_callback(round(n * 98.0 / num_combinations))
+                n += 1
+                pbar.update(n * 98.0 / num_combinations)
 
         df_biases = pd.DataFrame(biases, columns=['name', 'value', 'target', 'distance', 'count'])
         df_biases = df_biases[df_biases['value'] != 'Total']
@@ -192,8 +188,7 @@ class FairnessScorer:
         df_biases['value'] = df_biases['value'].map(
             lambda x: self.values_str_to_list[x] if x in self.values_str_to_list else x)
 
-        if progress_callback is not None:
-            progress_callback(100)
+        pbar.update(100)
 
         return score, df_biases
 
