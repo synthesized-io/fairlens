@@ -1,24 +1,24 @@
 from difflib import SequenceMatcher
 from enum import Enum
-from typing import Dict, List, Optional, Union
+from typing import Any, Dict, List, Optional, Union
 
 
 class SensitiveNames(Enum):
-    Age = "Age"
-    Gender = "Gender"
-    Ethnicity = "Ethnicity"
-    Religion = "Religion"
-    Nationality = "Nationality"
-    FamilyStatus = "Family Status"
-    Disability = "Disability"
-    SexualOrientation = "Sexual Orientation"
+    Age: str = "Age"
+    Gender: str = "Gender"
+    Ethnicity: str = "Ethnicity"
+    Religion: str = "Religion"
+    Nationality: str = "Nationality"
+    FamilyStatus: str = "Family Status"
+    Disability: str = "Disability"
+    SexualOrientation: str = "Sexual Orientation"
 
 
 class SensitiveNamesDetector:
     def __init__(self, threshold: float = 0.1):
         self.threshold = threshold
 
-        self.sensitive_names_map = {
+        self.sensitive_names_map: Dict["SensitiveNames", List[str]] = {
             SensitiveNames.Age: ["age", "DOB", "birth", "youth", "elder", "senior"],
             SensitiveNames.Gender: ["gender", "sex"],
             SensitiveNames.Ethnicity: ["race", "color", "ethnic", "breed", "culture"],
@@ -29,7 +29,7 @@ class SensitiveNamesDetector:
             SensitiveNames.SexualOrientation: ["sexual", "orientation", "attracted"],
         }
 
-    def detect_name(self, name: str) -> Optional[str]:
+    def detect_name(self, name: str) -> Optional[Any]:
         name = name.lower()
 
         # Check exact match

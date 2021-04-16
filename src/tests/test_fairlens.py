@@ -1,2 +1,2 @@
-def test_fairlens():
+def test_fairlens() -> None:
     pass

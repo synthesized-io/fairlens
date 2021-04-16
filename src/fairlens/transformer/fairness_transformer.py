@@ -1,10 +1,9 @@
 import logging
-from typing import List, Optional, cast, Dict, Tuple
 from enum import Enum
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
-from sklearn.pipeline import Pipeline
 
 from ..transformer import BinningTransformer, DTypeTransformer, Transformer
 
@@ -42,7 +41,7 @@ class FairnessTransformer(Transformer):
         target_n_bins: Optional[int] = 5,
         positive_class: Optional[str] = None,
     ):
-        super().__init__(name='fairness_transformer')
+        super().__init__(name="fairness_transformer")
 
         self.sensitive_attrs = sensitive_attrs
         self.target = target
@@ -53,9 +52,7 @@ class FairnessTransformer(Transformer):
         self._transformers: List[Transformer] = []
         self.models: Dict[str, ModelType] = dict()
 
-
     def fit(self, df: pd.DataFrame) -> "FairnessTransformer":
-
         df = self._get_dataframe_subset(df)
 
         if len(df) == 0:
@@ -65,15 +62,13 @@ class FairnessTransformer(Transformer):
         for c in df.columns:
             self.models[c] = self._infer_column_model(df[c])
 
-        transformers = []
-
         # Transformer for target column
         if self.models[self.target] == ModelType.Continuous and self.target_n_bins:
             df_target = df[[self.target]].copy()
             df_target = DTypeTransformer(self.target).fit_transform(df_target)
             binning_transformer = BinningTransformer(
-                    self.target, bins=self.target_n_bins, duplicates="drop", remove_outliers=0.1, include_lowest=True
-                )
+                self.target, bins=self.target_n_bins, duplicates="drop", remove_outliers=0.1, include_lowest=True
+            )
             df_target = binning_transformer.fit_transform(df_target)
             self._transformers.append(binning_transformer)
 
@@ -123,9 +118,10 @@ class FairnessTransformer(Transformer):
         column_name = column.name
 
         if self.models[column_name] == ModelType.Continuous:
-            remove_outliers = None if column.dtype.kind == 'M' else 0.1
-            return BinningTransformer(column_name, bins=self.n_bins, remove_outliers=remove_outliers,
-                                      duplicates='drop', include_lowest=True)
+            remove_outliers = None if column.dtype.kind == "M" else 0.1
+            return BinningTransformer(
+                column_name, bins=self.n_bins, remove_outliers=remove_outliers, duplicates="drop", include_lowest=True
+            )
 
         return None
 
@@ -136,7 +132,7 @@ class FairnessTransformer(Transformer):
         df = df[self._used_columns].copy()
         return df[~df[self.target].isna()]
 
-    def _infer_column_model(self, column: pd.Series) -> 'ModelType':
+    def _infer_column_model(self, column: pd.Series) -> "ModelType":
         num_rows = len(column)
         n_unique = column.nunique()
 

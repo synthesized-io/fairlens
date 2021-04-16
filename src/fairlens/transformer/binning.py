@@ -33,11 +33,11 @@ class BinningTransformer(Transformer):
         self.quantile_based = quantile_based
         self.kwargs = kwargs
 
-        self._bins: Optional[List] = None
+        self._bins: Optional[List[pd.Interval]] = None
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return (
-            f"{self.__class__.__name__}(name={self.name}, dtypes={self.dtypes}, bins={self.bins}, "
+            f"{self.__class__.__name__}(name={self.name}, bins={self.bins}, "
             f"remove_outliers={self.remove_outliers}, quantile_based={self.quantile_based}, "
             f'{", ".join([f"{k}={v}" for k, v in self.kwargs.items()])})'
         )

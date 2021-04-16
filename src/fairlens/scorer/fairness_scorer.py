@@ -1,7 +1,7 @@
 import logging
 from itertools import combinations
 from math import factorial
-from typing import Any, Callable, Dict, List, Optional, Sized, Tuple, Union
+from typing import Any, Dict, List, Optional, Sized, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -9,8 +9,8 @@ from pyemd import emd
 from scipy.stats import binom, ks_2samp
 from tqdm import tqdm
 
-from ..transformer.fairness_transformer import FairnessTransformer, ModelType
 from .sensitive_attributes import SensitiveNamesDetector, sensitive_attr_concat_name
+from ..transformer.fairness_transformer import FairnessTransformer, ModelType
 
 logger = logging.getLogger(__name__)
 
@@ -28,9 +28,19 @@ class FairnessScorer:
         >>> fairness_scorer = FairnessScorer(data, sensitive_attrs=sensitive_attributes, target=target)
         >>> dist_score, dist_biases = fairness_scorer.distributions_score(data)
     """
-    def __init__(self, df: pd.DataFrame, sensitive_attrs: Optional[Union[List[str], str]], target: str, n_bins: int = 5,
-                 target_n_bins: Optional[int] = 5, detect_sensitive: bool = False, detect_hidden: bool = False,
-                 positive_class: Optional[str] = None, drop_dates: bool = True):
+
+    def __init__(
+        self,
+        df: pd.DataFrame,
+        sensitive_attrs: Optional[Union[List[str], str]],
+        target: str,
+        n_bins: int = 5,
+        target_n_bins: Optional[int] = 5,
+        detect_sensitive: bool = False,
+        detect_hidden: bool = False,
+        positive_class: Optional[str] = None,
+        drop_dates: bool = True,
+    ):
         """FairnessScorer constructor.
 
         Args:
@@ -70,8 +80,12 @@ class FairnessScorer:
         if len(self.sensitive_attrs) == 0:
             logger.warning("No sensitive attributes detected. Fairness score will always be 0.")
 
-        self.transformer = FairnessTransformer(sensitive_attrs=self.sensitive_attrs, target=self.target,
-                                               n_bins=self.n_bins, target_n_bins=self.target_n_bins)
+        self.transformer = FairnessTransformer(
+            sensitive_attrs=self.sensitive_attrs,
+            target=self.target,
+            n_bins=self.n_bins,
+            target_n_bins=self.target_n_bins,
+        )
 
         self.transformer.fit(df)
         self.target_model = self.transformer.models[self.target]
@@ -88,7 +102,7 @@ class FairnessScorer:
         self.names_str_to_list: Dict[str, List[str]] = dict()
 
     @classmethod
-    def init_detect_sensitive(cls, df: pd.DataFrame, target: str, n_bins: int = 5) -> 'FairnessScorer':
+    def init_detect_sensitive(cls, df: pd.DataFrame, target: str, n_bins: int = 5) -> "FairnessScorer":
         """Create a new FairnessScorer and automatically detect sensitive attributes.
         Args:
             df: Input DataFrame to be scored.
@@ -103,11 +117,17 @@ class FairnessScorer:
     def sensitive_attrs_and_target(self) -> List[str]:
         return list(np.concatenate((self.sensitive_attrs, [self.target])))
 
-    def distributions_score(self, df: pd.DataFrame,
-                            mode: str = 'emd', alpha: float = 0.05,
-                            min_dist: Optional[float] = None, min_count: Optional[int] = 50,
-                            weighted: bool = True, max_combinations: Optional[int] = 3,
-                            condense_output: bool = True) -> Tuple[float, pd.DataFrame]:
+    def distributions_score(
+        self,
+        df: pd.DataFrame,
+        mode: str = "emd",
+        alpha: float = 0.05,
+        min_dist: Optional[float] = None,
+        min_count: Optional[int] = 50,
+        weighted: bool = True,
+        max_combinations: Optional[int] = 3,
+        condense_output: bool = True,
+    ) -> Tuple[float, pd.DataFrame]:
         """Returns the biases and fairness score by analyzing the distribution difference between
         sensitive variables and the target variable.
 
@@ -129,11 +149,12 @@ class FairnessScorer:
         if len(self.sensitive_attrs) == 0 or len(df_pre) == 0 or len(df_pre.dropna()) == 0:
             pbar.update(0)
             pbar.update(100)
-            return 1., pd.DataFrame([], columns=['name', 'value', 'target', 'distance', 'count'])
+            return 1.0, pd.DataFrame([], columns=["name", "value", "target", "distance", "count"])
 
         biases = []
-        max_combinations = (min(max_combinations, len(self.sensitive_attrs))
-            if max_combinations else len(self.sensitive_attrs))
+        max_combinations = (
+            min(max_combinations, len(self.sensitive_attrs)) if max_combinations else len(self.sensitive_attrs)
+        )
         num_combinations = self.get_num_combinations(self.sensitive_attrs, max_combinations)
 
         n = 0
@@ -142,7 +163,7 @@ class FairnessScorer:
         # Compute biases for all combinations of sensitive attributes
         for k in range(1, max_combinations + 1):
             for sensitive_attr in combinations(self.sensitive_attrs, k):
-                df_not_nan = df_pre[~(df_pre[list(sensitive_attr)] == 'nan').any(1)]
+                df_not_nan = df_pre[~(df_pre[list(sensitive_attr)] == "nan").any(1)]
                 if len(df_not_nan) == 0:
                     continue
 
@@ -152,57 +173,61 @@ class FairnessScorer:
                 n += 1
                 pbar.update(n * 98.0 / num_combinations)
 
-        df_biases = pd.DataFrame(biases, columns=['name', 'value', 'target', 'distance', 'count'])
-        df_biases = df_biases[df_biases['value'] != 'Total']
+        df_biases = pd.DataFrame(biases, columns=["name", "value", "target", "distance", "count"])
+        df_biases = df_biases[df_biases["value"] != "Total"]
 
         if min_dist is not None:
-            df_biases = df_biases[df_biases['distance'].abs() >= min_dist]
+            df_biases = df_biases[df_biases["distance"].abs() >= min_dist]
         if min_count is not None:
-            df_biases = df_biases[df_biases['count'] >= min_count]
+            df_biases = df_biases[df_biases["count"] >= min_count]
 
         # Compute score
         if len(df_biases) == 0:
-            return 1., pd.DataFrame([], columns=['name', 'value', 'target', 'distance', 'count'])
+            return 1.0, pd.DataFrame([], columns=["name", "value", "target", "distance", "count"])
         elif weighted:
-            score = 1 - (df_biases['distance'].abs() * df_biases['count']).sum() / df_biases['count'].sum()
+            score = 1 - (df_biases["distance"].abs() * df_biases["count"]).sum() / df_biases["count"].sum()
         else:
-            score = 1 - df_biases['distance'].abs().mean()
+            score = 1 - df_biases["distance"].abs().mean()
 
         if condense_output:
             if self.target_model == ModelType.Binary:
-                df_biases = df_biases[df_biases['target'] == self.positive_class]
+                df_biases = df_biases[df_biases["target"] == self.positive_class]
 
-            elif self.target_model == ModelType.Multinomial and mode == 'ovr':
-                df_biases['distance'] = df_biases['distance'].abs()
-                df_biases_out = df_biases.groupby(['name', 'value'], as_index=False).sum()
-                df_biases_out['distance'] = df_biases.groupby(['name', 'value'], as_index=False).mean()['distance']
-                df_biases_out['target'] = 'N/A'
+            elif self.target_model == ModelType.Multinomial and mode == "ovr":
+                df_biases["distance"] = df_biases["distance"].abs()
+                df_biases_out = df_biases.groupby(["name", "value"], as_index=False).sum()
+                df_biases_out["distance"] = df_biases.groupby(["name", "value"], as_index=False).mean()["distance"]
+                df_biases_out["target"] = "N/A"
                 df_biases = df_biases_out
 
         # Sort values
-        df_biases = (df_biases.reindex(df_biases['distance'].abs().sort_values(ascending=False).index)
-            .reset_index(drop=True))
+        df_biases = df_biases.reindex(df_biases["distance"].abs().sort_values(ascending=False).index).reset_index(
+            drop=True
+        )
 
-        df_biases['name'] = df_biases['name'].apply(
-            lambda x: self.names_str_to_list[x] if x in self.names_str_to_list else x)
-        df_biases['value'] = df_biases['value'].map(
-            lambda x: self.values_str_to_list[x] if x in self.values_str_to_list else x)
+        df_biases["name"] = df_biases["name"].apply(
+            lambda x: self.names_str_to_list[x] if x in self.names_str_to_list else x
+        )
+        df_biases["value"] = df_biases["value"].map(
+            lambda x: self.values_str_to_list[x] if x in self.values_str_to_list else x
+        )
 
         pbar.update(100)
 
         return score, df_biases
 
-    def calculate_distance(self, df: pd.DataFrame, sensitive_attr: List[str], mode: str = 'emd',
-                           alpha: float = 0.05) -> pd.DataFrame:
+    def calculate_distance(
+        self, df: pd.DataFrame, sensitive_attr: List[str], mode: str = "emd", alpha: float = 0.05
+    ) -> pd.DataFrame:
         """Check input values and decide which type of distance is computed for each case."""
 
         if self.target_model == ModelType.Binary:
             df_dist = self.difference_distance(df, sensitive_attr, alpha=alpha)
 
         elif self.target_model == ModelType.Multinomial:
-            if mode == 'ovr':
+            if mode == "ovr":
                 df_dist = self.difference_distance(df, sensitive_attr, alpha=alpha)
-            elif mode == 'emd':
+            elif mode == "emd":
                 df_dist = self.emd_distance(df, sensitive_attr)
             else:
                 raise ValueError(f"Given mode '{mode}' not recognized.")
@@ -219,14 +244,14 @@ class FairnessScorer:
         target = self.target
 
         # Get group counts & rates
-        sensitive_group_target_counts = df.groupby(sensitive_attr + [target])[target].aggregate(Count='count')
+        sensitive_group_target_counts = df.groupby(sensitive_attr + [target])[target].aggregate(Count="count")
         sensitive_group_size = df.groupby(sensitive_attr).size()
-        sensitive_group_target_counts['Rate'] = sensitive_group_target_counts['Count'] / sensitive_group_size
+        sensitive_group_target_counts["Rate"] = sensitive_group_target_counts["Count"] / sensitive_group_size
 
         # Get total counts & rates
-        target_totals = df.groupby(target)[target].aggregate(Count='count')
-        target_totals['Rate'] = target_totals / len(df)
-        target_totals = target_totals.set_index(pd.MultiIndex.from_tuples([('Total', a) for a in target_totals.index]))
+        target_totals = df.groupby(target)[target].aggregate(Count="count")
+        target_totals["Rate"] = target_totals / len(df)
+        target_totals = target_totals.set_index(pd.MultiIndex.from_tuples([("Total", a) for a in target_totals.index]))
 
         index = sensitive_group_target_counts.index.droplevel(-1)
         name = sensitive_attr_concat_name(sensitive_attr)
@@ -234,8 +259,9 @@ class FairnessScorer:
 
         if len(sensitive_attr) > 1:
             index_fmt = index.map(lambda sa: f"({', '.join([str(sa_i) for sa_i in sa])})").rename(name)
-            sensitive_group_target_counts = (sensitive_group_target_counts.droplevel(sensitive_attr)
-                .set_index(index_fmt, append=True).swaplevel())
+            sensitive_group_target_counts = (
+                sensitive_group_target_counts.droplevel(sensitive_attr).set_index(index_fmt, append=True).swaplevel()
+            )
             self.values_str_to_list = {**self.values_str_to_list, **{k: list(v) for k, v in zip(index_fmt, index)}}
         else:
             self.values_str_to_list = {**self.values_str_to_list, **{k: [k] for k in index}}
@@ -250,19 +276,19 @@ class FairnessScorer:
 
         nlevels = bias.index.nlevels
         name = bias.index.names[0]
-        target = self.positive_class if self.positive_class else 'N/A'
+        target = self.positive_class if self.positive_class else "N/A"
 
-        for k, v in bias.to_dict('index').items():
+        for k, v in bias.to_dict("index").items():
             bias_i = dict()
 
-            bias_i['name'] = name
+            bias_i["name"] = name
             if nlevels == 1:
-                bias_i['value'], bias_i['target'] = k, target
+                bias_i["value"], bias_i["target"] = k, target
             elif nlevels == 2:
-                bias_i['value'], bias_i['target'] = k
+                bias_i["value"], bias_i["target"] = k
 
-            bias_i['distance'] = v['Distance']
-            bias_i['count'] = int(v['Count'])
+            bias_i["distance"] = v["Distance"]
+            bias_i["count"] = int(v["Count"])
 
             fmt_bias.append(bias_i)
 
@@ -284,7 +310,7 @@ class FairnessScorer:
                     dist = -dist
 
                 if isinstance(sensitive_attr_values, tuple) and len(sensitive_attr_values) > 1:
-                    sensitive_attr_str = "({})".format(', '.join([str(sa) for sa in sensitive_attr_values]))
+                    sensitive_attr_str = "({})".format(", ".join([str(sa) for sa in sensitive_attr_values]))
                     sensitive_attr_values = list(sensitive_attr_values)
                 else:
                     sensitive_attr_str = sensitive_attr_values
@@ -296,7 +322,7 @@ class FairnessScorer:
         name = sensitive_attr_concat_name(sensitive_attr)
         self.names_str_to_list[name] = sensitive_attr
 
-        return pd.DataFrame(distances, columns=[name, 'Count', 'Distance']).set_index(name)
+        return pd.DataFrame(distances, columns=[name, "Count", "Distance"]).set_index(name)
 
     def difference_distance(self, df: pd.DataFrame, sensitive_attr: List[str], alpha: float = 0.05) -> pd.DataFrame:
 
@@ -305,25 +331,27 @@ class FairnessScorer:
         len_df = len(df)
         target_vc = df[self.target].value_counts(normalize=True).to_dict()
 
-        df_count['Distance'] = df_count.apply(self.get_row_distance, axis=1, alpha=alpha,
-                                              len_df=len_df, target_vc=target_vc)
+        df_count["Distance"] = df_count.apply(
+            self.get_row_distance, axis=1, alpha=alpha, len_df=len_df, target_vc=target_vc
+        )
         df_count.dropna(inplace=True)
-        if 'Total' in df_count.index.get_level_values(0):
-            df_count.drop('Total', inplace=True)
+        if "Total" in df_count.index.get_level_values(0):
+            df_count.drop("Total", inplace=True)
 
         return df_count
 
     @staticmethod
     def get_row_distance(row: pd.Series, alpha: float, len_df: int, target_vc: Dict[str, float]) -> float:
-        if row.name[0] == 'Total':
-            return 0.
+        if row.name[0] == "Total":
+            return 0.0
 
         assert target_vc is not None
 
         p = target_vc[row.name[1]]
         k = p * len_df
-        k_i = row['Count']
-        n_i = k_i / row['Rate']
+        k_i = row["Count"]
+        n_i = k_i / row["Rate"]
+
         # Get p without the current subsample
         p_rest = (k - k_i) / (len_df - n_i)
 
@@ -344,9 +372,9 @@ class FairnessScorer:
         space = df_count.index.get_level_values(1).unique()
 
         for sensitive_value in df_count.index.get_level_values(0).unique():
-            p_counts = df_count['Count'][sensitive_value].to_dict()
+            p_counts = df_count["Count"][sensitive_value].to_dict()
             # Remove counts in current subsample
-            q_counts = {k: v - p_counts.get(k, 0) for k, v in df_count['Count']['Total'].to_dict().items()}
+            q_counts = {k: v - p_counts.get(k, 0) for k, v in df_count["Count"]["Total"].to_dict().items()}
 
             p = np.array([float(p_counts[x]) if x in p_counts else 0.0 for x in space])
             q = np.array([float(q_counts[x]) if x in q_counts else 0.0 for x in space])
@@ -356,28 +384,30 @@ class FairnessScorer:
 
             distance_space = 1 - np.eye(len(space))
 
-            emd_dist.append({
-                df_count.index.names[0]: sensitive_value,
-                'Distance': emd(p, q, distance_space),
-                'Count': df_count['Count'][sensitive_value].sum()
-            })
+            emd_dist.append(
+                {
+                    df_count.index.names[0]: sensitive_value,
+                    "Distance": emd(p, q, distance_space),
+                    "Count": df_count["Count"][sensitive_value].sum(),
+                }
+            )
         return pd.DataFrame(emd_dist).set_index(df_count.index.names[0])
 
     def validate_sensitive_attrs_and_target(
-            self, target: str, sensitive_attrs: List[str], df: pd.DataFrame
+        self, target: str, sensitive_attrs: List[str], df: pd.DataFrame
     ) -> Tuple[str, List[str]]:
 
         if not all(col in df.columns for col in sensitive_attrs):
             raise KeyError("Sensitive attributes not present in DataFrame.")
 
-        if df[target].dtype.kind == 'O' and df[target].nunique() > np.sqrt(len(df)):
+        if df[target].dtype.kind == "O" and df[target].nunique() > np.sqrt(len(df)):
             raise ValueError("Unable to compute fairness. Target column has too many unique non-numeric values.")
 
-        if df[target].dtype.kind == 'M':
+        if df[target].dtype.kind == "M":
             raise TypeError("Datetime target columns not supported.")
 
         for attr in sensitive_attrs:
-            if df[attr].dtype.kind == 'M' and self.drop_dates:
+            if df[attr].dtype.kind == "M" and self.drop_dates:
                 self.sensitive_attrs.remove(attr)
 
         # If target in sensitive_attrs, drop it
@@ -385,7 +415,7 @@ class FairnessScorer:
             sensitive_attrs.remove(self.target)
 
         for attr in sensitive_attrs:
-            if df[attr].dtype.kind == 'O' and df[attr].nunique() > np.sqrt(len(df)):
+            if df[attr].dtype.kind == "O" and df[attr].nunique() > np.sqrt(len(df)):
                 sensitive_attrs.remove(attr)
                 logging.info(f"Sensitive attribute '{attr}' dropped as it is a sampled value.")
 
@@ -394,8 +424,9 @@ class FairnessScorer:
 
         return target, sensitive_attrs
 
-    def detect_other_sensitive(self, df: pd.DataFrame, detect_sensitive: bool = True,
-                               detect_hidden: bool = False) -> None:
+    def detect_other_sensitive(
+        self, df: pd.DataFrame, detect_sensitive: bool = True, detect_hidden: bool = False
+    ) -> None:
         # Detect other hidden sensitive attrs
         if detect_sensitive:
             columns = list(filter(lambda c: c not in self.sensitive_attrs + [self.target], df.columns))
@@ -419,8 +450,10 @@ class FairnessScorer:
         detector = SensitiveNamesDetector()
         names_dict = detector.detect_names_dict(names)
         if len(names_dict) > 0:
-            logger.info("Sensitive columns detected: "
-                        "{}".format(', '.join([f"'{k}' (bias type: {v})" for k, v in names_dict.items()])))
+            logger.info(
+                "Sensitive columns detected: "
+                "{}".format(", ".join([f"'{k}' (bias type: {v})" for k, v in names_dict.items()]))
+            )
 
         return [attr for attr in names_dict.keys()]
 
@@ -446,12 +479,12 @@ class FairnessScorer:
 
         return num_combinations
 
-    def get_positive_class(self, df) -> Optional[str]:
+    def get_positive_class(self, df: pd.DataFrame) -> Optional[str]:
         # Only set positive class for binary/multinomial, even if given.
 
         if self.target_model == ModelType.Binary:
             # If target class is not given, we'll use minority class as usually it is the target.
-            value_counts = df[self.target].value_counts().to_dict()
+            value_counts: Dict[str, int] = df[self.target].value_counts().to_dict()
             return min(value_counts, key=lambda x: value_counts.get(x, 0))
 
         else:

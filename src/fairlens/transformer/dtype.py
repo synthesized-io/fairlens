@@ -18,8 +18,8 @@ class DTypeTransformer(Transformer):
         self.in_dtype: Optional[str] = None
         self.out_dtype: Optional[str] = out_dtype
 
-    def __repr__(self):
-        return f"{self.__class__.__name__}(name={self.name}, dtypes={self.dtypes}, out_dtype={self.out_dtype})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(name={self.name}, out_dtype={self.out_dtype})"
 
     def fit(self, df: pd.DataFrame) -> pd.DataFrame:
         self.in_dtype = str(df[self.name].dtype)

@@ -1,5 +1,3 @@
-from math import log
-
 import pandas as pd
 import pytest
 
@@ -13,13 +11,19 @@ from fairlens.transformer import FairnessTransformer
         pytest.param("data/credit_with_categoricals.csv", ["age"], "MonthlyIncome", None, id="continuous_target"),
         pytest.param("data/credit_with_categoricals.csv", ["age"], "MonthlyIncome", 5, id="continuous_target_binned"),
         pytest.param("data/credit_with_categoricals.csv", ["age"], "effort", None, id="multinomial_target"),
-        pytest.param("data/claim_prediction.csv", ["age", "sex", "children", "region"], "insuranceclaim",
-                     None, id="claim_prediction"),
+        pytest.param(
+            "data/claim_prediction.csv",
+            ["age", "sex", "children", "region"],
+            "insuranceclaim",
+            None,
+            id="claim_prediction",
+        ),
         pytest.param("data/claim_prediction.csv", [], "insuranceclaim", None, id="no_sensitive_attrs"),
         pytest.param("data/biased_data_mixed_types.csv", ["age", "gender", "DOB"], "income", None, id="mixed_types"),
-        pytest.param("data/biased_data_mixed_types.csv", ["age", "gender", "DOB"], "income", 5,
-                     id="mixed_types_target_binned"),
-    ]
+        pytest.param(
+            "data/biased_data_mixed_types.csv", ["age", "gender", "DOB"], "income", 5, id="mixed_types_target_binned"
+        ),
+    ],
 )
 def test_fairness_transformer(file_name, sensitive_attributes, target, target_n_bins):
     df = pd.read_csv(file_name)
@@ -36,10 +40,10 @@ def test_fairness_transformer(file_name, sensitive_attributes, target, target_n_
     categorical_threshold = int(max(min_num_unique, categorical_threshold_log_multiplier))
 
     for col in sensitive_attributes:
-        assert df_t[col].dtype.kind == 'O'
+        assert df_t[col].dtype.kind == "O"
         if df[col].nunique() > categorical_threshold:
-            assert df_t.loc[df_t[col] != 'nan', col].nunique() == 5
+            assert df_t.loc[df_t[col] != "nan", col].nunique() == 5
 
-    assert df_t[target].dtype.kind == 'O'
+    assert df_t[target].dtype.kind == "O"
     if target_n_bins:
         assert df_t[target].nunique() <= target_n_bins

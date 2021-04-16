@@ -2,22 +2,31 @@ import pandas as pd
 import pytest
 
 from fairlens.scorer import FairnessScorer
-from fairlens.transformer.fairness_transformer import ModelType
 
 
 @pytest.mark.parametrize(
     "file_name,sensitive_attributes,target,mode",
     [
         pytest.param("data/credit_with_categoricals.csv", ["age"], "SeriousDlqin2yrs", None, id="binary_target"),
-        pytest.param("data/credit_with_categoricals.csv", ["age"], "RevolvingUtilizationOfUnsecuredLines", None,
-                     id="continuous_target"),
+        pytest.param(
+            "data/credit_with_categoricals.csv",
+            ["age"],
+            "RevolvingUtilizationOfUnsecuredLines",
+            None,
+            id="continuous_target",
+        ),
         pytest.param("data/credit_with_categoricals.csv", ["age"], "effort", "emd", id="multinomial_target_emd"),
         pytest.param("data/credit_with_categoricals.csv", ["age"], "effort", "ovr", id="multinomial_target_ovr"),
-        pytest.param("data/claim_prediction.csv", ["age", "sex", "children", "region"], "insuranceclaim",
-                     None, id="claim_prediction"),
+        pytest.param(
+            "data/claim_prediction.csv",
+            ["age", "sex", "children", "region"],
+            "insuranceclaim",
+            None,
+            id="claim_prediction",
+        ),
         pytest.param("data/claim_prediction.csv", [], "insuranceclaim", None, id="no_sensitive_attrs"),
         pytest.param("data/biased_data_mixed_types.csv", ["age", "gender", "DOB"], "income", None, id="mixed_types"),
-    ]
+    ],
 )
 def test_fairness_scorer_parametrize(file_name, sensitive_attributes, target, mode):
 
@@ -29,24 +38,25 @@ def test_fairness_scorer_parametrize(file_name, sensitive_attributes, target, mo
 
     # Distributions Score
     if mode is None:
-        mode = 'emd'
+        mode = "emd"
     dist_score, dist_biases = fairness_scorer.distributions_score(data, mode=mode)
 
-    assert 0. <= dist_score <= 1.
+    assert 0.0 <= dist_score <= 1.0
     assert not any([dist_biases[c].isna().any() for c in dist_biases.columns])
-    assert all([isinstance(v, list) for v in dist_biases['name'].values])
-    assert all([isinstance(v, list) for v in dist_biases['value'].values])
-    assert not any(['nan' in v for v in dist_biases['value'].values])  # Shouldn't have biases for NaN values.
+    assert all([isinstance(v, list) for v in dist_biases["name"].values])
+    assert all([isinstance(v, list) for v in dist_biases["value"].values])
+    assert not any(["nan" in v for v in dist_biases["value"].values])  # Shouldn't have biases for NaN values.
 
 
 @pytest.mark.parametrize(
     "file_name,sensitive_attributes,target",
     [
-        pytest.param("data/claim_prediction.csv", ["age", "sex", "children", "region"], "insuranceclaim",
-                     id="claim_prediction"),
+        pytest.param(
+            "data/claim_prediction.csv", ["age", "sex", "children", "region"], "insuranceclaim", id="claim_prediction"
+        ),
         pytest.param("data/credit_with_categoricals.csv", [], "age", id="target_in_sensitive_attrs"),
         pytest.param("data/credit_with_categoricals.csv", ["age"], "MonthlyIncome", id="target_in_sensitive_attrs"),
-    ]
+    ],
 )
 def test_fairness_scorer_detect_sensitive(file_name, sensitive_attributes, target):
     data = pd.read_csv(file_name)
@@ -56,7 +66,7 @@ def test_fairness_scorer_detect_sensitive(file_name, sensitive_attributes, targe
 
     dist_score, dist_biases = fairness_scorer.distributions_score(data)
 
-    assert 0. <= dist_score <= 1.
+    assert 0.0 <= dist_score <= 1.0
 
     assert not any([dist_biases[c].isna().any() for c in dist_biases.columns])
 
