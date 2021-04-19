@@ -8,5 +8,9 @@ dist/
 docs/_build/
 
 .env/
+venv/
+
+.coverage
+test-results/
 
 .DS_Store
