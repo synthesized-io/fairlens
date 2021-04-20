@@ -26,7 +26,7 @@ Implementation notes
    :maxdepth: 2
    :hidden:
    :glob:
-   
+
    user-guide
    changelog
    api-reference

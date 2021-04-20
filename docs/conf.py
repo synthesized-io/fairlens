@@ -12,7 +12,8 @@
 
 import os
 import sys
-sys.path.insert(0, os.path.abspath('../src/fairlens'))
+
+sys.path.insert(0, os.path.abspath("../src/fairlens"))
 
 # for x in os.walk('../../src'):
 #     sys.path.insert(0, x[0])
@@ -23,10 +24,10 @@ sys.path.insert(0, os.path.abspath('../src/fairlens'))
 # You can specify multiple suffix as a list of string:
 #
 # source_suffix = ['.rst', '.md']
-source_suffix = ['.rst', '.md']
+source_suffix = [".rst", ".md"]
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = "index"
 
 
 project = "FairLens"
@@ -42,7 +43,7 @@ release = "0.0.1"
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = ['sphinx.ext.napoleon', 'sphinx.ext.autodoc']
+extensions = ["sphinx.ext.napoleon", "sphinx.ext.autodoc"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
