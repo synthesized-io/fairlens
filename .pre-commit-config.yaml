@@ -17,13 +17,13 @@ repos:
   rev: 20.8b1
   hooks:
   - id: black
-    args: ["-l=120"]
+    args: ["-l 120"]
 
 - repo: https://github.com/PyCQA/isort
   rev: 5.7.0
   hooks:
   - id: isort
-    args: ["-m=0", "-l=120", "--reverse-relative"]
+    args: ["-m 0", "-l 120", "--reverse-relative"]
 
 - repo: https://github.com/pre-commit/mirrors-mypy
   rev: v0.800
