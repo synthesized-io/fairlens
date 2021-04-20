@@ -23,9 +23,11 @@ Implementation notes
 * Citations, etc.
 
 .. toctree::
+   :maxdepth: 2
    :hidden:
    :glob:
    
    user-guide
    changelog
    api-reference
+   license
