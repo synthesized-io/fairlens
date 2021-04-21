@@ -1,20 +1,33 @@
-.. fairness documentation master file, created by
-   sphinx-quickstart on Wed Mar 31 11:41:37 2021.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+========
+FairLens
+========
 
-Welcome to the FairLens documentation!
-====================================
+FairLens is an open source Python library for automatically discovering bias and measuring fairness in data. The package can be used to quickly identify bias, and provides multiple metrics to measure fairness across a range of sensititive and legally protected characteristics such as age, race and sex.
+
+Features
+========
+
+* Metrics
+* Tools
+
+
+Project background
+==================
+
+FairLens is ...
+
+
+Implementation notes
+====================
+
+* Citations, etc.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :hidden:
+   :glob:
 
-
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   user-guide
+   changelog
+   api-reference
+   license
