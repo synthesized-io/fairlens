@@ -31,6 +31,16 @@ sensitive_names_map: Dict["SensitiveNames", List[str]] = {
 
 
 def detect_name(name: str, threshold: float = 0.1) -> Optional[str]:
+    """[summary]
+
+    Args:
+        name (str): [description]
+        threshold (float, optional): [description]. Defaults to 0.1.
+
+    Returns:
+        Optional[str]: [description]
+    """
+
     name = name.lower()
 
     # Check exact match
@@ -55,7 +65,18 @@ def detect_name(name: str, threshold: float = 0.1) -> Optional[str]:
 
 
 def detect_names(names: List[str], threshold: float = 0.1) -> List[str]:
+    """[summary]
+
+    Args:
+        names (List[str]): [description]
+        threshold (float, optional): [description]. Defaults to 0.1.
+
+    Returns:
+        List[str]: [description]
+    """
+
     sensitive_attrs = []
+
     for name in names:
         if detect_name(name, threshold=threshold):
             sensitive_attrs.append(name)
@@ -64,7 +85,18 @@ def detect_names(names: List[str], threshold: float = 0.1) -> List[str]:
 
 
 def detect_names_dict(names: List[str], threshold: float = 0.1) -> Dict[str, str]:
+    """[summary]
+
+    Args:
+        names (List[str]): [description]
+        threshold (float, optional): [description]. Defaults to 0.1.
+
+    Returns:
+        Dict[str, str]: [description]
+    """
+
     names_dict = dict()
+
     for name in names:
         attr = detect_name(name, threshold=threshold)
         if attr is not None:

@@ -2,8 +2,5 @@
 API Reference
 =============
 
-Transformer
-^^^^^^^^^^^
-
-Scorer
-^^^^^^
+.. automodule:: sensitive.sensitive_attributes
+   :members:
