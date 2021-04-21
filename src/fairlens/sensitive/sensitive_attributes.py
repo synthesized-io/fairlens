@@ -54,7 +54,7 @@ def detect_name(name: str, threshold: float = 0.1) -> Optional[str]:
     return None
 
 
-def detect_sensitive_columns(names: List[str], threshold: float = 0.1) -> List[str]:
+def detect_names(names: List[str], threshold: float = 0.1) -> List[str]:
     sensitive_attrs = []
     for name in names:
         if detect_name(name, threshold=threshold):
