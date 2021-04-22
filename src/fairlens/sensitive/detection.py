@@ -42,13 +42,16 @@ def detect_name(
     """Detects whether a given attribute is sensitive and returns the corresponding sensitive group.
 
     Args:
-        name (str): The name of the attribute.
-        threshold (float, optional): The threshold for the string distance function. Defaults to 0.1.
-        str_distance (Callable[[str, str], float], optional): The string distance function. Defaults to
-            Ratcliff-Obershelp algorithm.
+        name (str):
+            The name of the attribute.
+        threshold (float, optional):
+            The threshold for the string distance function. Defaults to 0.1.
+        str_distance (Callable[[str, str], float], optional):
+            The string distance function. Defaults to Ratcliff-Obershelp algorithm.
 
     Returns:
-        Optional[str]: The sensitive name corresponding to the input.
+        Optional[str]:
+            The sensitive name corresponding to the input.
     """
 
     name = name.lower()
@@ -81,13 +84,16 @@ def detect_names(
     """Filters the sensitive attributes in a list.
 
     Args:
-        names (List[str]): List of attribute names.
-        threshold (float, optional): The threshold for the string distance function. Defaults to 0.1.
-        str_distance (Callable[[str, str], float], optional): The string distance function. Defaults to
-            Ratcliff-Obershelp algorithm.
+        names (List[str]):
+            List of attribute names.
+        threshold (float, optional):
+            The threshold for the string distance function. Defaults to 0.1.
+        str_distance (Callable[[str, str], float], optional):
+            The string distance function. Defaults to Ratcliff-Obershelp algorithm.
 
     Returns:
-        List[str]: List containing the sensitive attribute names.
+        List[str]:
+            List containing the sensitive attribute names.
     """
 
     sensitive_attrs = []
@@ -105,14 +111,17 @@ def detect_names_dict(
     """Creates a dictionary which maps the attribute names to the corresponding sensitive attribute.
 
     Args:
-        names (List[str]): List of attribute names.
-        threshold (float, optional): The threshold for the string distance function. Defaults to 0.1.
-        str_distance (Callable[[str, str], float], optional): The string distance function. Defaults to
-            Ratcliff-Obershelp algorithm.
+        names (List[str]):
+            List of attribute names.
+        threshold (float, optional):
+            The threshold for the string distance function. Defaults to 0.1.
+        str_distance (Callable[[str, str], float], optional):
+            The string distance function. Defaults to Ratcliff-Obershelp algorithm.
 
     Returns:
-        Dict[str, str]: A dictionary containing a mapping from attribute names to a string representing the
-            corresponding sensitive attribute or None.
+        Dict[str, str]:
+            A dictionary containing a mapping from attribute names to a string representing the corresponding
+            sensitive attribute or None.
     """
 
     names_dict = dict()
