@@ -2,6 +2,8 @@ from difflib import SequenceMatcher
 from enum import Enum
 from typing import Callable, Dict, List, Optional
 
+import pandas as pd
+
 
 class SensitiveNames(Enum):
     """
@@ -111,6 +113,26 @@ def detect_names(
     return sensitive_attrs
 
 
+def detect_names_dataframe(
+    df: pd.DataFrame, threshold: float = 0.1, str_distance: Callable[[str, str], float] = None
+) -> List[str]:
+    """[summary]
+
+    Args:
+        df (pd.DataFrame):
+            Pandas dataframe that will be analysed.
+        threshold (float, optional):
+            The threshold for the string distance function. Defaults to 0.1.
+        str_distance (Callable[[str, str], float], optional):
+            The string distance function. Defaults to Ratcliff-Obershelp algorithm.
+
+    Returns:
+        List[str]:
+            List containing the sensitive attribute names.
+    """
+    pass
+
+
 def detect_names_dict(
     names: List[str], threshold: float = 0.1, str_distance: Callable[[str, str], float] = None
 ) -> Dict[str, Optional[str]]:
@@ -141,3 +163,24 @@ def detect_names_dict(
         names_dict[name] = _detect_name(name, threshold=threshold, str_distance=str_distance)
 
     return names_dict
+
+
+def detect_names_dict_dataframe(
+    df: pd.DataFrame, threshold: float = 0.1, str_distance: Callable[[str, str], float] = None
+) -> Dict[str, Optional[str]]:
+    """[summary]
+
+    Args:
+        df (pd.DataFrame):
+            Pandas dataframe that will be analysed.
+        threshold (float, optional):
+            The threshold for the string distance function. Defaults to 0.1.
+        str_distance (Callable[[str, str], float], optional):
+            The string distance function. Defaults to Ratcliff-Obershelp algorithm.
+
+    Returns:
+        Dict[str, Optional[str]]:
+            A dictionary containing a mapping from attribute names to a string representing the corresponding
+            sensitive attribute or None.
+    """
+    pass
