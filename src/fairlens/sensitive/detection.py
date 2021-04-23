@@ -102,8 +102,6 @@ def detect_names(
         ["age", "gender"]
     """
 
-    str_distance = str_distance or _ro_distance
-
     sensitive_attrs = []
 
     for name in names:
@@ -155,7 +153,6 @@ def detect_names_dict(
         >>> detect_names_dict(["age", "gender", "legality", "risk"])
         {"age": "Age", "gender": "Gender", "legality": None, "risk": None}
     """
-    str_distance = str_distance or _ro_distance
 
     names_dict = dict()
 
