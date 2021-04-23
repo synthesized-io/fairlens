@@ -94,6 +94,10 @@ def detect_names(
     Returns:
         List[str]:
             List containing the sensitive attribute names.
+
+    Examples:
+        >>> detect_names(["age", "gender", "legality", "risk"])
+        ["age", "gender"]
     """
 
     str_distance = str_distance or _ro_distance
@@ -124,6 +128,10 @@ def detect_names_dict(
         Dict[str, str]:
             A dictionary containing a mapping from attribute names to a string representing the corresponding
             sensitive attribute or None.
+
+    Examples:
+        >>> detect_names_dict(["age", "gender", "legality", "risk"])
+        {"age": "Age", "gender": "Gender", "legality": None, "risk": None}
     """
     str_distance = str_distance or _ro_distance
 
