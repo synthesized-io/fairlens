@@ -36,9 +36,7 @@ def _ro_distance(s1: str, s2: str) -> float:
     return 1 - SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
 
 
-def _detect_name(
-    name: str, threshold: float = 0.1, str_distance: Callable[[str, str], float] = _ro_distance
-) -> Optional[str]:
+def _detect_name(name: str, threshold: float = 0.1, str_distance: Callable[[str, str], float] = None) -> Optional[str]:
     """Detects whether a given attribute is sensitive and returns the corresponding sensitive group.
 
     Args:
@@ -53,6 +51,8 @@ def _detect_name(
         Optional[str]:
             The sensitive name corresponding to the input.
     """
+
+    str_distance = str_distance or _ro_distance
 
     name = name.lower()
 
@@ -79,7 +79,7 @@ def _detect_name(
 
 
 def detect_names(
-    names: List[str], threshold: float = 0.1, str_distance: Callable[[str, str], float] = _ro_distance
+    names: List[str], threshold: float = 0.1, str_distance: Callable[[str, str], float] = None
 ) -> List[str]:
     """Filters the sensitive attributes in a list.
 
@@ -96,6 +96,8 @@ def detect_names(
             List containing the sensitive attribute names.
     """
 
+    str_distance = str_distance or _ro_distance
+
     sensitive_attrs = []
 
     for name in names:
@@ -106,7 +108,7 @@ def detect_names(
 
 
 def detect_names_dict(
-    names: List[str], threshold: float = 0.1, str_distance: Callable[[str, str], float] = _ro_distance
+    names: List[str], threshold: float = 0.1, str_distance: Callable[[str, str], float] = None
 ) -> Dict[str, Optional[str]]:
     """Creates a dictionary which maps the attribute names to the corresponding sensitive attribute.
 
@@ -123,6 +125,7 @@ def detect_names_dict(
             A dictionary containing a mapping from attribute names to a string representing the corresponding
             sensitive attribute or None.
     """
+    str_distance = str_distance or _ro_distance
 
     names_dict = dict()
 
