@@ -30,14 +30,14 @@ sensitive_names_map: Dict["SensitiveNames", List[str]] = {
 }
 
 
-def ro_distance(s1: str, s2: str) -> float:
+def _ro_distance(s1: str, s2: str) -> float:
     """Computes a distance between the input strings using the Ratcliff-Obershelp algorithm."""
 
     return 1 - SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
 
 
-def detect_name(
-    name: str, threshold: float = 0.1, str_distance: Callable[[str, str], float] = ro_distance
+def _detect_name(
+    name: str, threshold: float = 0.1, str_distance: Callable[[str, str], float] = _ro_distance
 ) -> Optional[str]:
     """Detects whether a given attribute is sensitive and returns the corresponding sensitive group.
 
@@ -79,7 +79,7 @@ def detect_name(
 
 
 def detect_names(
-    names: List[str], threshold: float = 0.1, str_distance: Callable[[str, str], float] = ro_distance
+    names: List[str], threshold: float = 0.1, str_distance: Callable[[str, str], float] = _ro_distance
 ) -> List[str]:
     """Filters the sensitive attributes in a list.
 
@@ -99,14 +99,14 @@ def detect_names(
     sensitive_attrs = []
 
     for name in names:
-        if detect_name(name, threshold=threshold, str_distance=str_distance):
+        if _detect_name(name, threshold=threshold, str_distance=str_distance):
             sensitive_attrs.append(name)
 
     return sensitive_attrs
 
 
 def detect_names_dict(
-    names: List[str], threshold: float = 0.1, str_distance: Callable[[str, str], float] = ro_distance
+    names: List[str], threshold: float = 0.1, str_distance: Callable[[str, str], float] = _ro_distance
 ) -> Dict[str, Optional[str]]:
     """Creates a dictionary which maps the attribute names to the corresponding sensitive attribute.
 
@@ -127,6 +127,6 @@ def detect_names_dict(
     names_dict = dict()
 
     for name in names:
-        names_dict[name] = detect_name(name, threshold=threshold, str_distance=str_distance)
+        names_dict[name] = _detect_name(name, threshold=threshold, str_distance=str_distance)
 
     return names_dict
