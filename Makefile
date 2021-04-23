@@ -1,4 +1,4 @@
-.PHONY: lint test unit-test
+.PHONY: lint test unit-test docs
 
 VENV_NAME ?= venv
 VENV_ACTIVATE = $(VENV_NAME)/bin/activate
@@ -32,3 +32,7 @@ $(VENV_ACTIVATE): requirements.txt requirements-dev.txt
 	$(PYTHON) -m pip install -U pip==20.3.1
 	$(PYTHON) -m pip install -r requirements-dev.txt
 	touch $(VENV_ACTIVATE)
+
+docs:
+	sphinx-apidoc -o docs/api-docs src/fairlens/
+	cd docs; make clean; make html

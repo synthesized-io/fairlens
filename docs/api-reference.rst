@@ -2,8 +2,8 @@
 API Reference
 =============
 
-Transformer
-^^^^^^^^^^^
+.. toctree::
+   :hidden:
+   :glob:
 
-Scorer
-^^^^^^
+   api-docs/modules
