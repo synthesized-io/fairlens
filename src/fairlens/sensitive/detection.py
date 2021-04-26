@@ -295,7 +295,10 @@ def detect_names(
 
 
 def detect_names_dataframe(
-    df: pd.DataFrame, threshold: float = 0.1, str_distance: Callable[[str, str], float] = None
+    df: pd.DataFrame,
+    threshold: float = 0.1,
+    str_distance: Callable[[str, str], float] = None,
+    deep_search: bool = False,
 ) -> List[str]:
     """[summary]
 
@@ -312,8 +315,31 @@ def detect_names_dataframe(
             List containing the sensitive attribute names.
     """
     cols = df.columns
+    sensitive_cols = detect_names(cols, threshold, str_distance)
 
-    return detect_names(cols, threshold, str_distance)
+    str_distance = str_distance or _ro_distance
+
+    if deep_search:
+        non_sensitive_cols = list(set(cols) - set(sensitive_cols))
+
+        for non_sensitive_col in non_sensitive_cols:
+            for _, values in sensitive_values_map.items():
+                for value in values:
+                    if value in df[non_sensitive_col]:
+                        sensitive_cols.append(non_sensitive_col)
+                        break
+                    else:
+                        for _, entry in df[non_sensitive_col].items():
+                            if (
+                                entry.startswith(value)
+                                or entry.endswith(value)
+                                or str_distance(entry, value) < threshold
+                            ):
+                                sensitive_cols.append(non_sensitive_col)
+                                break
+        return sensitive_cols
+    else:
+        return sensitive_cols
 
 
 def detect_names_dict(
@@ -348,7 +374,10 @@ def detect_names_dict(
 
 
 def detect_names_dict_dataframe(
-    df: pd.DataFrame, threshold: float = 0.1, str_distance: Callable[[str, str], float] = None
+    df: pd.DataFrame,
+    threshold: float = 0.1,
+    str_distance: Callable[[str, str], float] = None,
+    deep_search: bool = False,
 ) -> Dict[str, Optional[str]]:
     """[summary]
 
@@ -366,5 +395,29 @@ def detect_names_dict_dataframe(
             sensitive attribute or None.
     """
     cols = df.columns
+    sensitive_dict = detect_names_dict(cols, threshold, str_distance)
+    sensitive_cols = list(sensitive_dict.keys())
 
-    return detect_names_dict(cols, threshold, str_distance)
+    str_distance = str_distance or _ro_distance
+
+    if deep_search:
+        non_sensitive_cols = list(set(cols) - set(sensitive_cols))
+
+        for non_sensitive_col in non_sensitive_cols:
+            for group_name, values in sensitive_values_map.items():
+                for value in values:
+                    if value in df[non_sensitive_col]:
+                        sensitive_dict[non_sensitive_col] = group_name.value
+                        break
+                    else:
+                        for _, entry in df[non_sensitive_col].items():
+                            if (
+                                entry.startswith(value)
+                                or entry.endswith(value)
+                                or str_distance(entry, value) < threshold
+                            ):
+                                sensitive_dict[non_sensitive_col] = group_name.value
+                                break
+        return sensitive_dict
+    else:
+        return sensitive_dict
