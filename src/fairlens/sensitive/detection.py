@@ -2,6 +2,7 @@ from difflib import SequenceMatcher
 from enum import Enum
 from typing import Callable, Dict, List, Optional
 
+import numpy as np
 import pandas as pd
 
 
@@ -323,6 +324,9 @@ def detect_names_dataframe(
         non_sensitive_cols = list(set(cols) - set(sensitive_cols))
 
         for non_sensitive_col in non_sensitive_cols:
+            # Avoid checking number values as they can be inconclusive.
+            if df[non_sensitive_col].dtype == np.number:
+                continue
             for _, values in sensitive_values_map.items():
                 for value in values:
                     if value in df[non_sensitive_col]:
@@ -404,6 +408,9 @@ def detect_names_dict_dataframe(
         non_sensitive_cols = list(set(cols) - set(sensitive_cols))
 
         for non_sensitive_col in non_sensitive_cols:
+            # Avoid checking number values as they can be inconclusive.
+            if df[non_sensitive_col].dtype == np.number:
+                continue
             for group_name, values in sensitive_values_map.items():
                 for value in values:
                     if value in df[non_sensitive_col]:
