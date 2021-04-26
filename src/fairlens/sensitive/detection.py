@@ -128,7 +128,9 @@ def detect_names_dataframe(
         List[str]:
             List containing the sensitive attribute names.
     """
-    pass
+    cols = df.columns
+
+    return detect_names(cols, threshold, str_distance)
 
 
 def detect_names_dict(
@@ -180,4 +182,6 @@ def detect_names_dict_dataframe(
             A dictionary containing a mapping from attribute names to a string representing the corresponding
             sensitive attribute or None.
     """
-    pass
+    cols = df.columns
+
+    return detect_names_dict(cols, threshold, str_distance)
