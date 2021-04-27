@@ -11,11 +11,3 @@ fairlens.sensitive.detection module
    :members:
    :undoc-members:
    :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: fairlens.sensitive
-   :members:
-   :undoc-members:
-   :show-inheritance:

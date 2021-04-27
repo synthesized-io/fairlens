@@ -35,11 +35,3 @@ fairlens.bias.viz module
    :members:
    :undoc-members:
    :show-inheritance:
-
-Module contents
----------------
-
-.. automodule:: fairlens.bias
-   :members:
-   :undoc-members:
-   :show-inheritance:
