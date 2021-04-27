@@ -1,5 +1,5 @@
-fairlens.sensitive package
-==========================
+Sensitive Attribute Detection
+=============================
 
 Submodules
 ----------
