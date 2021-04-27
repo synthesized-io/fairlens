@@ -1,7 +1,25 @@
+from enum import Enum
 from typing import Optional
 
 import numpy as np
 import pandas as pd
+
+
+class DistrType(Enum):
+    """Indicates the type distribution of data in a series."""
+
+    Continuous = "Continuous"
+    Binary = "Binary"
+    Categorical = "Categorical"
+
+    def is_continuous(self):
+        return self == DistrType.Continuous
+
+    def is_binary(self):
+        return self == DistrType.Binary
+
+    def is_categorical(self):
+        return self == DistrType.Categorical
 
 
 def bin(
@@ -55,7 +73,7 @@ def bin(
     if isinstance(bins[0], pd.Timestamp):
         bins = pd.IntervalIndex([pd.Interval(bins[n], bins[n + 1]) for n in range(len(bins) - 1)], closed="left")
 
-    df.loc[:, column] = pd.cut(df.loc[:, column_name], bins=bins, **kwargs)
+    df.loc[:, column_name] = pd.cut(df.loc[:, column_name], bins=bins, include_lowest=True, **kwargs)
 
     return df
 
@@ -106,3 +124,39 @@ def infer_dtype(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
         df[column_name] = df[column_name].astype(out_dtype, errors="ignore")
 
     return df
+
+
+def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: int = 10) -> DistrType:
+    """Infers whether the data in a column or series is continuous, categorical or binary.
+
+    Args:
+        column (pd.Series):
+            The column from the data or data series to consider.
+        ctl_mult (float, optional):
+            Categorical threshold log multiplier. Defaults to 2.5.
+        min_num_unique (int, optional):
+            Minimum number of unique values for the data to be continuous. Defaults to 10.
+
+    Returns:
+        DistrType:
+            The output is an enum representing the type of distribution.
+
+    Examples:
+        >>> col_type = infer_distr_type(range(1000))
+        >>> col_type.is_continuous()
+        True
+        >>> col_type.is_binary()
+        False
+    """
+
+    n_unique = column.nunique()
+    num_rows = len(column)
+
+    if n_unique > max(min_num_unique, ctl_mult * np.log(num_rows)):
+        return DistrType.Continuous
+
+    elif n_unique == 2:
+        return DistrType.Binary
+
+    else:
+        return DistrType.Categorical
