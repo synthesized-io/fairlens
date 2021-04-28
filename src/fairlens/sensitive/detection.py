@@ -374,6 +374,11 @@ def detect_names_dict(
     for name in names:
         names_dict[name] = _detect_name(name, threshold=threshold, str_distance=str_distance)
 
+    # Remove columns with 'None' values.
+    for key, value in dict(names_dict).items():
+        if value is None:
+            del names_dict[key]
+
     return names_dict
 
 

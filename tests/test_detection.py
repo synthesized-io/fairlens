@@ -17,7 +17,7 @@ def test_detect_names():
 
 def test_detect_names_dict():
     cols = ["age", "gender", "legality", "risk"]
-    res = {"age": "Age", "gender": "Gender", "legality": None, "risk": None}
+    res = {"age": "Age", "gender": "Gender"}
     assert dt.detect_names_dict(cols) == res
 
 
@@ -36,9 +36,6 @@ def test_detect_names_dataframe_dict_simple():
         "location": "Nationality",
         "house": "Family Status",
         "religion": "Religion",
-        "salary": None,
-        "subscription": None,
-        "score": None,
     }
     assert dt.detect_names_dict_dataframe(df) == res
 
@@ -52,3 +49,13 @@ def test_detect_names_dataframe_deep():
     df = pd.DataFrame(data, columns=col_names)
     res = ["A", "B", "C", "D"]
     assert set(dt.detect_names_dataframe(df, deep_search=True)) == set(res)
+
+
+# def test_detect_names_dict_dataframe_deep():
+#     col_names = ["Rand", "A", "B", "Score", "Credit", "xyzqwe", "D"]
+#     data = [
+#         ["scottish", "african-american", "male", "5", "80", "no religion", "sight loss"],
+#         ["romanian", "caucasian", "female", "4", "100", "christianity", "arthritis"],
+#         ["bulgarian", "european", "agender", "10", "40", "islam", "sclerosis"],
+#     ]
+#     pass
