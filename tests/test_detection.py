@@ -51,11 +51,13 @@ def test_detect_names_dataframe_deep():
     assert set(dt.detect_names_dataframe(df, deep_search=True)) == set(res)
 
 
-# def test_detect_names_dict_dataframe_deep():
-#     col_names = ["Rand", "A", "B", "Score", "Credit", "xyzqwe", "D"]
-#     data = [
-#         ["scottish", "african-american", "male", "5", "80", "no religion", "sight loss"],
-#         ["romanian", "caucasian", "female", "4", "100", "christianity", "arthritis"],
-#         ["bulgarian", "european", "agender", "10", "40", "islam", "sclerosis"],
-#     ]
-#     pass
+def test_detect_names_dict_dataframe_deep():
+    col_names = ["Rand", "A", "B", "Score", "Credit", "xyzqwe", "D"]
+    data = [
+        ["scottish", "asian", "male", "5", "80", "no religion", "sight loss"],
+        ["romanian", "caucasian", "female", "4", "100", "christianity", "arthritis"],
+        ["bulgarian", "european", "agender", "10", "40", "islam", "sclerosis"],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    res = {"Rand": "Nationality", "A": "Ethnicity", "B": "Gender", "xyzqwe": "Religion", "D": "Disability"}
+    assert dt.detect_names_dict_dataframe(df, deep_search=True) == res
