@@ -334,6 +334,9 @@ def detect_names_dataframe(
                         break
                     else:
                         for _, entry in df[non_sensitive_col].items():
+                            # Skip missing values in columns.
+                            if entry is None:
+                                continue
                             if (
                                 entry.startswith(value)
                                 or entry.endswith(value)
@@ -423,6 +426,9 @@ def detect_names_dict_dataframe(
                         break
                     else:
                         for _, entry in df[non_sensitive_col].items():
+                            # Skip missing values in columns.
+                            if entry is None:
+                                continue
                             if (
                                 entry.startswith(value)
                                 or entry.endswith(value)
