@@ -73,3 +73,15 @@ def test_dataframe_names_stress():
     df = pd.DataFrame(data, columns=col_names)
     res = ["xyz", "abc", "C", "D"]
     assert set(dt.detect_names_dataframe(df, deep_search=True)) == set(res)
+
+
+def test_dataframe_dict_stress():
+    col_names = ["xyz", "abc", "A", "B", "C", "D"]
+    data = [
+        [None, "romanian", "80", "100", None, "sclerosis"],
+        ["asian", None, None, "200", "islam", "sight loss"],
+        [None, None, "100", "150", "christian", None],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    res = {"xyz": "Ethnicity", "abc": "Nationality", "C": "Religion", "D": "Disability"}
+    assert dt.detect_names_dict_dataframe(df, deep_search=True) == res
