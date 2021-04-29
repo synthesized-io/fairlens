@@ -4,3 +4,7 @@ class UnsupportedDistributionError(Exception):
 
 class AmbiguousAttributeError(Exception):
     pass
+
+
+class InvalidAttributeError(Exception):
+    pass

@@ -1,8 +1,10 @@
 from enum import Enum
-from typing import Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 import pandas as pd
+
+from .exceptions import InvalidAttributeError
 
 
 class DistrType(Enum):
@@ -25,7 +27,7 @@ class DistrType(Enum):
 def bin(
     df: pd.DataFrame,
     column_name: str,
-    n_bins: int,
+    n_bins: Optional[int] = None,
     remove_outliers: Optional[float] = 0.1,
     quantile_based: bool = False,
     **kwargs
@@ -37,8 +39,8 @@ def bin(
             The input dataframe.
         column_name (str):
             The name of the dataframe column to transform.
-        n_bins (int):
-            The number of bins.
+        n_bins (Optional[int], optional):
+            The number of bins. Defaults to Freedman-Diaconis rule.
         remove_outliers (Optional[float], optional):
             Any data point outside this quantile (two-sided) will be dropped before computing bins.
             If `None`, outliers are not removed. Defaults to 0.1.
@@ -52,6 +54,8 @@ def bin(
 
     column = df[column_name].copy()
     column_clean = column.dropna()
+
+    n_bins = n_bins or fd_opt_bins(column)
 
     if remove_outliers:
         percentiles = [remove_outliers * 100.0 / 2, 100 - remove_outliers * 100.0 / 2]
@@ -92,9 +96,9 @@ def infer_dtype(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
             The dataframe converted to its inferred type.
     """
 
-    in_dtype = str(df[column_name].dtype)
-
     column = df[column_name].copy()
+
+    in_dtype = str(column.dtype)
 
     # Try to convert it to numeric
     if column.dtype.kind not in ("i", "u", "f"):
@@ -160,3 +164,69 @@ def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: i
 
     else:
         return DistrType.Categorical
+
+
+def get_predicates(df: pd.DataFrame, group1: Dict[str, List[Any]], group2: Optional[Dict[str, List[Any]]] = None):
+    # Check all attributes are valid
+    attrs = set(group1.keys())
+    if group2:
+        attrs = attrs.union(set(group2.keys()))
+
+    if attrs.union(df.columns) != set(df.columns):
+        raise InvalidAttributeError(attrs)
+
+    # Form predicate for first group
+    pred1 = False
+    for attr, vals in group1.items():
+        for val in vals:
+            pred1 |= df[attr] == val
+
+    # If group2 not given return the predicate and its inverse
+    if group2 is None:
+        return pred1, ~pred1
+
+    # Form predicate for second group
+    pred2 = False
+    for attr, vals in group2.items():
+        for val in vals:
+            pred2 |= df[attr] == val
+
+    return pred1, pred2
+
+
+def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[Any]]]):
+    # Check all attributes are valid
+    all_attrs = [group.keys() for group in groups]
+    attrs = set(*all_attrs)
+    if attrs.intersection(df.columns) != attrs:
+        raise InvalidAttributeError(attrs)
+
+    # Form a predicate for each group
+    preds = []
+    for group in groups:
+        pred = False
+        for attr, vals in group.items():
+            for val in vals:
+                pred |= df[attr] == val
+
+        preds.append(pred)
+
+    return preds
+
+
+def fd_opt_bins(column: pd.Series) -> int:
+    """Computes the optimal number of bins in a pandas series using the Freedman-Diaconis rule.
+
+    Args:
+        column (pd.Series):
+            The pandas series containing the continuous data to be binned.
+
+    Returns:
+        int:
+            The optimal number of bins.
+    """
+
+    n = len(column)
+    iqr = column.quantile(0.75) - column.quantile(0.25)
+
+    return int((column.max() - column.min()) / (2 * iqr * (n ** (-1 / 3))))
