@@ -2,7 +2,6 @@ from difflib import SequenceMatcher
 from enum import Enum
 from typing import Callable, Dict, List, Optional
 
-import numpy as np
 import pandas as pd
 
 
@@ -218,6 +217,8 @@ sensitive_values_map: Dict["SensitiveNames", List[str]] = {
 
 def _ro_distance(s1: str, s2: str) -> float:
     """Computes a distance between the input strings using the Ratcliff-Obershelp algorithm."""
+    if s1 is None or s2 is None:
+        return 1
 
     return 1 - SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
 
@@ -325,25 +326,18 @@ def detect_names_dataframe(
 
         for non_sensitive_col in non_sensitive_cols:
             # Avoid checking number values as they can be inconclusive.
-            if df[non_sensitive_col].dtype == np.number:
+            if df[non_sensitive_col].dtype.kind in ["i", "f", "m", "M"]:
                 continue
             for _, values in sensitive_values_map.items():
                 for value in values:
-                    if value in df[non_sensitive_col]:
+                    if (
+                        df[non_sensitive_col].str.contains(value).any()
+                        or df[non_sensitive_col].str.startswith(value).any()
+                        or df[non_sensitive_col].str.endswith(value).any()
+                        or df[non_sensitive_col].map(lambda x: str_distance(x, value) < threshold).any()
+                    ):
+
                         sensitive_cols.append(non_sensitive_col)
-                        break
-                    else:
-                        for _, entry in df[non_sensitive_col].items():
-                            # Skip missing values in columns.
-                            if entry is None:
-                                continue
-                            if (
-                                entry.startswith(value)
-                                or entry.endswith(value)
-                                or str_distance(entry, value) < threshold
-                            ):
-                                sensitive_cols.append(non_sensitive_col)
-                                break
         return sensitive_cols
     else:
         return sensitive_cols
@@ -417,25 +411,18 @@ def detect_names_dict_dataframe(
 
         for non_sensitive_col in non_sensitive_cols:
             # Avoid checking number values as they can be inconclusive.
-            if df[non_sensitive_col].dtype == np.number:
+            if df[non_sensitive_col].dtype.kind in ["i", "f", "m", "M"]:
                 continue
             for group_name, values in sensitive_values_map.items():
                 for value in values:
-                    if value in df[non_sensitive_col]:
+                    if (
+                        df[non_sensitive_col].str.contains(value).any()
+                        or df[non_sensitive_col].str.startswith(value).any()
+                        or df[non_sensitive_col].str.endswith(value).any()
+                        or df[non_sensitive_col].map(lambda x: str_distance(x, value) < threshold).any()
+                    ):
+
                         sensitive_dict[non_sensitive_col] = group_name.value
-                        break
-                    else:
-                        for _, entry in df[non_sensitive_col].items():
-                            # Skip missing values in columns.
-                            if entry is None:
-                                continue
-                            if (
-                                entry.startswith(value)
-                                or entry.endswith(value)
-                                or str_distance(entry, value) < threshold
-                            ):
-                                sensitive_dict[non_sensitive_col] = group_name.value
-                                break
         return sensitive_dict
     else:
         return sensitive_dict
