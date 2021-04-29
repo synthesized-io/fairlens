@@ -8,3 +8,7 @@ class AmbiguousAttributeError(Exception):
 
 class InvalidAttributeError(Exception):
     pass
+
+
+class InvalidValueError(Exception):
+    pass

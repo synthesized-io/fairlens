@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Any, Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -166,7 +166,29 @@ def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: i
         return DistrType.Categorical
 
 
-def get_predicates(df: pd.DataFrame, group1: Dict[str, List[Any]], group2: Optional[Dict[str, List[Any]]] = None):
+def get_predicates(
+    df: pd.DataFrame, group1: Dict[str, List[str]], group2: Optional[Dict[str, List[str]]] = None
+) -> Tuple[pd.DataFrame, pd.DataFrame]:
+    """Forms and returns pandas dataframe predicates which can be used to index group1 and group2.
+    If group2 is None the second predicate returned is the inverse of that used to index group1.
+
+    Args:
+        df (pd.DataFrame):
+            The input dataframe.
+        group1 (Dict[str, List[Any]]):
+            The first group of interest.
+        group2 (Optional[Dict[str, List[str]]], optional):
+            The second group of interest. Defaults to None.
+
+    Raises:
+        InvalidAttributeError:
+            Indicates an ill-formed group input due to invalid attributes in this case.
+
+    Returns:
+        Tuple[pd.DataFrame, pd.DataFrame]:
+            A pair of dataframes that can be used to index the corresponding groups of data.
+    """
+
     # Check all attributes are valid
     attrs = set(group1.keys())
     if group2:
@@ -194,7 +216,24 @@ def get_predicates(df: pd.DataFrame, group1: Dict[str, List[Any]], group2: Optio
     return pred1, pred2
 
 
-def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[Any]]]):
+def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) -> List[pd.DataFrame]:
+    """Similar to get_predicates but works on multiple groups.
+
+    Args:
+        df (pd.DataFrame):
+            The input dataframe.
+        groups (List[Dict[str, List[str]]]):
+            A list of groups of interest.
+
+    Raises:
+        InvalidAttributeError:
+            Indicates an ill-formed group input due to invalid attributes in this case.
+
+    Returns:
+        List[pd.DataFrame]:
+            A list of dataframes that can be used to index the corresponding groups of data.
+    """
+
     # Check all attributes are valid
     all_attrs = [group.keys() for group in groups]
     attrs = set(*all_attrs)
