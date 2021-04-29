@@ -4,25 +4,37 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 from . import utils
-from .exceptions import UnsupportedDistributionError
 
 
-def plt_group_dist(df: pd.DataFrame, group1: Dict[str, List[Any]], group2: Dict[str, List[Any]], target_attr: str):
+def plt_group_dist(
+    df: pd.DataFrame,
+    target_attr: str,
+    group1: Dict[str, List[Any]],
+    group2: Dict[str, List[Any]],
+    title=False,
+    legend=False,
+):
+
     df = utils.infer_dtype(df, target_attr)
     distr_type = utils.infer_distr_type(df[target_attr])
 
-    if not (distr_type.is_continuous() or str(df[target_attr].dtype) in ["float64", "int64"]):
-        raise UnsupportedDistributionError()
+    preds1, preds2 = utils.get_predicates(df, group1, group2)
 
-    pred1 = False
-    for attr, vals in group1.items():
-        for val in vals:
-            pred1 |= df[attr] == val
+    if distr_type.is_continuous() or str(df[target_attr].dtype) in ["float64", "int64"]:
+        bins = utils.fd_opt_bins(df[target_attr])
+        plt.hist(df[preds1][target_attr], bins=bins, alpha=0.5)
+        plt.hist(df[preds2][target_attr], bins=bins, alpha=0.5)
+    else:
+        plt.hist(df[preds1][target_attr])
+        plt.hist(df[preds2][target_attr])
 
-    pred2 = False
-    for attr, vals in group2.items():
-        for val in vals:
-            pred2 |= df[attr] == val
+    if title:
+        plt.title(target_attr)
 
-    plt.hist(df[pred1][target_attr], bins=100)
-    plt.hist(df[pred2][target_attr], bins=100)
+    if legend:
+        plt.legend(
+            [
+                ",".join([",".join(vals) for vals in group1.values()]),
+                ",".join([",".join(vals) for vals in group2.values()]),
+            ]
+        )
