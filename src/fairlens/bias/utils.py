@@ -236,7 +236,7 @@ def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) ->
 
     # Check all attributes are valid
     all_attrs = [group.keys() for group in groups]
-    attrs = set(*all_attrs)
+    attrs = set().union(*all_attrs)  # type: ignore
     if attrs.intersection(df.columns) != attrs:
         raise InvalidAttributeError(attrs)
 
