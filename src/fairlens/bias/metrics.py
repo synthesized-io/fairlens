@@ -92,7 +92,8 @@ def emd(
     p /= p.sum()
     q /= q.sum()
 
-    distance_space = 1 - np.eye(len(space))
+    xx, yy = np.meshgrid(space, space)
+    distance_space = np.abs(xx - yy)
 
     return pemd(p, q, distance_space)
 
