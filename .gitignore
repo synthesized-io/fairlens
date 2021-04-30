@@ -14,4 +14,4 @@ docs/_build/
 .coverage
 test-results/
 
-*.png
+plots/

@@ -34,5 +34,4 @@ $(VENV_ACTIVATE): requirements.txt requirements-dev.txt
 	touch $(VENV_ACTIVATE)
 
 docs:
-	sphinx-apidoc -o docs/api-docs src/fairlens/
 	cd docs; make clean; make html
