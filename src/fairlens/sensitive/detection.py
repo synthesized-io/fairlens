@@ -4,6 +4,10 @@ from typing import Callable, Dict, List, Optional
 
 import pandas as pd
 
+from fairlens.sensitive import config
+
+config.default_config()
+
 
 class SensitiveNames(Enum):
     """
@@ -20,199 +24,9 @@ class SensitiveNames(Enum):
     SexualOrientation: str = "Sexual Orientation"
 
 
-sensitive_names_map: Dict["SensitiveNames", List[str]] = {
-    SensitiveNames.Age: ["age", "DOB", "birth", "youth", "elder", "senior"],
-    SensitiveNames.Gender: ["gender", "sex"],
-    SensitiveNames.Ethnicity: ["race", "color", "ethnic", "breed", "culture"],
-    SensitiveNames.Nationality: ["nation", "geography", "location", "native", "country", "region"],
-    SensitiveNames.Religion: ["religion", "creed", "cult", "doctrine"],
-    SensitiveNames.FamilyStatus: ["family", "house", "marital", "children", "partner", "pregnant"],
-    SensitiveNames.Disability: ["disability", "impairment"],
-    SensitiveNames.SexualOrientation: ["sexual", "orientation", "attracted"],
-}
+sensitive_names_map: Dict[str, List[str]] = config.attr_synonym_dict
 
-sensitive_values_map: Dict["SensitiveNames", List[str]] = {
-    SensitiveNames.Age: [],
-    SensitiveNames.Gender: [
-        "male",
-        "female",
-        "gender",
-        "non-binary",
-        "man",
-        "woman",
-        "gender neutral",
-        "agender",
-        "pangender",
-        "genderqueer",
-        "two-spirit",
-    ],
-    SensitiveNames.Ethnicity: [
-        "caucasian",
-        "american",
-        "african",
-        "indo-european",
-        "asian",
-        "caribbean",
-        "arabian",
-        "indigenous",
-        "romani",
-        "white",
-        "black",
-        "indian",
-        "romance",
-    ],
-    SensitiveNames.Nationality: [
-        "english",
-        "irish",
-        "welsh",
-        "american",
-        "german",
-        "indian",
-        "french",
-        "spanish",
-        "indian",
-        "chinese",
-        "japanese",
-        "afghan",
-        "australian",
-        "albanian",
-        "argentinian",
-        "austrian",
-        "bangladeshi",
-        "bengali",
-        "belgian",
-        "bolivian",
-        "botswanan",
-        "brazilian",
-        "bulgarian",
-        "cambodian",
-        "cameroonian",
-        "canadian",
-        "chilean",
-        "colombian",
-        "costa rican",
-        "croatian",
-        "cuban",
-        "czech",
-        "danish",
-        "dane",
-        "dominican",
-        "ecuadorian",
-        "egyptian",
-        "salvadorian",
-        "estonian",
-        "ethiopian",
-        "fijian",
-        "finnish",
-        "ghanaian",
-        "greek",
-        "guatemalan",
-        "haitian",
-        "honduran",
-        "hungarian",
-        "icelandic",
-        "indonesian",
-        "iranian",
-        "iraqi",
-        "israeli",
-        "italian",
-        "jamaican",
-        "jordanian",
-        "kenyan",
-        "kuwaiti",
-        "laotain",
-        "lao",
-        "latvian",
-        "lebanese",
-        "libyan",
-        "lithuanian",
-        "malagasy",
-        "malaysian",
-        "malian",
-        "maltese",
-        "mexican",
-        "mongolian",
-        "moroccan",
-        "mozambican",
-        "nambian",
-        "nepalese",
-        "dutch",
-        "new zealander",
-        "nicaraguan",
-        "nigerian",
-        "norwegian",
-        "pakistani",
-        "panamanian",
-        "paraguayan",
-        "peruvian",
-        "filipino",
-        "polish",
-        "portuguese",
-        "romanian",
-        "russian",
-        "saudi",
-        "scottish",
-        "senegalese",
-        "serbian",
-        "singaporean",
-        "slovak",
-        "south african",
-        "korean",
-        "sri lankan",
-        "sudanese",
-        "swedish",
-        "swiss",
-        "syrian",
-        "taiwanese",
-        "taijikistani",
-        "thai",
-        "tongan",
-        "tunisian",
-        "turkish",
-        "ukrainian",
-        "emirati",
-        "uruguayan",
-        "venezuelan",
-        "vietnamese",
-        "zambian",
-        "zimbabwean",
-    ],
-    SensitiveNames.Religion: [
-        "christian",
-        "religion",
-        "islam",
-        "hinduism",
-        "sikhism",
-        "judaism",
-        "buddhism",
-        "protestantism",
-        "daoism",
-        "pantheism",
-    ],
-    SensitiveNames.FamilyStatus: ["married", "single", "widowed", "divorced", "separated", "pregnant"],
-    SensitiveNames.Disability: [
-        "hearing",
-        "impairment",
-        "sight",
-        "cancer",
-        "hiv",
-        "sclerosis",
-        "injury",
-        "learning",
-        "dyslexia",
-        "dyspraxia",
-        "autism",
-        "depression",
-        "disorder",
-        "bipolar",
-        "schizophrenia",
-        "arthritis",
-        "fibromyalgia",
-        "dystrophy",
-        "dementia",
-    ],
-    SensitiveNames.SexualOrientation: ["heterosexual", "asexual", "homosexual", "bisexual", "sexual"],
-}
+sensitive_values_map: Dict[str, List[str]] = config.attr_value_dict
 
 
 def _ro_distance(s1: str, s2: str) -> float:
@@ -247,20 +61,20 @@ def _detect_name(name: str, threshold: float = 0.1, str_distance: Callable[[str,
     for group_name, attrs in sensitive_names_map.items():
         for attr in attrs:
             if name == attr:
-                return group_name.value
+                return group_name
 
     # Check startswith / endswith
     for group_name, attrs in sensitive_names_map.items():
         for attr in attrs:
             if name.startswith(attr) or name.endswith(attr):
-                return group_name.value
+                return group_name
 
     # Check distance < threshold
     for group_name, attrs in sensitive_names_map.items():
         for attr in attrs:
             dist = str_distance(name, attr)
             if dist < threshold:
-                return group_name.value
+                return group_name
 
     return None
 
@@ -422,7 +236,7 @@ def detect_names_dict_dataframe(
                         or df[non_sensitive_col].map(lambda x: str_distance(x, value) < threshold).any()
                     ):
 
-                        sensitive_dict[non_sensitive_col] = group_name.value
+                        sensitive_dict[non_sensitive_col] = group_name
         return sensitive_dict
     else:
         return sensitive_dict

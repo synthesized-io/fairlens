@@ -37,7 +37,7 @@ def default_config():
 
 def change_config(config_path: Union[str, pathlib.Path]):
     PROJ_DIR = os.path.dirname(os.path.abspath(__file__))
-    json_path = os.path.join(PROJ_DIR, dict_path)
+    json_path = os.path.join(PROJ_DIR, config_path)
 
     json_file = open(json_path)
     config_dict = json.load(json_file)

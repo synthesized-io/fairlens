@@ -176,7 +176,7 @@
                 "zimbabwean"
             ]
         },
-    "FamilyStatus":
+    "Family Status":
         {
             "synonyms": ["family", "house", "marital", "children", "partner", "pregnant"],
             "values": ["married", "single", "widowed", "divorced", "separated", "pregnant"]
@@ -206,7 +206,7 @@
                 "dementia"
             ]
         },
-    "SexualOrientation":
+    "Sexual Orientation":
         {
             "synonyms": ["sexual", "orientation", "attracted"],
             "values": ["heterosexual", "asexual", "homosexual", "bisexual", "sexual"]
