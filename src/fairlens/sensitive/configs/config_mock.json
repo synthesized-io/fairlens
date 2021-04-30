@@ -1,0 +1,74 @@
+{
+    "Mammals":
+        {
+            "synonyms": ["beast", "mammalian", "vertebrate", "carnivore", "bovine", "herbivore"],
+            "values": [
+                "cat",
+                "dog",
+                "cow",
+                "horse",
+                "bat",
+                "mouse",
+                "sheep",
+                "goat",
+                "pig"
+            ]
+        },
+    "Fish":
+        {
+            "synonyms": ["chum", "plankton", "seafood"],
+            "values": [
+                "angler",
+                "catfish",
+                "bass",
+                "shark",
+                "eel",
+                "bluefin",
+                "bluegill",
+                "tuna",
+                "salmon",
+                "herring",
+                "shrimp",
+                "clam"
+            ]
+        },
+    "Reptiles":
+        {
+            "synonyms": ["lizard", "snake"],
+            "values": [
+                "iguana",
+                "chameleon",
+                "crocodile",
+                "aligator",
+                "gecko",
+                "python",
+                "anaconda",
+                "boa",
+                "rattlesnake",
+                "komodo dragon",
+                "skink",
+                "worm",
+                "tegu"
+            ]
+        },
+    "Birds":
+        {
+            "synonyms": ["passerine", "feathered", "fowl", "avifauna"],
+            "values": [
+                "eagle",
+                "sparrow",
+                "swallow",
+                "hawk",
+                "aquila",
+                "osprey",
+                "robin",
+                "owl",
+                "oriole",
+                "dove",
+                "crow",
+                "raven",
+                "cardinal",
+                "falcon"
+            ]
+        }
+}
