@@ -12,3 +12,7 @@ class InvalidAttributeError(Exception):
 
 class InvalidValueError(Exception):
     pass
+
+
+class InsufficientParamError(Exception):
+    pass

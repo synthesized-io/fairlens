@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Tuple, Union
+from typing import Dict, Hashable, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -6,10 +6,11 @@ from pyemd import emd as pemd
 from scipy.stats import entropy, ks_2samp
 
 from . import utils
+from .exceptions import InsufficientParamError
 
 
 def class_imbalance(
-    df: pd.DataFrame, target_attr: str, group1: Dict[str, List[Any]], group2: Dict[str, List[str]]
+    df: pd.DataFrame, target_attr: str, group1: Dict[str, List[str]], group2: Dict[str, List[str]]
 ) -> float:
     """Computes the class imbalance between group1 and group2 with respect to the target attribute.
 
@@ -41,28 +42,27 @@ def class_imbalance(
 def emd(
     df: pd.DataFrame,
     target_attr: str,
-    group1: Dict[str, List[Any]],
+    group1: Optional[Dict[str, List[str]]] = None,
     group2: Optional[Dict[str, List[str]]] = None,
-    g1_counts: Optional[Dict[Any, int]] = None,
-    g2_counts: Optional[Dict[Any, int]] = None,
+    counts: Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int]]] = None,
 ) -> float:
     """Computes the Earth Mover's Distance between the probability distributions of group1 and group2 with
-    respect to the target attribute. If group2 is None then the distance is computed between group1 and the
-    rest of the dataset. Alternatively precomputed aggregated counts for each of the groups can be provided.
+    respect to the target attribute. If group2 is None then the distance computed is between group1 and the
+    remaining data points. Alternatively precomputed aggregated counts for each of the groups can be provided.
 
     Args:
         df (pd.DataFrame):
             The input datafame.
         target_attr (str):
             The target attribute in the dataframe.
-        group1 (Dict[str, List[str]]):
-            The first group of interest.
+        group1 (Optional[Dict[str, List[str]]]):
+            The first group of interest. Defaults to None.
         group2 (Optional[Dict[str, List[str]]], optional):
             The second group of interest. Defaults to None.
-        g1_counts (Optional[Dict[Any, int]], optional):
-            Dictionary mapping from value to counts for group1. Defaults to None.
-        g2_counts (Optional[Dict[Any, int]], optional):
-            Dictionary mapping from value to counts for group2. Defaults to None.
+        counts (Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int]]], optional):
+            A tuple containing the counts of the first and second group, each in a dictionary mapping
+            from value to counts. These counts can be interpreted as the histograms between which the
+            metric will be computed. Overrides group1 and group2. Defaults to None.
 
     Returns:
         float:
@@ -76,18 +76,26 @@ def emd(
         0.16237499999999971
     """
 
-    pred1, pred2 = utils.get_predicates(df, group1, group2)
+    if counts is None:
+        if group1 is None:
+            raise InsufficientParamError()
 
-    g1_counts = g1_counts or df[pred1].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
-    g2_counts = g2_counts or df[pred2].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+        # Find the predicates for the two groups
+        pred1, pred2 = utils.get_predicates(df, group1, group2)
+
+        # Compute the histogram / counts for each group
+        g1_counts = df[pred1].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+        g2_counts = df[pred2].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+
+        counts = g1_counts, g2_counts
 
     space = df[target_attr].unique()
 
     p = np.zeros(len(space))
     q = np.zeros(len(space))
     for i, val in enumerate(space):
-        p[i] += g1_counts.get(val, 0)
-        q[i] += g2_counts.get(val, 0)
+        p[i] += counts[0].get(val, 0)
+        q[i] += counts[1].get(val, 0)
 
     p /= p.sum()
     q /= q.sum()
@@ -137,10 +145,9 @@ def ks_distance(
 def kl_divergence(
     df: pd.DataFrame,
     target_attr: str,
-    group1: Dict[str, List[str]],
+    group1: Optional[Dict[str, List[str]]] = None,
     group2: Optional[Dict[str, List[str]]] = None,
-    g1_counts: Optional[Dict[Any, int]] = None,
-    g2_counts: Optional[Dict[Any, int]] = None,
+    counts: Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int]]] = None,
 ) -> float:
     """Computes the Kullback–Leibler Divergence or Relative Entropy between the probability distributions of the
     two groups with respect to the target attribute. If group2 is None then the distance is computed between
@@ -156,28 +163,36 @@ def kl_divergence(
             The first group of interest.
         group2 (Optional[Dict[str, List[str]]], optional):
             The first group of interest. Defaults to None.
-        g1_counts (Optional[Dict[Any, int]], optional):
-            Dictionary mapping from value to counts for group1. Defaults to None.
-        g2_counts (Optional[Dict[Any, int]], optional):
-            Dictionary mapping from value to counts for group2. Defaults to None.
+        counts (Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int]]], optional):
+            A tuple containing the counts of the first and second group, each in a dictionary mapping
+            from value to counts. These counts can be interpreted as the histograms between which the
+            metric will be computed. Overrides group1 and group2. Defaults to None.
 
     Returns:
         float:
             The entropy as a float.
     """
 
-    pred1, pred2 = utils.get_predicates(df, group1, group2)
+    if counts is None:
+        if group1 is None:
+            raise InsufficientParamError()
 
-    g1_counts = g1_counts or df[pred1].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
-    g2_counts = g2_counts or df[pred2].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+        # Find the predicates for the two groups
+        pred1, pred2 = utils.get_predicates(df, group1, group2)
+
+        # Compute the histogram / counts for each group
+        g1_counts = df[pred1].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+        g2_counts = df[pred2].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+
+        counts = g1_counts, g2_counts
 
     space = df[target_attr].unique()
 
     p = np.zeros(len(space))
     q = np.zeros(len(space))
     for i, val in enumerate(space):
-        p[i] += g1_counts.get(val, 0)
-        q[i] += g2_counts.get(val, 0)
+        p[i] += counts[0].get(val, 0)
+        q[i] += counts[1].get(val, 0)
 
     p /= p.sum()
     q /= q.sum()
@@ -188,11 +203,9 @@ def kl_divergence(
 def js_divergence(
     df: pd.DataFrame,
     target_attr: str,
-    group1: Dict[str, List[str]],
+    group1: Optional[Dict[str, List[str]]] = None,
     group2: Optional[Dict[str, List[str]]] = None,
-    g1_counts: Optional[Dict[Any, int]] = None,
-    g2_counts: Optional[Dict[Any, int]] = None,
-    total_counts: Optional[Dict[Any, int]] = None,
+    counts: Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int], Dict[Hashable, int]]] = None,
 ) -> float:
     """Computes the Jensen-Shannon Divergence between the probability distributions of the two groups with respect
     to the target attribute. If group2 is None then the distance is computed between group1 and the rest of the
@@ -203,28 +216,33 @@ def js_divergence(
             The input dataframe.
         target_attr (str):
             The target attribute in the dataframe.
-        group1 (Dict[str, List[str]]):
-            The first group of interest.
+        group1 (Optional[Dict[str, List[str]]], optional):
+            The first group of interest. Defaults to None
         group2 (Optional[Dict[str, List[str]]], optional):
             The second group of interest. Defaults to None.
-        g1_counts (Optional[Dict[Any, int]], optional):
-            Dictionary mapping from value to counts for group1. Defaults to None.
-        g2_counts (Optional[Dict[Any, int]], optional):
-            Dictionary mapping from value to counts for group2. Defaults to None.
-        total_counts (Optional[Dict[Any, int]], optional):
-            Dictionary mapping from value to counts for all unique values in the target column.
-            Defaults to None.
+        counts (Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int], Dict[Hashable, int]]], optional):
+            A tuple containing the counts of the 2 groups and the entire dataset, each in a dictionary mapping
+            from value to counts. These counts can be interpreted as the histograms between which the
+            metric will be computed. Overrides group1 and group2. Defaults to None.
 
     Returns:
         float:
             The entropy as a float.
     """
 
-    pred1, pred2 = utils.get_predicates(df, group1, group2)
+    if counts is None:
+        if group1 is None:
+            raise InsufficientParamError()
 
-    g1_counts = g1_counts or df[pred1].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
-    g2_counts = g2_counts or df[pred2].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
-    total_counts = total_counts or df.groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+        # Find the predicates for the two groups
+        pred1, pred2 = utils.get_predicates(df, group1, group2)
+
+        # Compute the histogram / counts for each group
+        g1_counts = df[pred1].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+        g2_counts = df[pred2].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+        total_counts = df.groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+
+        counts = g1_counts, g2_counts, total_counts
 
     space = df[target_attr].unique()
 
@@ -232,9 +250,9 @@ def js_divergence(
     q = np.zeros(len(space))
     pq = np.zeros(len(space))
     for i, val in enumerate(space):
-        p[i] += g1_counts.get(val, 0)
-        q[i] += g2_counts.get(val, 0)
-        pq[i] += total_counts.get(val, 0)
+        p[i] += counts[0].get(val, 0)
+        q[i] += counts[1].get(val, 0)
+        pq[i] += counts[2].get(val, 0)
 
     p /= p.sum()
     q /= q.sum()
@@ -249,8 +267,7 @@ def lp_norm(
     group1: Dict[str, List[str]],
     group2: Optional[Dict[str, List[str]]] = None,
     order: Union[int, str] = 2,
-    g1_counts: Optional[Dict[Any, int]] = None,
-    g2_counts: Optional[Dict[Any, int]] = None,
+    counts: Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int]]] = None,
 ) -> float:
     """Computes the LP Norm between the probability distributions of the two groups with respect to the
     target attribute. If group2 is None then the distance is computed between group1 and the rest of the
@@ -267,28 +284,36 @@ def lp_norm(
             The second group of interest. Defaults to None.
         order (Union[int, str], optional):
             The order of the norm (p). Passed as 'ord' to numpy.linalg.norm. Defaults to 2.
-        g1_counts (Optional[Dict[Any, int]], optional):
-            Dictionary mapping from value to counts for group1. Defaults to None.
-        g2_counts (Optional[Dict[Any, int]], optional):
-            Dictionary mapping from value to counts for group2. Defaults to None.
+        counts (Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int]]], optional):
+            A tuple containing the counts of the 2 groups and the entire dataset, each in a dictionary mapping
+            from value to counts. These counts can be interpreted as the histograms between which the
+            metric will be computed. Overrides group1 and group2. Defaults to None.
 
     Returns:
         float:
             The norm as a float.
     """
 
-    pred1, pred2 = utils.get_predicates(df, group1, group2)
+    if counts is None:
+        if group1 is None:
+            raise InsufficientParamError()
 
-    g1_counts = g1_counts or df[pred1].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
-    g2_counts = g2_counts or df[pred2].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+        # Find the predicates for the two groups
+        pred1, pred2 = utils.get_predicates(df, group1, group2)
+
+        # Compute the histogram / counts for each group
+        g1_counts = df[pred1].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+        g2_counts = df[pred2].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+
+        counts = g1_counts, g2_counts
 
     space = df[target_attr].unique()
 
     p = np.zeros(len(space))
     q = np.zeros(len(space))
     for i, val in enumerate(space):
-        p[i] += g1_counts.get(val, 0)
-        q[i] += g2_counts.get(val, 0)
+        p[i] += counts[0].get(val, 0)
+        q[i] += counts[1].get(val, 0)
 
     p /= p.sum()
     q /= q.sum()

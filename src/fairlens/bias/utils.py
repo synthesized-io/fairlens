@@ -168,7 +168,7 @@ def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: i
 
 def get_predicates(
     df: pd.DataFrame, group1: Dict[str, List[str]], group2: Optional[Dict[str, List[str]]] = None
-) -> Tuple[pd.DataFrame, pd.DataFrame]:
+) -> Tuple[pd.Series, pd.Series]:
     """Forms and returns pandas dataframe predicates which can be used to index group1 and group2.
     If group2 is None the second predicate returned is the inverse of that used to index group1.
 
@@ -185,8 +185,8 @@ def get_predicates(
             Indicates an ill-formed group input due to invalid attributes in this case.
 
     Returns:
-        Tuple[pd.DataFrame, pd.DataFrame]:
-            A pair of dataframes that can be used to index the corresponding groups of data.
+        Tuple[pd.Series, pd.Series]:
+            A pair of series' that can be used to index the corresponding groups of data.
     """
 
     # Check all attributes are valid
@@ -216,7 +216,7 @@ def get_predicates(
     return pred1, pred2
 
 
-def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) -> List[pd.DataFrame]:
+def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) -> List[pd.Series]:
     """Similar to get_predicates but works on multiple groups.
 
     Args:
@@ -230,8 +230,8 @@ def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) ->
             Indicates an ill-formed group input due to invalid attributes in this case.
 
     Returns:
-        List[pd.DataFrame]:
-            A list of dataframes that can be used to index the corresponding groups of data.
+        List[pd.Series]:
+            A list of series' that can be used to index the corresponding groups of data.
     """
 
     # Check all attributes are valid
