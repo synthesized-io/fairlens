@@ -302,7 +302,8 @@ def detect_names_dataframe(
     str_distance: Callable[[str, str], float] = None,
     deep_search: bool = False,
 ) -> List[str]:
-    """[summary]
+    """Detects the sensitive column names in a dataframe, with the option of enabling
+    deep search to infer if a column might be sensitive based on its content.
 
     Args:
         df (pd.DataFrame):
@@ -311,6 +312,9 @@ def detect_names_dataframe(
             The threshold for the string distance function. Defaults to 0.1.
         str_distance (Callable[[str, str], float], optional):
             The string distance function. Defaults to Ratcliff-Obershelp algorithm.
+        deep_search (bool, optional):
+            The boolean flag that enables deep search when set to true. Deep search
+            also makes use of the content of the column to check if it is sensitive.
 
     Returns:
         List[str]:
@@ -359,7 +363,7 @@ def detect_names_dict(
     Returns:
         Dict[str, str]:
             A dictionary containing a mapping from attribute names to a string representing the corresponding
-            sensitive attribute or None.
+            sensitive attribute category or None.
 
     Examples:
         >>> detect_names_dict(["age", "gender", "legality", "risk"])
@@ -385,7 +389,9 @@ def detect_names_dict_dataframe(
     str_distance: Callable[[str, str], float] = None,
     deep_search: bool = False,
 ) -> Dict[str, Optional[str]]:
-    """[summary]
+    """Detects the sensitive columns in a dataframe and creates a dictionary which
+    maps the attribute names to the corresponding sensitive category name (such as
+    Gender, Religion etc).
 
     Args:
         df (pd.DataFrame):
@@ -394,11 +400,14 @@ def detect_names_dict_dataframe(
             The threshold for the string distance function. Defaults to 0.1.
         str_distance (Callable[[str, str], float], optional):
             The string distance function. Defaults to Ratcliff-Obershelp algorithm.
+        deep_search (bool, optional):
+            The boolean flag that enables deep search when set to true. Deep search
+            also makes use of the content of the column to check if it is sensitive.
 
     Returns:
         Dict[str, Optional[str]]:
             A dictionary containing a mapping from attribute names to a string representing the corresponding
-            sensitive attribute or None.
+            sensitive attribute category or None.
     """
     cols = df.columns
     sensitive_dict = detect_names_dict(cols, threshold, str_distance)
