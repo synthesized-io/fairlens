@@ -215,7 +215,7 @@ sensitive_values_map: Dict["SensitiveNames", List[str]] = {
 }
 
 
-def detect_names_dict_dataframe(
+def detect_names_df(
     df: Union[pd.DataFrame, List[str]],
     threshold: float = 0.1,
     str_distance: Callable[[Optional[str], Optional[str]], float] = None,
@@ -380,6 +380,7 @@ def _deep_search(
         # Skip sensitive groups that do not have defined possible values.
         if not values:
             continue
+        pattern = "|".join(values)
         if s.isin(values).mean() > 0.2:
             return group_name.value
 
