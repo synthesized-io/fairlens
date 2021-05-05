@@ -204,20 +204,14 @@ def get_predicates(
         raise InvalidAttributeError(attrs)
 
     # Form predicate for first group
-    pred1 = False
-    for attr, vals in group1.items():
-        for val in vals:
-            pred1 |= df[attr] == val
+    pred1 = df[group1.keys()].isin(group1).any(axis=1)
 
     # If group2 not given return the predicate and its inverse
     if group2 is None:
         return pred1, ~pred1
 
     # Form predicate for second group
-    pred2 = False
-    for attr, vals in group2.items():
-        for val in vals:
-            pred2 |= df[attr] == val
+    pred2 = df[group2.keys()].isin(group2).any(axis=1)
 
     return pred1, pred2
 
@@ -250,11 +244,7 @@ def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) ->
     # Form a predicate for each group
     preds = []
     for group in groups:
-        pred = False
-        for attr, vals in group.items():
-            for val in vals:
-                pred |= df[attr] == val
-
+        pred = df[group.keys()].isin(group).any(axis=1)
         preds.append(pred)
 
     return preds
