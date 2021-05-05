@@ -200,7 +200,7 @@ def get_predicates(
     if group2:
         attrs = attrs.union(set(group2.keys()))
 
-    if attrs.union(df.columns) != set(df.columns):
+    if not attrs <= set(df.columns):
         raise InvalidAttributeError(attrs)
 
     # Form predicate for first group
@@ -243,6 +243,7 @@ def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) ->
     # Check all attributes are valid
     all_attrs = [group.keys() for group in groups]
     attrs = set().union(*all_attrs)  # type: ignore
+
     if attrs.intersection(df.columns) != attrs:
         raise InvalidAttributeError(attrs)
 
