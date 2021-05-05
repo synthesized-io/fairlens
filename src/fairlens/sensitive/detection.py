@@ -1,6 +1,6 @@
 from difflib import SequenceMatcher
 from enum import Enum
-from typing import Callable, Dict, List, Optional
+from typing import Callable, Dict, List, Optional, Union
 
 import pandas as pd
 
@@ -215,7 +215,7 @@ sensitive_values_map: Dict["SensitiveNames", List[str]] = {
 }
 
 
-def _ro_distance(s1: str, s2: str) -> float:
+def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
     """Computes a distance between the input strings using the Ratcliff-Obershelp algorithm."""
     if s1 is None or s2 is None:
         return 1
@@ -223,7 +223,9 @@ def _ro_distance(s1: str, s2: str) -> float:
     return 1 - SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
 
 
-def _detect_name(name: str, threshold: float = 0.1, str_distance: Callable[[str, str], float] = None) -> Optional[str]:
+def _detect_name(
+    name: str, threshold: float = 0.1, str_distance: Callable[[Optional[str], Optional[str]], float] = None
+) -> Optional[str]:
     """Detects whether a given attribute is sensitive and returns the corresponding sensitive group.
 
     Args:
@@ -265,90 +267,8 @@ def _detect_name(name: str, threshold: float = 0.1, str_distance: Callable[[str,
     return None
 
 
-def detect_names(
-    names: List[str], threshold: float = 0.1, str_distance: Callable[[str, str], float] = None
-) -> List[str]:
-    """Filters the sensitive attributes in a list.
-
-    Args:
-        names (List[str]):
-            List of attribute names.
-        threshold (float, optional):
-            The threshold for the string distance function. Defaults to 0.1.
-        str_distance (Callable[[str, str], float], optional):
-            The string distance function. Defaults to Ratcliff-Obershelp algorithm.
-
-    Returns:
-        List[str]:
-            List containing the sensitive attribute names.
-
-    Examples:
-        >>> detect_names(["age", "gender", "legality", "risk"])
-        ["age", "gender"]
-    """
-
-    sensitive_attrs = []
-
-    for name in names:
-        if _detect_name(name, threshold=threshold, str_distance=str_distance):
-            sensitive_attrs.append(name)
-
-    return sensitive_attrs
-
-
-def detect_names_dataframe(
-    df: pd.DataFrame,
-    threshold: float = 0.1,
-    str_distance: Callable[[str, str], float] = None,
-    deep_search: bool = False,
-) -> List[str]:
-    """Detects the sensitive column names in a dataframe, with the option of enabling
-    deep search to infer if a column might be sensitive based on its content.
-
-    Args:
-        df (pd.DataFrame):
-            Pandas dataframe that will be analysed.
-        threshold (float, optional):
-            The threshold for the string distance function. Defaults to 0.1.
-        str_distance (Callable[[str, str], float], optional):
-            The string distance function. Defaults to Ratcliff-Obershelp algorithm.
-        deep_search (bool, optional):
-            The boolean flag that enables deep search when set to true. Deep search
-            also makes use of the content of the column to check if it is sensitive.
-
-    Returns:
-        List[str]:
-            List containing the sensitive attribute names.
-    """
-    cols = df.columns
-    sensitive_cols = detect_names(cols, threshold, str_distance)
-
-    str_distance = str_distance or _ro_distance
-
-    if deep_search:
-        non_sensitive_cols = list(set(cols) - set(sensitive_cols))
-
-        for non_sensitive_col in non_sensitive_cols:
-            # Avoid checking number values as they can be inconclusive.
-            if df[non_sensitive_col].dtype.kind in ["i", "f", "m", "M"]:
-                continue
-            for _, values in sensitive_values_map.items():
-                for value in values:
-                    if (
-                        df[non_sensitive_col].str.contains(value).any()
-                        or df[non_sensitive_col].str.startswith(value).any()
-                        or df[non_sensitive_col].str.endswith(value).any()
-                        or df[non_sensitive_col].map(lambda x: str_distance(x, value) < threshold).any()
-                    ):
-
-                        sensitive_cols.append(non_sensitive_col)
-        return sensitive_cols
-    else:
-        return sensitive_cols
-
-
-def detect_names_dict(
-    names: List[str], threshold: float = 0.1, str_distance: Callable[[str, str], float] = None
+def _detect_names_dict(
+    names: List[str], threshold: float = 0.1, str_distance: Callable[[Optional[str], Optional[str]], float] = None
 ) -> Dict[str, Optional[str]]:
     """Creates a dictionary which maps the attribute names to the corresponding sensitive attribute.
 
@@ -366,7 +286,7 @@ def detect_names_dict(
             sensitive attribute category or None.
 
     Examples:
-        >>> detect_names_dict(["age", "gender", "legality", "risk"])
+        >>> _detect_names_dict(["age", "gender", "legality", "risk"])
         {"age": "Age", "gender": "Gender", "legality": None, "risk": None}
     """
 
@@ -384,21 +304,23 @@ def detect_names_dict(
 
 
 def detect_names_dict_dataframe(
-    df: pd.DataFrame,
+    df: Union[pd.DataFrame, List[str]],
     threshold: float = 0.1,
-    str_distance: Callable[[str, str], float] = None,
+    str_distance: Callable[[Optional[str], Optional[str]], float] = None,
     deep_search: bool = False,
 ) -> Dict[str, Optional[str]]:
-    """Detects the sensitive columns in a dataframe and creates a dictionary which
-    maps the attribute names to the corresponding sensitive category name (such as
-    Gender, Religion etc).
+    """Detects the sensitive columns in a dataframe or string list and creates a
+    dictionary which maps the attribute names to the corresponding sensitive
+    category name (such as Gender, Religion etc). The option to deep search can
+    be enabled in the case of dataframes, which looks at the values in the tables
+    and infers sensitive categories, even when the column name is inconclusive.
 
     Args:
-        df (pd.DataFrame):
-            Pandas dataframe that will be analysed.
+        df Union[pd.DataFrame, List[str]]):
+            Pandas dataframe or string list that will be analysed.
         threshold (float, optional):
             The threshold for the string distance function. Defaults to 0.1.
-        str_distance (Callable[[str, str], float], optional):
+        str_distance (Callable[[Optional[str], Optional[str]], float], optional):
             The string distance function. Defaults to Ratcliff-Obershelp algorithm.
         deep_search (bool, optional):
             The boolean flag that enables deep search when set to true. Deep search
@@ -408,12 +330,27 @@ def detect_names_dict_dataframe(
         Dict[str, Optional[str]]:
             A dictionary containing a mapping from attribute names to a string representing the corresponding
             sensitive attribute category or None.
+
+    Examples:
+        >>> detect_names_dict_dataframe(["age", "gender", "legality", "risk"])
+        {"age": "Age", "gender": "Gender"}
+        >>> col_names = ["native", "location", "house", "subscription", "salary", "religion", "score"]
+        >>> df = pd.DataFrame(columns=col_names)
+        >>> detect_names_dict_dataframe(df)
+        {"native": "Nationality", "location": "Nationality", "house": "Family Status", "religion": "Religion"}
     """
-    cols = df.columns
-    sensitive_dict = detect_names_dict(cols, threshold, str_distance)
-    sensitive_cols = list(sensitive_dict.keys())
+    if isinstance(df, list):
+        cols = df
+    else:
+        cols = df.columns
+
+    sensitive_dict = _detect_names_dict(cols, threshold, str_distance)
+
+    if isinstance(df, list):
+        return sensitive_dict
 
     str_distance = str_distance or _ro_distance
+    sensitive_cols = list(sensitive_dict.keys())
 
     if deep_search:
         non_sensitive_cols = list(set(cols) - set(sensitive_cols))
