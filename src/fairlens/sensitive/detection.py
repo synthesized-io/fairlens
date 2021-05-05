@@ -303,6 +303,39 @@ def _detect_names_dict(
     return names_dict
 
 
+def _deep_search(
+    s: pd.Series, threshold: float = 0.1, str_distance: Callable[[Optional[str], Optional[str]], float] = None
+) -> Optional[str]:
+
+    # Avoid checking number values as they can be inconclusive.
+    if s.dtype.kind in ["i", "f", "m", "M"]:
+        return None
+
+    str_distance = str_distance or _ro_distance
+
+    # Coarse grain search to check if there is an exact match to avoid mismatches.
+    for group_name, values in sensitive_values_map.items():
+        # Skip sensitive groups that do not have defined possible values.
+        if not values:
+            continue
+        if s.isin(values).any():
+            return group_name.value
+
+    for group_name, values in sensitive_values_map.items():
+        if not values:
+            continue
+        pattern = "|".join(values)
+        if s.str.contains(pattern).any():
+            return group_name.value
+
+    # Fine grain search that will catch edge cases.
+    for group_name, values in sensitive_values_map.items():
+        for value in values:
+            if s.str.contains(value).mean() > 0.1 or s.map(lambda x: str_distance(x, value) < threshold).mean() > 0.1:
+                return group_name.value
+    return None
+
+
 def detect_names_dict_dataframe(
     df: Union[pd.DataFrame, List[str]],
     threshold: float = 0.1,
@@ -356,19 +389,10 @@ def detect_names_dict_dataframe(
         non_sensitive_cols = list(set(cols) - set(sensitive_cols))
 
         for non_sensitive_col in non_sensitive_cols:
-            # Avoid checking number values as they can be inconclusive.
-            if df[non_sensitive_col].dtype.kind in ["i", "f", "m", "M"]:
-                continue
-            for group_name, values in sensitive_values_map.items():
-                for value in values:
-                    if (
-                        df[non_sensitive_col].str.contains(value).any()
-                        or df[non_sensitive_col].str.startswith(value).any()
-                        or df[non_sensitive_col].str.endswith(value).any()
-                        or df[non_sensitive_col].map(lambda x: str_distance(x, value) < threshold).any()
-                    ):
+            group_name = _deep_search(df[non_sensitive_col], threshold, str_distance)
 
-                        sensitive_dict[non_sensitive_col] = group_name.value
+            if group_name is not None:
+                sensitive_dict[non_sensitive_col] = group_name
         return sensitive_dict
     else:
         return sensitive_dict
