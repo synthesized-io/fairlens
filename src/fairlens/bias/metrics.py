@@ -84,8 +84,8 @@ def emd(
         pred1, pred2 = utils.get_predicates(df, group1, group2)
 
         # Compute the histogram / counts for each group
-        g1_counts = df[pred1].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
-        g2_counts = df[pred2].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+        g1_counts = df[pred1][target_attr].value_counts().to_dict()
+        g2_counts = df[pred2][target_attr].value_counts().to_dict()
 
         counts = g1_counts, g2_counts
 
@@ -175,8 +175,8 @@ def kl_divergence(
         pred1, pred2 = utils.get_predicates(df, group1, group2)
 
         # Compute the histogram / counts for each group
-        g1_counts = df[pred1].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
-        g2_counts = df[pred2].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+        g1_counts = df[pred1][target_attr].value_counts().to_dict()
+        g2_counts = df[pred2][target_attr].value_counts().to_dict()
 
         counts = g1_counts, g2_counts
 
@@ -226,9 +226,9 @@ def js_divergence(
         pred1, pred2 = utils.get_predicates(df, group1, group2)
 
         # Compute the histogram / counts for each group
-        g1_counts = df[pred1].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
-        g2_counts = df[pred2].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
-        total_counts = df.groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+        g1_counts = df[pred1][target_attr].value_counts().to_dict()
+        g2_counts = df[pred2][target_attr].value_counts().to_dict()
+        total_counts = df[target_attr].value_counts().to_dict()
 
         counts = g1_counts, g2_counts, total_counts
 
@@ -282,8 +282,8 @@ def lp_norm(
         pred1, pred2 = utils.get_predicates(df, group1, group2)
 
         # Compute the histogram / counts for each group
-        g1_counts = df[pred1].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
-        g2_counts = df[pred2].groupby(target_attr)[target_attr].aggregate(Count="count")["Count"].to_dict()
+        g1_counts = df[pred1][target_attr].value_counts().to_dict()
+        g2_counts = df[pred2][target_attr].value_counts().to_dict()
 
         counts = g1_counts, g2_counts
 
