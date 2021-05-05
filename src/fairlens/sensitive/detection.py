@@ -380,19 +380,19 @@ def _deep_search(
         # Skip sensitive groups that do not have defined possible values.
         if not values:
             continue
-        if s.isin(values).any():
+        if s.isin(values).mean() > 0.2:
             return group_name.value
 
     for group_name, values in sensitive_values_map.items():
         if not values:
             continue
         pattern = "|".join(values)
-        if s.str.contains(pattern).any():
+        if s.str.contains(pattern).mean() > 0.6:
             return group_name.value
 
     # Fine grain search that will catch edge cases.
     for group_name, values in sensitive_values_map.items():
         for value in values:
-            if s.str.contains(value).mean() > 0.1 or s.map(lambda x: str_distance(x, value) < threshold).mean() > 0.1:
+            if s.map(lambda x: str_distance(x, value) < threshold).mean() > 0.1:
                 return group_name.value
     return None
