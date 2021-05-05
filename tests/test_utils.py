@@ -49,3 +49,13 @@ def test_get_predicates_mult():
 
     assert df[preds[0]]["C"].nunique() == 1
     assert df[preds[1]]["C"].nunique() == 0
+
+
+def test_align_probabilities():
+    space = [1, 2, 3, 4]
+    counts = {2: 3, 3: 2}
+
+    p = utils.align_probabilities(counts, space)
+
+    assert (p == [0, 0.6, 0.4, 0]).all()
+    assert not (p == [0, 0.4, 0.6, 0]).all()
