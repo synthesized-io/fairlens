@@ -91,7 +91,7 @@ def plt_group_dist_mult(
     bins = None
     if distr_type.is_continuous() or str(df[target_attr].dtype) in ["float64", "int64"]:
         bins = utils.fd_opt_bins(df[target_attr])
-        df["Binned"] = pd.cut(df[target_attr], bins=bins)
+        df["Binned"] = utils.bin(df["RawScore"], n_bins=bins, mean_bins=True)
 
     # Plot the histograms
     for pred in preds:

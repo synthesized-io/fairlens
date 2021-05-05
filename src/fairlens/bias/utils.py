@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Hashable, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
@@ -25,20 +25,18 @@ class DistrType(Enum):
 
 
 def bin(
-    df: pd.DataFrame,
-    column_name: str,
+    column: pd.Series,
     n_bins: Optional[int] = None,
     remove_outliers: Optional[float] = 0.1,
     quantile_based: bool = False,
+    mean_bins=False,
     **kwargs
 ) -> pd.DataFrame:
     """Bin continous values into discrete bins.
 
     Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        column_name (str):
-            The name of the dataframe column to transform.
+        column (pd.Series):
+            The column or series containing the data to be binned.
         n_bins (Optional[int], optional):
             The number of bins. Defaults to Freedman-Diaconis rule.
         remove_outliers (Optional[float], optional):
@@ -46,13 +44,17 @@ def bin(
             If `None`, outliers are not removed. Defaults to 0.1.
         quantile_based (bool, optional):
             Whether the bin computation is quantile based. Defaults to False.
+        mean_bins (bool, optional):
+            Return the mean of the intervals instead of the intervals themselves. Defaults to False.
+        **kwargs:
+            Key word arguments for pd.cut or pd.qcut.
 
     Returns:
-        pd.DataFrame:
-            The binned dataframe.
+        pd.Series:
+            The binned column.
     """
 
-    column = df[column_name].copy()
+    column = column.copy()
     column_clean = column.dropna()
 
     n_bins = n_bins or fd_opt_bins(column)
@@ -70,6 +72,7 @@ def bin(
         _, bins = pd.cut(column_clean, n_bins, retbins=True, **kwargs)
     else:
         _, bins = pd.qcut(column_clean, n_bins, retbins=True, **kwargs)
+
     bins = list(bins)  # Otherwise it is np.ndarray
     bins[0], bins[-1] = column.min(), column.max()
 
@@ -77,9 +80,12 @@ def bin(
     if isinstance(bins[0], pd.Timestamp):
         bins = pd.IntervalIndex([pd.Interval(bins[n], bins[n + 1]) for n in range(len(bins) - 1)], closed="left")
 
-    df.loc[:, column_name] = pd.cut(df.loc[:, column_name], bins=bins, include_lowest=True, **kwargs)
+    binned = pd.Series(pd.cut(column, bins=bins, include_lowest=True, **kwargs))
 
-    return df
+    if mean_bins:
+        return binned.apply(lambda i: float(i.mid))
+
+    return binned
 
 
 def infer_dtype(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
@@ -269,3 +275,27 @@ def fd_opt_bins(column: pd.Series) -> int:
     iqr = column.quantile(0.75) - column.quantile(0.25)
 
     return int((column.max() - column.min()) / (2 * iqr * (n ** (-1 / 3))))
+
+
+def align_probabilities(group_counts: Dict[Hashable, int], space: np.ndarray) -> np.ndarray:
+    """Align the counts for the given group and return the probabilities aligned with the space.
+
+    Args:
+        group_counts (Dict[Hashable, int]):
+            A mapping from the values in the group to their counts / frequency.
+        space (np.ndarray):
+            A space to align the counts with. ie. A list containing of all the unique values in the dataset,
+            or the a list of all natural numbers.
+
+    Returns:
+        np.ndarray:
+            The aligned probabilities in an array of the same length as space.
+    """
+
+    p = np.zeros(len(space))
+    for i, val in enumerate(space):
+        p[i] = group_counts.get(val, 0)
+
+    p /= p.sum()
+
+    return p

@@ -91,14 +91,8 @@ def emd(
 
     space = df[target_attr].unique()
 
-    p = np.zeros(len(space))
-    q = np.zeros(len(space))
-    for i, val in enumerate(space):
-        p[i] += counts[0].get(val, 0)
-        q[i] += counts[1].get(val, 0)
-
-    p /= p.sum()
-    q /= q.sum()
+    p = utils.align_probabilities(counts[0], space)
+    q = utils.align_probabilities(counts[1], space)
 
     xx, yy = np.meshgrid(space, space)
     distance_space = np.abs(xx - yy)
@@ -188,14 +182,8 @@ def kl_divergence(
 
     space = df[target_attr].unique()
 
-    p = np.zeros(len(space))
-    q = np.zeros(len(space))
-    for i, val in enumerate(space):
-        p[i] += counts[0].get(val, 0)
-        q[i] += counts[1].get(val, 0)
-
-    p /= p.sum()
-    q /= q.sum()
+    p = utils.align_probabilities(counts[0], space)
+    q = utils.align_probabilities(counts[1], space)
 
     return entropy(p, q)
 
@@ -246,17 +234,9 @@ def js_divergence(
 
     space = df[target_attr].unique()
 
-    p = np.zeros(len(space))
-    q = np.zeros(len(space))
-    pq = np.zeros(len(space))
-    for i, val in enumerate(space):
-        p[i] += counts[0].get(val, 0)
-        q[i] += counts[1].get(val, 0)
-        pq[i] += counts[2].get(val, 0)
-
-    p /= p.sum()
-    q /= q.sum()
-    pq /= pq.sum()
+    p = utils.align_probabilities(counts[0], space)
+    q = utils.align_probabilities(counts[1], space)
+    pq = utils.align_probabilities(counts[2], space)
 
     return (entropy(p, pq) + entropy(q, pq)) / 2
 
@@ -309,13 +289,7 @@ def lp_norm(
 
     space = df[target_attr].unique()
 
-    p = np.zeros(len(space))
-    q = np.zeros(len(space))
-    for i, val in enumerate(space):
-        p[i] += counts[0].get(val, 0)
-        q[i] += counts[1].get(val, 0)
-
-    p /= p.sum()
-    q /= q.sum()
+    p = utils.align_probabilities(counts[0], space)
+    q = utils.align_probabilities(counts[1], space)
 
     return np.linalg.norm(p - q, ord=order)
