@@ -7,12 +7,6 @@ dict_path = "./configs/config_engb.json"
 attr_synonym_dict: Dict[str, List[str]] = {}
 attr_value_dict: Dict[str, List[str]] = {}
 
-# @dataclass
-# class SensitiveAttribute:
-#     name: str
-#     synonyms: List[str]
-#     values: List[str]
-
 
 def default_config():
     PROJ_DIR = os.path.dirname(os.path.abspath(__file__))
