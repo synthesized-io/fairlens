@@ -1,3 +1,4 @@
+import pathlib
 from difflib import SequenceMatcher
 from typing import Callable, Dict, List, Optional, Union
 
@@ -24,7 +25,7 @@ def detect_names_df(
     be enabled in the case of dataframes, which looks at the values in the tables
     and infers sensitive categories, even when the column name is inconclusive.
     Args:
-        df Union[pd.DataFrame, List[str]]):
+        df (Union[pd.DataFrame, List[str]]):
             Pandas dataframe or string list that will be analysed.
         threshold (float, optional):
             The threshold for the string distance function. Defaults to 0.1.
@@ -69,6 +70,20 @@ def detect_names_df(
         return sensitive_dict
     else:
         return sensitive_dict
+
+
+def change_config(config_path: Union[str, pathlib.Path]):
+    """Changes the default configuration that is used to detect sensitive attributes
+    or sensitive dataframe columns, using the provided path to the new config file.
+
+    Args:
+        config_path (Union[str, pathlib.Path])
+    """
+    config.change_config(config_path)
+    global sensitive_names_map
+    sensitive_names_map = config.attr_synonym_dict
+    global sensitive_values_map
+    sensitive_values_map = config.attr_value_dict
 
 
 def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
