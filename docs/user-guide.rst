@@ -2,14 +2,10 @@
 User Guide
 ==========
 
-Installation
-^^^^^^^^^^^^
-Lorem ipsum
-
 Getting Started
 ^^^^^^^^^^^^^^^
-Lorem ipsum
+FairLens can be installed using pip
 
-Tutorials
-^^^^^^^^^
-Lorem ipsum
+.. code-block:: bash
+
+  pip install fairlens

@@ -30,4 +30,4 @@ Implementation notes
    user-guide
    changelog
    api-reference
-   license
+   contributing
