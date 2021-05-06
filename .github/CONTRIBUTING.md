@@ -12,7 +12,7 @@ source ./.env/bin/activate
 Other tools such as `virtualenv` and `conda` are also suitable. Pick your favourite.
 
 
-Once your environemnt is active, you can set up the development environment for FairLens by running:
+Once your environment is active, you can set up the development environment for FairLens by running:
 ```bash
 pip install -e .[dev]
 ```
