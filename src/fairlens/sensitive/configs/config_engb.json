@@ -178,7 +178,7 @@
         },
     "Family Status":
         {
-            "synonyms": ["family", "house", "marital", "children", "partner", "pregnant"],
+            "synonyms": ["family status", "family", "house", "marital", "children", "partner", "pregnant"],
             "values": ["married", "single", "widowed", "divorced", "separated", "pregnant"]
         },
     "Disability":
@@ -208,7 +208,7 @@
         },
     "Sexual Orientation":
         {
-            "synonyms": ["sexual", "orientation", "attracted"],
+            "synonyms": ["sexual orientation", "sexual", "orientation", "attracted"],
             "values": ["heterosexual", "asexual", "homosexual", "bisexual", "sexual"]
         }
 
