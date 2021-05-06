@@ -8,11 +8,13 @@ from ..bias import utils
 from ..bias.metrics import stat_distance
 from ..sensitive.detection import detect_names_df
 
+
 logger = logging.getLogger(__name__)
 
 
 class FairnessScorer:
     """This class analyzes a given DataFrame, looks for biases and quantifies fairness."""
+
 
     def __init__(
         self,
@@ -53,6 +55,7 @@ class FairnessScorer:
         self.df = df
         self.target_attr = target_attr
         self.sensitive_attrs = list(sensitive_attrs)
+
 
     def distribution_score(
         self,
