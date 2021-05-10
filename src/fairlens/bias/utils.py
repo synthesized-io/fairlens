@@ -1,10 +1,10 @@
 from enum import Enum
-from typing import Dict, Hashable, List, Optional, Tuple
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
 
-from .exceptions import InvalidAttributeError
+from .exceptions import IllegalArgumentException, InsufficientParamError, InvalidAttributeError
 
 
 class DistrType(Enum):
@@ -250,6 +250,74 @@ def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) ->
     return preds
 
 
+def parse_args(
+    df: pd.DataFrame,
+    group1: Union[Optional[Dict[str, List[str]]], pd.Series],
+    group2: Union[Optional[Dict[str, List[str]]], pd.Series],
+) -> Tuple[pd.Series, pd.Series]:
+    """A wrapper for get_predicates.
+
+    Args:
+        df (pd.DataFrame):
+            The input dataframe.
+        group1 (Union[Optional[Dict[str, List[str]]], pd.Series]):
+            The first group of interest.
+        group2 (Union[Optional[Dict[str, List[str]]], pd.Series]):
+            The second group of interest.
+
+    Raises:
+        InsufficientParamError:
+            Indicates insufficient parameters.
+
+        IllegalArgumentException:
+            Indicates illegal argument(s) passed to the function.
+
+    Returns:
+        Tuple[pd.Series, pd.Series]:
+            A tuple of pandas series containing the values in each group.
+    """
+
+    if isinstance(group1, pd.Series) and isinstance(group2, pd.Series):
+        return group1, group2
+
+    if not group1 and not group2:
+        raise InsufficientParamError()
+
+    if isinstance(group1, dict) and isinstance(group2, dict):
+        return get_predicates(df, group1, group2)
+
+    raise IllegalArgumentException()
+
+
+def compute_probabilities(space: np.ndarray, *data: pd.Series) -> List[np.ndarray]:
+    """Compute the probability distributions for the given data and return them in arrays aligned to the space.
+
+    Args:
+        space (np.ndarray):
+            A space to align the counts with. ie. A list containing of all the unique values in the dataset,
+            a list of all natural numbers.
+        *data (pd.Series):
+            Variable amount of pandas series containing the raw data.
+
+    Returns:
+        List[np.ndarray]:
+            The aligned probabilities in a list of numpy arrays each of the same length as the space.
+    """
+
+    n = len(data)
+    ps = [np.zeros(len(space)) for group in data]
+    gs = [group.value_counts().to_dict() for group in data]
+
+    for i, val in enumerate(space):
+        for j in range(n):
+            ps[j][i] = gs[j].get(val, 0)
+
+    for i in range(n):
+        ps[i] /= ps[i].sum()
+
+    return ps
+
+
 def fd_opt_bins(column: pd.Series) -> int:
     """Computes the optimal number of bins in a pandas series using the Freedman-Diaconis rule.
 
@@ -266,27 +334,3 @@ def fd_opt_bins(column: pd.Series) -> int:
     iqr = column.quantile(0.75) - column.quantile(0.25)
 
     return int((column.max() - column.min()) / (2 * iqr * (n ** (-1 / 3))))
-
-
-def align_probabilities(group_counts: Dict[Hashable, int], space: np.ndarray) -> np.ndarray:
-    """Align the counts for the given group and return the probabilities aligned with the space.
-
-    Args:
-        group_counts (Dict[Hashable, int]):
-            A mapping from the values in the group to their counts / frequency.
-        space (np.ndarray):
-            A space to align the counts with. ie. A list containing of all the unique values in the dataset,
-            or the a list of all natural numbers.
-
-    Returns:
-        np.ndarray:
-            The aligned probabilities in an array of the same length as space.
-    """
-
-    p = np.zeros(len(space))
-    for i, val in enumerate(space):
-        p[i] = group_counts.get(val, 0)
-
-    p /= p.sum()
-
-    return p
