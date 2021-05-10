@@ -81,7 +81,7 @@ def emd(
 
     space = df[target_attr].unique()
 
-    p, q = tuple(utils.compute_probabilities(space, g1, g2))
+    p, q = utils.compute_probabilities(space, g1, g2)
 
     xx, yy = np.meshgrid(space, space)
     distance_space = np.abs(xx - yy)
@@ -161,7 +161,7 @@ def kl_divergence(
 
     space = df[target_attr].unique()
 
-    p, q = tuple(utils.compute_probabilities(space, g1, g2))
+    p, q = utils.compute_probabilities(space, g1, g2)
 
     return entropy(p, q)
 
@@ -197,7 +197,7 @@ def js_divergence(
 
     space = df[target_attr].unique()
 
-    p, q, pq = tuple(utils.compute_probabilities(space, g1, g2, df[target_attr]))
+    p, q, pq = utils.compute_probabilities(space, g1, g2, df[target_attr])
 
     return (entropy(p, pq) + entropy(q, pq)) / 2
 
@@ -236,6 +236,6 @@ def lp_norm(
 
     space = df[target_attr].unique()
 
-    p, q = tuple(utils.compute_probabilities(space, g1, g2))
+    p, q = utils.compute_probabilities(space, g1, g2)
 
     return np.linalg.norm(p - q, ord=order)

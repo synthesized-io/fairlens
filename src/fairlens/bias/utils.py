@@ -289,7 +289,7 @@ def parse_args(
     raise IllegalArgumentException()
 
 
-def compute_probabilities(space: np.ndarray, *data: pd.Series) -> List[np.ndarray]:
+def compute_probabilities(space: np.ndarray, *data: pd.Series) -> Tuple[np.ndarray, ...]:
     """Compute the probability distributions for the given data and return them in arrays aligned to the space.
 
     Args:
@@ -300,8 +300,8 @@ def compute_probabilities(space: np.ndarray, *data: pd.Series) -> List[np.ndarra
             Variable amount of pandas series containing the raw data.
 
     Returns:
-        List[np.ndarray]:
-            The aligned probabilities in a list of numpy arrays each of the same length as the space.
+        Tuple[np.ndarray, ...]:
+            The aligned probabilities in a tuple of numpy arrays each of the same length as the space.
     """
 
     n = len(data)
@@ -315,7 +315,7 @@ def compute_probabilities(space: np.ndarray, *data: pd.Series) -> List[np.ndarra
     for i in range(n):
         ps[i] /= ps[i].sum()
 
-    return ps
+    return tuple(ps)
 
 
 def fd_opt_bins(column: pd.Series) -> int:
