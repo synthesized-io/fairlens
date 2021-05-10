@@ -63,11 +63,13 @@ def test_get_predicates_mult():
     assert dfc[pred2].equals(dfc[dfc["Ethnicity"] == "Caucasian"])
 
 
-def test_align_probabilities():
+def test_compute_probabilities():
+    space = [1, 2, 3, 4, 5, 6]
+    p = utils.compute_probabilities(space, pd.Series([1, 2, 2, 2, 3, 3, 4, 4, 5, 6]))[0]
+
+    assert (p == [0.1, 0.3, 0.2, 0.2, 0.1, 0.1]).all()
+
     space = [1, 2, 3, 4]
-    counts = {2: 3, 3: 2}
+    p = utils.compute_probabilities(space, pd.Series([1, 2, 2, 2, 3, 3, 4, 4, 5, 6]))[0]
 
-    p = utils.align_probabilities(counts, space)
-
-    assert (p == [0, 0.6, 0.4, 0]).all()
-    assert not (p == [0, 0.4, 0.6, 0]).all()
+    assert (p == [0.125, 0.375, 0.25, 0.25]).all()

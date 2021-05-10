@@ -1,11 +1,3 @@
-class UnsupportedDistributionError(Exception):
-    pass
-
-
-class AmbiguousAttributeError(Exception):
-    pass
-
-
 class InvalidAttributeError(Exception):
     pass
 
@@ -15,4 +7,8 @@ class InvalidValueError(Exception):
 
 
 class InsufficientParamError(Exception):
+    pass
+
+
+class IllegalArgumentException(Exception):
     pass
