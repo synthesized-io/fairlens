@@ -3,6 +3,7 @@ from typing import Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 from pyemd import emd as pemd
+from pyemd import emd_samples
 from scipy.stats import entropy, ks_2samp
 
 from . import utils
@@ -38,7 +39,7 @@ def class_imbalance(
         0.021244309559939303
     """
 
-    g1, g2 = utils.parse_args(df, group1, group2)
+    g1, g2 = utils.parse_args(df, target_attr, group1, group2)
 
     return (g1.nunique() - g2.nunique()) / df[target_attr].nunique()
 
@@ -77,7 +78,10 @@ def emd(
         0.16237499999999971
     """
 
-    g1, g2 = utils.parse_args(df, group1, group2)
+    g1, g2 = utils.parse_args(df, target_attr, group1, group2)
+
+    if utils.infer_distr_type(df[target_attr]).is_continuous():
+        return emd_samples(g1, g2)
 
     space = df[target_attr].unique()
 
@@ -123,7 +127,7 @@ def ks_distance(
         (0.0744047619047619, 0.8522462138629425)
     """
 
-    g1, g2 = utils.parse_args(df, group1, group2)
+    g1, g2 = utils.parse_args(df, target_attr, group1, group2)
 
     statistic, pval = ks_2samp(g1, g2)
 
@@ -157,7 +161,7 @@ def kl_divergence(
             The entropy as a float.
     """
 
-    g1, g2 = utils.parse_args(df, group1, group2)
+    g1, g2 = utils.parse_args(df, target_attr, group1, group2)
 
     space = df[target_attr].unique()
 
@@ -193,7 +197,7 @@ def js_divergence(
             The entropy as a float.
     """
 
-    g1, g2 = utils.parse_args(df, group1, group2)
+    g1, g2 = utils.parse_args(df, target_attr, group1, group2)
 
     space = df[target_attr].unique()
 
@@ -232,7 +236,7 @@ def lp_norm(
             The norm as a float.
     """
 
-    g1, g2 = utils.parse_args(df, group1, group2)
+    g1, g2 = utils.parse_args(df, target_attr, group1, group2)
 
     space = df[target_attr].unique()
 
