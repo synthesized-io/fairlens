@@ -122,3 +122,39 @@ def test_double_correlation():
     df = pd.DataFrame(data, columns=col_names)
     res = {"corr1": ("gender", "Gender"), "corr2": ("nationality", "Nationality")}
     assert dt.detect_correlation(df) == res
+
+
+def test_column_correlation():
+    col_names = ["gender", "nationality", "random", "corr1", "corr2"]
+    data = [
+        ["woman", "spanish", 715, 10, 20],
+        ["man", "spanish", 1008, 20, 20],
+        ["man", "french", 932, 20, 10],
+        ["woman", "french", 1300, 10, 10],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    res1 = [("gender", "Gender")]
+    res2 = [("nationality", "Nationality")]
+    assert dt.check_column_correlation("corr1", df) == res1
+    assert dt.check_column_correlation("corr2", df) == res2
+
+
+def test_series_correlation():
+    col_names = ["race", "age", "score", "entries", "marital", "credit"]
+    data = [
+        ["arabian", 21, 10, 2000, "married", 10],
+        ["carribean", 20, 10, 3000, "single", 10],
+        ["indo-european", 41, 10, 1900, "widowed", 10],
+        ["carribean", 40, 10, 2000, "single", 10],
+        ["indo-european", 42, 10, 2500, "widowed", 10],
+        ["arabian", 19, 10, 2200, "married", 10],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    # The first series is correlated with the "race" and "family status" columns, while the second is
+    # correlated with the "age" column
+    s1 = pd.Series([60, 90, 120, 90, 120, 60])
+    s2 = pd.Series([120, 130, 210, 220, 200, 115])
+    res1 = [("race", "Ethnicity"), ("marital", "Family Status")]
+    res2 = [("age", "Age")]
+    assert set(dt.check_column_correlation(s1, df, corr_cutoff=0.9)) == set(res1)
+    assert set(dt.check_column_correlation(s2, df, corr_cutoff=0.9)) == set(res2)
