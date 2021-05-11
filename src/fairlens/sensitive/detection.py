@@ -1,6 +1,6 @@
 from difflib import SequenceMatcher
 from enum import Enum
-from typing import Callable, Dict, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
@@ -283,6 +283,61 @@ def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
         return 1
 
     return 1 - SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
+
+
+def detect_correlation(
+    df: pd.DataFrame,
+    threshold: float = 0.1,
+    str_distance: Callable[[Optional[str], Optional[str]], float] = None,
+    corr_cutoff: float = 0.75,
+) -> Dict[str, Tuple[str, Optional[str]]]:
+    """Looks at the columns that are not considered to be immediately sensitive and finds if any is strongly
+    correlated with a sensitive column, specifying both the sensitive column name and the sensitive category
+    it is a part of.
+
+    Args:
+        df (pd.DataFrame):
+            Pandas dataframe that will be analyzed.
+        threshold (float, optional):
+            The threshold for the string distance function that will be used for detecting sensitive columns.
+            Defaults to 0.1.
+        str_distance (Callable[[Optional[str], Optional[str]], float], optional):
+            The string distance function that will be used for detecting sensitive columns.
+            Defaults to Ratcliff-Obershelp algorithm.
+        corr_cutoff (float, optional):
+            The cutoff for considering a column to be correlated with a sensitive attribute, with Pearson's correlation.
+            Defaults to 0.75.
+
+    Returns:
+        Dict[str, Tuple[Optional[str]]]:
+            The returned value is a dictionary with the non-sensitive column as the key and a tuple as the value,
+            where the first entry is the name of the corresponding sensitive column in the dataframe and the second
+            entry is the sensitive attribute category.
+    """
+
+    str_distance = str_distance or _ro_distance
+
+    sensitive_dict = detect_names_df(df, threshold=threshold, str_distance=str_distance, deep_search=True)
+
+    non_sensitive_cols = list(set(df.columns) - set(sensitive_dict.keys()))
+
+    correlation_dict = dict()
+
+    for sensitive_col in sensitive_dict.keys():
+        for non_sensitive_col in non_sensitive_cols:
+            col1 = df[sensitive_col]
+            col2 = df[non_sensitive_col]
+
+            # Turn string columns into numerical representation to be able to correlate.
+            if df[sensitive_col].map(type).eq(str).all():
+                col1 = df[sensitive_col].astype("category").cat.codes
+            if df[non_sensitive_col].map(type).eq(str).all():
+                col2 = df[sensitive_col].astype("category").cat.codes
+
+            if abs(col1.corr(col2)) > corr_cutoff:
+                correlation_dict[non_sensitive_col] = (sensitive_col, sensitive_dict[sensitive_col])
+
+    return correlation_dict
 
 
 def _detect_name(
