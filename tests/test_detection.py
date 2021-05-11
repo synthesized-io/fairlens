@@ -101,3 +101,24 @@ def test_dataframe_dict_numbers():
     df = pd.DataFrame(data, columns=col_names)
     res = {}
     assert dt.detect_names_df(df, deep_search=True) == res
+
+
+def test_correlation():
+    col_names = ["gender", "random", "score"]
+    data = [["male", 10, 60], ["female", 10, 80], ["male", 10, 60], ["female", 10, 80]]
+    df = pd.DataFrame(data, columns=col_names)
+    res = {"score": ("gender", "Gender")}
+    assert dt.detect_correlation(df) == res
+
+
+def test_double_correlation():
+    col_names = ["gender", "nationality", "random", "corr1", "corr2"]
+    data = [
+        ["woman", "spanish", 715, 10, 20],
+        ["man", "spanish", 1008, 20, 20],
+        ["man", "french", 932, 20, 10],
+        ["woman", "french", 1300, 10, 10],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    res = {"corr1": ("gender", "Gender"), "corr2": ("nationality", "Nationality")}
+    assert dt.detect_correlation(df) == res
