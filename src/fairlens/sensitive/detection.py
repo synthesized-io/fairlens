@@ -277,14 +277,6 @@ def detect_names_df(
         return sensitive_dict
 
 
-def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
-    """Computes a distance between the input strings using the Ratcliff-Obershelp algorithm."""
-    if s1 is None or s2 is None:
-        return 1
-
-    return 1 - SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
-
-
 def detect_correlation(
     df: pd.DataFrame,
     threshold: float = 0.1,
@@ -314,7 +306,6 @@ def detect_correlation(
             where the first entry is the name of the corresponding sensitive column in the dataframe and the second
             entry is the sensitive attribute category.
     """
-
     str_distance = str_distance or _ro_distance
 
     sensitive_dict = detect_names_df(df, threshold=threshold, str_distance=str_distance, deep_search=True)
@@ -338,6 +329,76 @@ def detect_correlation(
                 correlation_dict[non_sensitive_col] = (sensitive_col, sensitive_dict[sensitive_col])
 
     return correlation_dict
+
+
+def check_column_correlation(
+    col: Union[str, pd.Series],
+    df: pd.DataFrame,
+    threshold: float = 0.1,
+    str_distance: Callable[[Optional[str], Optional[str]], float] = None,
+    corr_cutoff: float = 0.75,
+) -> List[Tuple[str, Optional[str]]]:
+    """This function takes in a series or a column name of a given dataframe and checks whether any of
+    the sensitive attribute columns detected in the dataframe are strongly correlated with the series
+    or the column corresponding to the given name.
+    If matches are found, a list containing the correlated
+    column names and its associated sensitive category, respectively, is returned.
+
+    Args:
+        col (Union[str, pd.Series]):
+            Pandas series or dataframe column name that will be analyzed.
+        df (pd.DataFrame):
+            Dataframe supporting the search, possibly already a column with the input name.
+        threshold (float, optional):
+            The threshold for the string distance function that will be used for detecting sensitive columns.
+            Defaults to 0.1.
+        str_distance (Callable[[Optional[str], Optional[str]], float], optional):
+            The string distance function that will be used for detecting sensitive columns.
+            Defaults to Ratcliff-Obershelp algorithm.
+        corr_cutoff (float, optional):
+            The cutoff for considering a column to be correlated with a sensitive attribute, with Pearson's correlation.
+            Defaults to 0.75.
+
+    Returns:
+        List[Tuple[str, Optional[str]]]:
+            The returned value is a list containing tuples of all the correlated sensitive columns that were
+            found, along with their associated sensitive category label.
+    """
+    str_distance = str_distance or _ro_distance
+
+    sensitive_dict = detect_names_df(df, threshold=threshold, str_distance=str_distance, deep_search=True)
+
+    correlation_list = list()
+
+    if isinstance(col, str):
+        if col in df.columns:
+            col1 = df[col]
+        else:
+            raise ValueError("The given dataframe does not contain a column with this name.")
+    else:
+        col1 = col
+
+    for sensitive_col in sensitive_dict.keys():
+        col2 = df[sensitive_col]
+
+        # Turn string columns into numerical representations.
+        if col1.map(type).eq(str).all():
+            col1 = col1.astype("category").cat.codes
+        if df[sensitive_col].map(type).eq(str).all():
+            col2 = col2.astype("category").cat.codes
+
+        if abs(col1.corr(col2)) > corr_cutoff:
+            correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
+
+    return correlation_list
+
+
+def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
+    """Computes a distance between the input strings using the Ratcliff-Obershelp algorithm."""
+    if s1 is None or s2 is None:
+        return 1
+
+    return 1 - SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
 
 
 def _detect_name(
