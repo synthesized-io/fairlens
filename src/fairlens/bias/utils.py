@@ -252,6 +252,7 @@ def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) ->
 
 def parse_args(
     df: pd.DataFrame,
+    target_attr: str,
     group1: Union[Optional[Dict[str, List[str]]], pd.Series],
     group2: Union[Optional[Dict[str, List[str]]], pd.Series],
 ) -> Tuple[pd.Series, pd.Series]:
@@ -260,6 +261,8 @@ def parse_args(
     Args:
         df (pd.DataFrame):
             The input dataframe.
+        target_attr (str):
+            The target attribute.
         group1 (Union[Optional[Dict[str, List[str]]], pd.Series]):
             The first group of interest.
         group2 (Union[Optional[Dict[str, List[str]]], pd.Series]):
@@ -284,7 +287,9 @@ def parse_args(
         raise InsufficientParamError()
 
     if isinstance(group1, dict) and isinstance(group2, dict):
-        return get_predicates(df, group1, group2)
+        pred1, pred2 = get_predicates(df, group1, group2)
+
+        return df[pred1][target_attr], df[pred2][target_attr]
 
     raise IllegalArgumentException()
 
