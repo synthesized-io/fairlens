@@ -277,7 +277,7 @@ def detect_names_df(
         return sensitive_dict
 
 
-def detect_correlation(
+def find_sensitive_correlations(
     df: pd.DataFrame,
     threshold: float = 0.1,
     str_distance: Callable[[Optional[str], Optional[str]], float] = None,
@@ -315,13 +315,14 @@ def detect_correlation(
     correlation_dict = dict()
 
     for sensitive_col in sensitive_dict.keys():
+        col1 = df[sensitive_col]
+        if df[sensitive_col].map(type).eq(str).all():
+            col1 = df[sensitive_col].astype("category").cat.codes
         for non_sensitive_col in non_sensitive_cols:
-            col1 = df[sensitive_col]
+
             col2 = df[non_sensitive_col]
 
             # Turn string columns into numerical representation to be able to correlate.
-            if df[sensitive_col].map(type).eq(str).all():
-                col1 = df[sensitive_col].astype("category").cat.codes
             if df[non_sensitive_col].map(type).eq(str).all():
                 col2 = df[sensitive_col].astype("category").cat.codes
 
@@ -331,7 +332,7 @@ def detect_correlation(
     return correlation_dict
 
 
-def check_column_correlation(
+def find_column_correlation(
     col: Union[str, pd.Series],
     df: pd.DataFrame,
     threshold: float = 0.1,
@@ -378,12 +379,13 @@ def check_column_correlation(
     else:
         col1 = col
 
+    if col1.map(type).eq(str).all():
+        col1 = col1.astype("category").cat.codes
+
     for sensitive_col in sensitive_dict.keys():
         col2 = df[sensitive_col]
 
         # Turn string columns into numerical representations.
-        if col1.map(type).eq(str).all():
-            col1 = col1.astype("category").cat.codes
         if df[sensitive_col].map(type).eq(str).all():
             col2 = col2.astype("category").cat.codes
 

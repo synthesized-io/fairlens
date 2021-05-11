@@ -108,7 +108,7 @@ def test_correlation():
     data = [["male", 10, 60], ["female", 10, 80], ["male", 10, 60], ["female", 10, 80]]
     df = pd.DataFrame(data, columns=col_names)
     res = {"score": ("gender", "Gender")}
-    assert dt.detect_correlation(df) == res
+    assert dt.find_sensitive_correlations(df) == res
 
 
 def test_double_correlation():
@@ -121,7 +121,7 @@ def test_double_correlation():
     ]
     df = pd.DataFrame(data, columns=col_names)
     res = {"corr1": ("gender", "Gender"), "corr2": ("nationality", "Nationality")}
-    assert dt.detect_correlation(df) == res
+    assert dt.find_sensitive_correlations(df) == res
 
 
 def test_column_correlation():
@@ -135,8 +135,8 @@ def test_column_correlation():
     df = pd.DataFrame(data, columns=col_names)
     res1 = [("gender", "Gender")]
     res2 = [("nationality", "Nationality")]
-    assert dt.check_column_correlation("corr1", df) == res1
-    assert dt.check_column_correlation("corr2", df) == res2
+    assert dt.find_column_correlation("corr1", df) == res1
+    assert dt.find_column_correlation("corr2", df) == res2
 
 
 def test_series_correlation():
@@ -156,5 +156,5 @@ def test_series_correlation():
     s2 = pd.Series([120, 130, 210, 220, 200, 115])
     res1 = [("race", "Ethnicity"), ("marital", "Family Status")]
     res2 = [("age", "Age")]
-    assert set(dt.check_column_correlation(s1, df, corr_cutoff=0.9)) == set(res1)
-    assert set(dt.check_column_correlation(s2, df, corr_cutoff=0.9)) == set(res2)
+    assert set(dt.find_column_correlation(s1, df, corr_cutoff=0.9)) == set(res1)
+    assert set(dt.find_column_correlation(s2, df, corr_cutoff=0.9)) == set(res2)
