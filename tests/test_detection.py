@@ -107,7 +107,7 @@ def test_correlation():
     col_names = ["gender", "random", "score"]
     data = [["male", 10, 60], ["female", 10, 80], ["male", 10, 60], ["female", 10, 80]]
     df = pd.DataFrame(data, columns=col_names)
-    res = {"score": ("gender", "Gender")}
+    res = {"score": [("gender", "Gender")]}
     assert dt.find_sensitive_correlations(df) == res
 
 
@@ -120,7 +120,42 @@ def test_double_correlation():
         ["woman", "french", 1300, 10, 10],
     ]
     df = pd.DataFrame(data, columns=col_names)
-    res = {"corr1": ("gender", "Gender"), "corr2": ("nationality", "Nationality")}
+    res = {"corr1": [("gender", "Gender")], "corr2": [("nationality", "Nationality")]}
+    assert dt.find_sensitive_correlations(df) == res
+
+
+def test_multiple_correlation():
+    col_names = ["race", "age", "score", "entries", "marital", "credit", "corr1"]
+    data = [
+        ["arabian", 21, 10, 2000, "married", 10, 60],
+        ["carribean", 20, 10, 3000, "single", 10, 90],
+        ["indo-european", 41, 10, 1900, "widowed", 10, 120],
+        ["carribean", 40, 10, 2000, "single", 10, 90],
+        ["indo-european", 42, 10, 2500, "widowed", 10, 120],
+        ["arabian", 19, 10, 2200, "married", 10, 60],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    # The first series is correlated with the "race" and "family status" columns, while the second is
+    # correlated with the "age" column
+    res = {"corr1": [("race", "Ethnicity"), ("marital", "Family Status")]}
+    assert dt.find_sensitive_correlations(df, corr_cutoff=0.9) == res
+
+
+def test_common_correlation():
+    col_names = ["race", "age", "score", "entries", "marital", "credit", "corr1", "corr2"]
+    data = [
+        ["arabian", 21, 10, 2000, "married", 10, 60, 120],
+        ["carribean", 20, 10, 3000, "single", 10, 90, 130],
+        ["indo-european", 41, 10, 1900, "widowed", 10, 120, 210],
+        ["carribean", 40, 10, 2000, "single", 10, 90, 220],
+        ["indo-european", 42, 10, 2500, "widowed", 10, 120, 200],
+        ["arabian", 19, 10, 2200, "married", 10, 60, 115],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    res = {
+        "corr1": [("race", "Ethnicity"), ("age", "Age"), ("marital", "Family Status")],
+        "corr2": [("race", "Ethnicity"), ("age", "Age"), ("marital", "Family Status")],
+    }
     assert dt.find_sensitive_correlations(df) == res
 
 
