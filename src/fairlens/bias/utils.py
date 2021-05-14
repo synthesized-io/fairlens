@@ -1,10 +1,10 @@
 from enum import Enum
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 
-from .exceptions import IllegalArgumentException, InsufficientParamError, InvalidAttributeError
+from .exceptions import InvalidAttributeError
 
 
 class DistrType(Enum):
@@ -250,50 +250,6 @@ def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) ->
     return preds
 
 
-def parse_args(
-    df: pd.DataFrame,
-    target_attr: str,
-    group1: Union[Optional[Dict[str, List[str]]], pd.Series],
-    group2: Union[Optional[Dict[str, List[str]]], pd.Series],
-) -> Tuple[pd.Series, pd.Series]:
-    """A wrapper for get_predicates.
-
-    Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        target_attr (str):
-            The target attribute.
-        group1 (Union[Optional[Dict[str, List[str]]], pd.Series]):
-            The first group of interest.
-        group2 (Union[Optional[Dict[str, List[str]]], pd.Series]):
-            The second group of interest.
-
-    Raises:
-        InsufficientParamError:
-            Indicates insufficient parameters.
-
-        IllegalArgumentException:
-            Indicates illegal argument(s) passed to the function.
-
-    Returns:
-        Tuple[pd.Series, pd.Series]:
-            A tuple of pandas series containing the values in each group.
-    """
-
-    if isinstance(group1, pd.Series) and isinstance(group2, pd.Series):
-        return group1, group2
-
-    if not group1 and not group2:
-        raise InsufficientParamError()
-
-    if isinstance(group1, dict) and isinstance(group2, dict):
-        pred1, pred2 = get_predicates(df, group1, group2)
-
-        return df[pred1][target_attr], df[pred2][target_attr]
-
-    raise IllegalArgumentException()
-
-
 def compute_probabilities(space: np.ndarray, *data: pd.Series) -> Tuple[np.ndarray, ...]:
     """Compute the probability distributions for the given data and return them in arrays aligned to the space.
 
@@ -339,3 +295,15 @@ def fd_opt_bins(column: pd.Series) -> int:
     iqr = column.quantile(0.75) - column.quantile(0.25)
 
     return int((column.max() - column.min()) / (2 * iqr * (n ** (-1 / 3))))
+
+
+def get_all_subclasses(cls):
+    if len(cls.__subclasses__()) == 0:
+        return [cls]
+
+    all_subclasses = []
+
+    for subclass in cls.__subclasses__():
+        all_subclasses.extend(get_all_subclasses(subclass))
+
+    return all_subclasses

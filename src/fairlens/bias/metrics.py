@@ -1,58 +1,34 @@
-from typing import Dict, List, Optional, Tuple, Union
+"""
+Collection of Metrics that measure the distance, or similarity, between two datasets.
+"""
+from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
-from pyemd import emd as pemd
-from pyemd import emd_samples
+import pyemd
 from scipy.stats import entropy, ks_2samp
 
+from . import p_value as pv
 from . import utils
+from .distance import CategoricalDistanceMetric, DistanceMetric
+from .exceptions import IllegalArgumentException
 
 
-def class_imbalance(
-    df: pd.DataFrame,
-    target_attr: str,
-    group1: Union[Dict[str, List[str]], pd.Series],
-    group2: Union[Dict[str, List[str]], pd.Series],
-) -> float:
-    """Computes the class imbalance between group1 and group2 with respect to the target attribute.
-
-    Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        target_attr (str):
-            The target attribute in the dataframe.
-        group1 (Union[Dict[str, List[str]], pd.Series]):
-            The first group of interest. Can be a dictionary mapping from attribute to values
-            or the raw data in a pandas series.
-        group2 (Union[Dict[str, List[str]], pd.Series]):
-            The second group of interest. Can be a dictionary mapping from attribute to values
-            or the raw data in a pandas series.
-
-    Returns:
-        float:
-            The class imbalance as a float.
-
-    Examples:
-        >>> df = pd.read_csv("datasets/compas.csv")
-        >>> class_imbalance(df, 'RawScore', {'Ethnicity': ['African-American']}, {'Ethnicity': ['Caucasian']})
-        0.021244309559939303
-    """
-
-    g1, g2 = utils.parse_args(df, target_attr, group1, group2)
-
-    return (g1.nunique() - g2.nunique()) / df[target_attr].nunique()
-
-
-def emd(
+def stat_distance(
     df: pd.DataFrame,
     target_attr: str,
     group1: Union[Dict[str, List[str]], pd.Series],
     group2: Union[Optional[Dict[str, List[str]]], pd.Series] = None,
-) -> float:
-    """Computes the Earth Mover's Distance between the probability distributions of group1 and group2 with
-    respect to the target attribute. If group1 is a dictionary and group2 is None then the distance is
-    computed between group1 and the rest of the dataset.
+    mode: str = "auto",
+    pval: bool = False,
+    **kwargs
+) -> Union[float, Tuple[float, float]]:
+    """Computes the statistical distance between two probability distributions ie. group 1 and group 2, with respect
+    to the target attribute. The distance metric can be chosen through the mode parameter. If mode is set to "auto",
+    the most suitable metric depending on the target attributes' distribution is chosen.
+
+    If group1 is a dictionary and group2 is None then the distance is computed between group1 and the rest of the
+    dataset.
 
     Args:
         df (pd.DataFrame):
@@ -65,181 +41,226 @@ def emd(
         group2 (Union[Optional[Dict[str, List[str]]], pd.Series]], optional):
             The second group of interest. Can be a dictionary mapping from attribute to values
             or the raw data in a pandas series. Defaults to None.
+        mode (str):
+            Which distance metric to use. Can be the names of classes from fairlens.bias.metrics, or their
+            __repr__() strings. If set to "auto", it automatically picks the best metric based on the
+            distribution of the target attribute. Defaults to "auto".
+        pval (str):
+            Returns the a suitable p-value for the metric if it exists. Defaults to False.
+        **kwargs:
+            Keyword arguments for the distance metric.
 
     Returns:
-        float:
-            The Earth Mover's Distance as a float.
-
-    Examples:
-        >>> df = pd.read_csv("datasets/compas.csv")
-        >>> emd(df, 'RawScore', {'Ethnicity': ['African-American']}, {'Ethnicity': ['Caucasian']})
-        0.15406599999999984
-        >>> emd(df, 'RawScore', {'Ethnicity': ['African-American']})
-        0.16237499999999971
+        Tuple[float, ...]:
+            The distance as a float, and the p-value if pval is set to True and can be computed.
     """
 
-    g1, g2 = utils.parse_args(df, target_attr, group1, group2)
+    # Parse group arguments into pandas series'
+    if isinstance(group1, dict) and isinstance(group2, dict):
+        pred1, pred2 = utils.get_predicates(df, group1, group2)
 
-    if utils.infer_distr_type(df[target_attr]).is_continuous():
-        return emd_samples(g1, g2)
+        group1 = df[pred1][target_attr]
+        group2 = df[pred2][target_attr]
 
-    space = df[target_attr].unique()
+    if not isinstance(group1, pd.Series) or not isinstance(group2, pd.Series):
+        raise IllegalArgumentException()
 
-    p, q = utils.compute_probabilities(space, g1, g2)
+    DistClass: Any = None
 
-    xx, yy = np.meshgrid(space, space)
-    distance_space = np.abs(xx - yy)
+    # Choose statistical distance metric
+    if mode == "auto":
+        distr_type = utils.infer_distr_type(df[target_attr])
+        if distr_type.is_continuous():
+            DistClass = KolmogorovSmirnovDistance
+        elif distr_type.is_binary():
+            DistClass = BinomialDistance
+        else:
+            DistClass = EarthMoversDistanceCategorical
 
-    return pemd(p, q, distance_space)
+    else:
+        class_map = {}
+        for cl in utils.get_all_subclasses(DistanceMetric):
+            if cl.id():
+                class_map[cl.id()] = cl
+            class_map[cl.__name__] = cl
+
+        if mode not in class_map:
+            raise ValueError("Invalid mode")
+
+        DistClass = class_map[mode]
+
+    dist_metric = DistClass(df[target_attr], group1, group2, **kwargs)
+
+    dist_result = dist_metric(p_value=pval)
+
+    if pval and dist_result.p_value:
+        return dist_result.distance, dist_result.p_value
+
+    return dist_result.distance
 
 
-def ks_distance(
-    df: pd.DataFrame,
-    target_attr: str,
-    group1: Union[Dict[str, List[str]], pd.Series],
-    group2: Union[Optional[Dict[str, List[str]]], pd.Series] = None,
-) -> Tuple[float, float]:
-    """Performs the Kolmogorov–Smirnov test between the probability distributions of group1 and group2 with
-    respect to the target attribute. If group1 is a dictionary and group2 is None then the distance is
-    computed between group1 and the rest of the dataset.
-
-    Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        target_attr (str):
-            The target attribute in the dataframe.
-        group1 (Union[Dict[str, List[str]], pd.Series]):
-            The first group of interest. Can be a dictionary mapping from attribute to values
-            or the raw data in a pandas series.
-        group2 (Union[Optional[Dict[str, List[str]]], pd.Series]], optional):
-            The second group of interest. Can be a dictionary mapping from attribute to values
-            or the raw data in a pandas series. Defaults to None.
-
-    Returns:
-        Tuple[float, float]:
-            A tuple containing the Kolmogorov–Smirnov statistic and the associated p-value
-
-    Examples:
-        >>> df = pd.read_csv("datasets/compas.csv")
-        >>> ks_distance(df, 'RawScore', {'Sex': ['Male']}, {'Sex': ['Female']})
-        (0.0574598854742705, 2.585181602569765e-30)
-        >>> ks_distance(df, 'RawScore', {'FirstName': ['Stephanie']}, {'FirstName': ['Kevin']})
-        (0.0744047619047619, 0.8522462138629425)
+class ClassImbalance(DistanceMetric):
+    """
+    Class imbalance between the number samples in both distributions.
     """
 
-    g1, g2 = utils.parse_args(df, target_attr, group1, group2)
+    @property
+    def distance(self) -> float:
+        return (self.x.nunique() - self.y.nunique()) / self.xy.nunique()
 
-    statistic, pval = ks_2samp(g1, g2)
+    @staticmethod
+    def id():
+        return "class_imbalance"
 
-    return statistic, pval
 
-
-def kl_divergence(
-    df: pd.DataFrame,
-    target_attr: str,
-    group1: Union[Dict[str, List[str]], pd.Series],
-    group2: Union[Optional[Dict[str, List[str]]], pd.Series] = None,
-) -> float:
-    """Computes the Kullback–Leibler Divergence or Relative Entropy between the probability distributions of the
-    two groups with respect to the target attribute. If group1 is a dictionary and group2 is None then the distance is
-    computed between group1 and the rest of the dataset.
-
-    Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        target_attr (str):
-            The target attribute in the dataframe.
-        group1 (Union[Dict[str, List[str]], pd.Series]):
-            The first group of interest. Can be a dictionary mapping from attribute to values
-            or the raw data in a pandas series.
-        group2 (Union[Optional[Dict[str, List[str]]], pd.Series]], optional):
-            The second group of interest. Can be a dictionary mapping from attribute to values
-            or the raw data in a pandas series. Defaults to None.
-
-    Returns:
-        float:
-            The entropy as a float.
+class BinomialDistance(DistanceMetric):
+    """
+    Difference distance between two binomal data samples.
+    i.e p_x - p_y, where p_x, p_y are the probabilities of success in x and y, respectively.
+    The p-value computed is for the null hypothesis is that the probability of success is p_y.
+    Data is assumed to be a series of 1, 0 (success, failure) Bernoulli random variates.
     """
 
-    g1, g2 = utils.parse_args(df, target_attr, group1, group2)
+    @property
+    def distance(self) -> float:
+        return self.x.mean() - self.y.mean()
 
-    space = df[target_attr].unique()
+    @property
+    def p_value(self) -> float:
+        p_obs = self.x.mean()
+        p_null = self.y.mean()
+        n = len(self.x)
+        return pv.binominal_proportion_p_value(p_obs, p_null, n)
 
-    p, q = utils.compute_probabilities(space, g1, g2)
+    @staticmethod
+    def id():
+        return "binomial"
 
-    return entropy(p, q)
 
+class EarthMoversDistance(DistanceMetric):
+    """
+    Earth movers distance (EMD), aka Wasserstein 1-distance, for continous data.
+    The samples are binned automatically by pyemd.
 
-def js_divergence(
-    df: pd.DataFrame,
-    target_attr: str,
-    group1: Union[Dict[str, List[str]], pd.Series],
-    group2: Union[Optional[Dict[str, List[str]]], pd.Series] = None,
-) -> float:
-    """Computes the Jensen-Shannon Divergence between the probability distributions of the two groups with
-    respect to the target attribute. If group1 is a dictionary and group2 is None then the distance is
-    computed between group1 and the rest of the dataset.
-
-    Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        target_attr (str):
-            The target attribute in the dataframe.
-        group1 (Union[Dict[str, List[str]], pd.Series]):
-            The first group of interest. Can be a dictionary mapping from attribute to values
-            or the raw data in a pandas series.
-        group2 (Union[Optional[Dict[str, List[str]]], pd.Series]], optional):
-            The second group of interest. Can be a dictionary mapping from attribute to values
-            or the raw data in a pandas series. Defaults to None.
-
-    Returns:
-        float:
-            The entropy as a float.
+    Keyword arguments are passed to pyemd.emd_samples. ie. extra_mass_penalty, distance
     """
 
-    g1, g2 = utils.parse_args(df, target_attr, group1, group2)
+    @property
+    def distance(self) -> float:
+        return pyemd.emd_samples(self.x, self.y, **self.kwargs)
 
-    space = df[target_attr].unique()
-
-    p, q, pq = utils.compute_probabilities(space, g1, g2, df[target_attr])
-
-    return (entropy(p, pq) + entropy(q, pq)) / 2
+    @staticmethod
+    def id():
+        return "emd"
 
 
-def lp_norm(
-    df: pd.DataFrame,
-    target_attr: str,
-    group1: Union[Dict[str, List[str]], pd.Series],
-    group2: Union[Optional[Dict[str, List[str]]], pd.Series] = None,
-    order: Union[int, str] = 2,
-) -> float:
-    """Computes the LP Norm between the probability distributions of the two groups with respect to the
-    target attribute. If group1 is a dictionary and group2 is None then the distance is computed between
-    group1 and the rest of the dataset.
+class EarthMoversDistanceCategorical(CategoricalDistanceMetric):
+    """
+    Earth movers distance (EMD), aka Wasserstein 1-distance, for categorical data.
 
-    Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        target_attr (str):
-            The target attribute in the dataframe.
-        group1 (Union[Dict[str, List[str]], pd.Series]):
-            The first group of interest. Can be a dictionary mapping from attribute to values
-            or the raw data in a pandas series.
-        group2 (Union[Optional[Dict[str, List[str]]], pd.Series]], optional):
-            The second group of interest. Can be a dictionary mapping from attribute to values
-            or the raw data in a pandas series. Defaults to None.
-        order (Union[int, str], optional):
-            The order of the norm (p). Passed as 'ord' to numpy.linalg.norm. Defaults to 2.
-
-    Returns:
-        float:
-            The norm as a float.
+    Bins can be included as a keyword argument 'bins' for pre-binned continous data, however
+    using EarthMoversDistance on the raw data is faster and recommended.
     """
 
-    g1, g2 = utils.parse_args(df, target_attr, group1, group2)
+    @property
+    def distance(self) -> float:
+        if "bins" in self.kwargs:
+            # Use pair-wise euclidean distances between bin centers for scale data
+            bins = self.kwargs["bins"]
+            bin_centers = 2 * (bins[:-1] + np.diff(bins) / 2.0,)
 
-    space = df[target_attr].unique()
+            xx, yy = np.meshgrid(*bin_centers)
+            distance_metric = np.abs(xx - yy).astype(np.float64)
+        else:
+            distance_metric = 1 - np.eye(len(self.pq))
 
-    p, q = utils.compute_probabilities(space, g1, g2)
+        return pyemd.emd(self.p, self.q, distance_metric)
 
-    return np.linalg.norm(p - q, ord=order)
+    @staticmethod
+    def id():
+        return "emd_categorical"
+
+
+class KolmogorovSmirnovDistance(DistanceMetric):
+    """
+    Kolmogorov-Smirnov (KS) distance between two data samples.
+
+    Keyword arguments are passed to scipy.stats.ks_2amp. ie. alternative, mode
+    """
+
+    @property
+    def distance(self) -> float:
+        """
+        Calculate the KS distance.
+
+        Returns:
+            The KS distance.
+        """
+        return ks_2samp(self.x, self.y, **self.kwargs)[0]
+
+    @property
+    def p_value(self):
+        return ks_2samp(self.x, self.y, **self.kwargs)[1]
+
+    @staticmethod
+    def id():
+        return "ks_distance"
+
+
+class KullbackLeiblerDivergence(CategoricalDistanceMetric):
+    """
+    Kullback–Leibler Divergence or Relative Entropy between the probability distributions of the
+    two groups with respect to the target attribute.
+    """
+
+    @property
+    def distance(self) -> float:
+        return entropy(self.p, self.q)
+
+    @staticmethod
+    def id():
+        return "kl_divergence"
+
+
+class JensenShannonDivergence(CategoricalDistanceMetric):
+    """
+    Jensen-Shannon Divergence or Relative Entropy between the probability distributions of the
+    two groups with respect to the target attribute.
+    """
+
+    @property
+    def distance(self) -> float:
+        return (entropy(self.p, self.pq) + entropy(self.q, self.pq)) / 2
+
+    @staticmethod
+    def id():
+        return "js_divergence"
+
+
+class LNorm(CategoricalDistanceMetric):
+    """
+    LP Norm between the probability distributions of the two groups with respect to the target attribute.
+
+    Keyword arguments are passed to np.linalg.norm. ie. ord
+    """
+
+    @property
+    def distance(self) -> float:
+        return np.linalg.norm(self.p - self.q)
+
+    def __repr__(self):
+        return "norm"
+
+
+class HellingerDistance(CategoricalDistanceMetric):
+    """
+    Hellinger distance between the two distributions.
+    """
+
+    @property
+    def distance(self) -> float:
+        return np.linalg.norm(np.sqrt(self.p) - np.sqrt(self.q)) / np.sqrt(2)
+
+    @staticmethod
+    def id():
+        return "hellinger"
