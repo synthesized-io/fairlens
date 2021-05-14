@@ -282,7 +282,7 @@ def find_sensitive_correlations(
     threshold: float = 0.1,
     str_distance: Callable[[Optional[str], Optional[str]], float] = None,
     corr_cutoff: float = 0.75,
-) -> Dict[str, Tuple[str, Optional[str]]]:
+) -> Dict[str, List[Tuple[str, Optional[str]]]]:
     """Looks at the columns that are not considered to be immediately sensitive and finds if any is strongly
     correlated with a sensitive column, specifying both the sensitive column name and the sensitive category
     it is a part of.
@@ -314,20 +314,24 @@ def find_sensitive_correlations(
 
     correlation_dict = dict()
 
-    for sensitive_col in sensitive_dict.keys():
-        col1 = df[sensitive_col]
-        if df[sensitive_col].map(type).eq(str).all():
-            col1 = df[sensitive_col].astype("category").cat.codes
-        for non_sensitive_col in non_sensitive_cols:
+    for non_sensitive_col in non_sensitive_cols:
+        col1 = df[non_sensitive_col]
+        if df[non_sensitive_col].map(type).eq(str).all():
+            col1 = df[non_sensitive_col].astype("category").cat.codes
 
-            col2 = df[non_sensitive_col]
+        correlation_list = list()
 
+        for sensitive_col in sensitive_dict.keys():
+            col2 = df[sensitive_col]
             # Turn string columns into numerical representation to be able to correlate.
-            if df[non_sensitive_col].map(type).eq(str).all():
+            if df[sensitive_col].map(type).eq(str).all():
                 col2 = df[sensitive_col].astype("category").cat.codes
 
             if abs(col1.corr(col2)) > corr_cutoff:
-                correlation_dict[non_sensitive_col] = (sensitive_col, sensitive_dict[sensitive_col])
+                correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
+
+        if len(correlation_list) > 0:
+            correlation_dict[non_sensitive_col] = correlation_list
 
     return correlation_dict
 
