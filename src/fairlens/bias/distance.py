@@ -1,17 +1,10 @@
 from abc import abstractmethod
-from dataclasses import dataclass
-from typing import Optional
+from typing import Tuple, Union
 
 import pandas as pd
 
 from . import p_value as pv
 from . import utils
-
-
-@dataclass
-class DistanceResult:
-    distance: float
-    p_value: Optional[float] = None
 
 
 class DistanceMetric:
@@ -44,7 +37,7 @@ class DistanceMetric:
         self.xy = column
         self.kwargs = kwargs
 
-    def __call__(self, p_value: bool = False) -> DistanceResult:
+    def __call__(self, p_value: bool = False) -> Union[Tuple[float, float], float]:
         """Calculate the distance between two distributions.
 
         Args:
@@ -53,15 +46,14 @@ class DistanceMetric:
                 overrides the DistanceMetric.p_value method. Defaults to False.
 
         Returns:
-            DistanceResult:
-                The calculated result.
+            Union[Tuple[float, float], float]:
+                The computed distance, paired with the p-value if the respective flag is set to True.
         """
 
-        result = DistanceResult(self.distance)
         if p_value:
-            result.p_value = self.p_value
+            return self.distance, self.p_value
 
-        return result
+        return self.distance
 
     @property
     @abstractmethod
@@ -86,7 +78,7 @@ class DistanceMetric:
     def _distance_call(self, x: pd.Series, y: pd.Series) -> float:
         cls = type(self)
         obj = cls(self.xy, x, y, **self.kwargs)
-        return obj().distance
+        return obj.distance
 
     @staticmethod
     @abstractmethod

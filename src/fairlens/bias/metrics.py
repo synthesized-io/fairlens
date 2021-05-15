@@ -20,8 +20,8 @@ def stat_distance(
     group1: Union[Dict[str, List[str]], pd.Series],
     group2: Union[Optional[Dict[str, List[str]]], pd.Series] = None,
     mode: str = "auto",
-    pval: bool = False,
-    **kwargs
+    p_value: bool = False,
+    **kwargs,
 ) -> Union[float, Tuple[float, float]]:
     """Computes the statistical distance between two probability distributions ie. group 1 and group 2, with respect
     to the target attribute. The distance metric can be chosen through the mode parameter. If mode is set to "auto",
@@ -45,18 +45,28 @@ def stat_distance(
             Which distance metric to use. Can be the names of classes from fairlens.bias.metrics, or their
             __repr__() strings. If set to "auto", it automatically picks the best metric based on the
             distribution of the target attribute. Defaults to "auto".
-        pval (str):
+        p_value (bool):
             Returns the a suitable p-value for the metric if it exists. Defaults to False.
         **kwargs:
             Keyword arguments for the distance metric.
 
     Returns:
-        Tuple[float, ...]:
-            The distance as a float, and the p-value if pval is set to True and can be computed.
+        Union[float, Tuple[float, float]]:
+            The distance as a float, and the p-value if p_value is set to True and can be computed.
+
+    Examples:
+        >>> df = pd.read_csv("datasets/compas.csv")
+        >>> group1 = {"Ethnicity": ["African-American", "African-Am"]}
+        >>> group2 = {"Ethnicity": ["Caucasian"]}
+        >>> group3 = {"Ethnicity": ["Asian"]}
+        >>> stat_distance(df, "RawScore", group1, group2, mode="auto")
+        0.1133214633580949
+        >>> stat_distance(df, "RawScore", group3, group2, mode="auto", p_value=True)
+        (0.0816143577815524, 0.02693435054772131)
     """
 
     # Parse group arguments into pandas series'
-    if isinstance(group1, dict) and isinstance(group2, dict):
+    if isinstance(group1, dict) and (isinstance(group2, dict) or group2 is None):
         pred1, pred2 = utils.get_predicates(df, group1, group2)
 
         group1 = df[pred1][target_attr]
@@ -79,24 +89,25 @@ def stat_distance(
 
     else:
         class_map = {}
+        valid_modes = []
         for cl in utils.get_all_subclasses(DistanceMetric):
             if cl.id():
                 class_map[cl.id()] = cl
+                valid_modes.append(cl.id())
+            else:
+                valid_modes.append(cl.__name__)
+
+            # All mappings from class name to class kept for compatibility
             class_map[cl.__name__] = cl
 
         if mode not in class_map:
-            raise ValueError("Invalid mode")
+            raise ValueError(f"Invalid mode. Valid modes include:\n{valid_modes}")
 
         DistClass = class_map[mode]
 
     dist_metric = DistClass(df[target_attr], group1, group2, **kwargs)
 
-    dist_result = dist_metric(p_value=pval)
-
-    if pval and dist_result.p_value:
-        return dist_result.distance, dist_result.p_value
-
-    return dist_result.distance
+    return dist_metric(p_value=p_value)
 
 
 class ClassImbalance(DistanceMetric):
@@ -248,7 +259,8 @@ class LNorm(CategoricalDistanceMetric):
     def distance(self) -> float:
         return np.linalg.norm(self.p - self.q)
 
-    def __repr__(self):
+    @staticmethod
+    def id():
         return "norm"
 
 

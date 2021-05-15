@@ -6,17 +6,20 @@ from scipy.stats import binom_test
 
 
 def bootstrap_pvalue(t_obs: float, t_distribution: pd.Series, alternative: str = "two-sided") -> float:
-    """
-    Calculate a p-value using a bootstrapped test statistic distribution
+    """Calculate a p-value using a bootstrapped test statistic distribution
 
     Args:
-        t_obs: Observed value of the test statistic.
-        t_distribution: Samples of test statistic distribution under the null hypothesis.
-        alternative: Optional; Indicates the alternative hypothesis.
-            One of 'two-sided', 'greater' ,'less',
+        t_obs (float):
+            Observed value of the test statistic.
+        t_distribution (pd.Series):
+            Samples of test statistic distribution under the null hypothesis.
+        alternative (str, optional):
+            Indicates the alternative hypothesis. One of "two-sided", "greater", "less".
+            Defaults to "two-sided".
 
     Returns:
-        The p-value under the null hypothesis.
+        float:
+            The p-value under the null hypothesis.
     """
 
     if alternative not in ("two-sided", "greater", "less"):
@@ -42,17 +45,21 @@ def bootstrap_statistic(
     n_samples: int = 1000,
     sample_size=None,
 ) -> np.ndarray:
-    """
-    Compute the samples of a statistic estimate using the bootstrap method.
+    """Compute the samples of a statistic estimate using the bootstrap method.
 
     Args:
-        data: Data on which to compute the statistic.
-        statistic: Function that computes the statistic.
-        n_samples: Optional; Number of bootstrap samples to perform.
+        data (Tuple[pd.Series, ...]):
+            Data on which to compute the statistic in a tuple.
+        statistic (Callable[[pd.Series, pd.Series], float]):
+            Function that computes the statistic.
+        n_samples (int, optional):
+            Number of bootstrap samples to perform.
 
     Returns:
-        The bootstrap samples.
+        np.ndarray:
+            The bootstrap samples.
     """
+
     if sample_size is None:
         sample_size = max((len(x) for x in data))
 
@@ -70,16 +77,19 @@ def bootstrap_statistic(
 def bootstrap_binned_statistic(
     data: Tuple[pd.Series, ...], statistic: Callable[[pd.Series, pd.Series], float], n_samples: int = 1000
 ) -> np.ndarray:
-    """
-    Compute the samples of a binned statistic estimate using the bootstrap method.
+    """Compute the samples of a binned statistic estimate using the bootstrap method.
 
     Args:
-        data: Data for which to compute the statistic.
-        statistic: Function that computes the statistic.
-        n_samples: Optional; Number of bootstrap samples to perform.
+        data (Tuple[pd.Series, ...]):
+            Data on which to compute the statistic in a tuple.
+        statistic (Callable[[pd.Series, pd.Series], float]):
+            Function that computes the statistic.
+        n_samples (int, optional):
+            Number of bootstrap samples to perform.
 
     Returns:
-        The bootstrap samples.
+        np.ndarray:
+            The bootstrap samples.
     """
 
     statistic_samples = np.empty(n_samples)
@@ -101,19 +111,24 @@ def bootstrap_binned_statistic(
 
 
 def binominal_proportion_p_value(p_obs: float, p_null: float, n: int, alternative: str = "two-sided") -> float:
-    """
-    Calculate an exact p-value for an observed binomial proportion of a sample.
+    """Calculate an exact p-value for an observed binomial proportion of a sample.
 
     Args:
-        p_obs: Observed proportion of successes.
-        p_null: Expected proportion of sucesses under null hypothesis.
-        n: Sample size.
-        alternative: Optional; Indicates the alternative hypothesis.
-            One of 'two-sided', 'greater' ,'less',
+        p_obs (float):
+            Observed proportion of successes.
+        p_null (float):
+            Expected proportion of sucesses under null hypothesis.
+        n (int):
+            Sample size.
+        alternative (str, optional):
+            Indicates the alternative hypothesis. One of "two-sided", "greater", "less".
+            Defaults to "two-sided".
 
     Returns:
-        The p-value under the null hypothesis.
+        float:
+            The p-value under the null hypothesis.
     """
+
     k = np.ceil(p_obs * n)
     return binom_test(k, n, p_null, alternative)
 
@@ -132,15 +147,21 @@ def permutation_test(
     and y are from the same distribution.
 
     Args:
-        x: First data sample.
-        y: Second data sample.
-        t: Callable that returns the test statistic.
-        alternative: Optional; Indicates the alternative hypothesis.
-            One of 'two-sided', 'greater' ,'less',
-        n_perm: number of permutations.
+        x (pd.Series):
+            First data sample.
+        y (pd.Series):
+            Second data sample.
+        t (Callable[[pd.Series, pd.Series], float]):
+            Callable that returns the test statistic.
+        n_perm (int):
+            Number of permutations.
+        alternative: Optional;
+            Indicates the alternative hypothesis. One of "two-sided', "greater", "less".
+            Defaults to "two-sided".
 
     Returns:
-        The p-value of t_obs under the null hypothesis.
+        float:
+            The p-value of t_obs under the null hypothesis.
     """
 
     if alternative not in ("two-sided", "greater", "less"):
