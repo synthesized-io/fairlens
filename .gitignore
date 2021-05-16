@@ -4,8 +4,10 @@ __pycache__
 pip-wheel-metadata/
 build/
 dist/
+*.swp
 
 docs/_build/
+docs/savefig
 
 .env/
 
@@ -14,5 +16,4 @@ docs/_build/
 .coverage
 test-results/
 
-*.swp
 plots/
