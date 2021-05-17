@@ -273,8 +273,9 @@ def compute_probabilities(space: np.ndarray, *data: pd.Series) -> Tuple[np.ndarr
         for j in range(n):
             ps[j][i] = gs[j].get(val, 0)
 
-    for i in range(n):
-        ps[i] /= ps[i].sum()
+    with np.errstate(divide="ignore", invalid="ignore"):
+        for i in range(n):
+            ps[i] = np.nan_to_num(ps[i] / ps[i].sum())
 
     return tuple(ps)
 
