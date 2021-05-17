@@ -46,14 +46,29 @@ def test_binomial_distance():
 
 def test_emd():
     assert metrics.EarthMoversDistance(target, group1, group1).distance == 0
+    assert metrics.EarthMoversDistance(pd.Series([42]), pd.Series([1, 1, 1]), pd.Series([0, 0, 0])).distance == 0.75
+    assert metrics.EarthMoversDistance(pd.Series([42]), pd.Series([1, 0]), pd.Series([1, 0])).distance == 0
+    assert (
+        metrics.EarthMoversDistance(pd.Series([42]), pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 0, 0])).distance == 0.375
+    )
 
 
 def test_emd_categorical():
     assert metrics.EarthMoversDistanceCategorical(target, group1, group1).distance == 0
+    assert (
+        metrics.EarthMoversDistanceCategorical(pd.Series([0, 0, 1, 1]), pd.Series([1, 1]), pd.Series([0, 0])).distance
+        == 1
+    )
 
 
 def test_ks_distance():
     assert metrics.KolmogorovSmirnovDistance(target, group1, group1).distance == 0
+    assert metrics.KolmogorovSmirnovDistance(pd.Series([42]), pd.Series([1, 1, 1]), pd.Series([0, 0, 0])).distance == 1
+    assert metrics.KolmogorovSmirnovDistance(pd.Series([42]), pd.Series([1, 0]), pd.Series([1, 0])).distance == 0
+    assert (
+        metrics.KolmogorovSmirnovDistance(pd.Series([42]), pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 0, 0])).distance
+        == 0.5
+    )
 
 
 def test_kl_divergence():
