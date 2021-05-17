@@ -127,6 +127,8 @@ def plt_group_dist_mult(
         for pred in preds:
             df[pred][target_attr].plot.kde()
 
+    plt.xlabel(target_attr)
+
     if title:
         plt.title(target_attr)
 
