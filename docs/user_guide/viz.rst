@@ -1,4 +1,4 @@
-Visualising distributions
+Visualizing distributions
 =========================
 
 Fairlens supports tools to visualize the distribution of sensitive groups relative to one another.

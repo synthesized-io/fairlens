@@ -20,7 +20,8 @@ First we will import the required packages and load the compas dataset.
   df = pd.read_csv("../datasets/compas.csv")
   df.head()
 
-.. code:: python
+.. ipython:: python
+  :verbatim:
 
   sensitive_attrs = ["Ethnicity", "Sex"]
   target_attr = "RawScore"
@@ -36,12 +37,22 @@ Fairlens supports multiple distance metrics which you can use via the method :co
 Let's import this method.
 
 .. ipython:: python
+  :verbatim:
 
-  from fairlens.bias import metrics
+  from fairlens.bias.metrics import stat_distance
 
-.. code:: python
+We need to define which groups of data we want to measure the distance between.
+
+.. ipython:: python
+  :verbatim:
 
   group1 = {"Ethnicity": ["African-American"]}
   group2 = {"Ethnicity": ["Caucasian"]}
+
+We can now make a call to :code:`stat_distance` which will automatically choose the best
+distance metric for us based on the distribution of the target attribute.
+
+.. ipython:: python
+  :verbatim:
 
   stat_distance(df, target_attr, group1, group2, mode="auto")
