@@ -17,9 +17,6 @@ from typing import List, Optional, Tuple, Union
 # import numpy as np
 import pandas as pd
 
-# from ..bias import utils
-from ..bias.metrics import ks_distance
-
 # from itertools import combinations
 
 
@@ -296,9 +293,9 @@ def calculate_distance(
     dist = []
 
     for _, row in unique.iterrows():
-        sensitive_group = {attr: [value] for attr, value in row.to_dict().items()}
+        # sensitive_group = {attr: [value] for attr, value in row.to_dict().items()}
 
-        distance: Union[float, Tuple[float, float]] = ks_distance(df, target_attr, sensitive_group)
+        distance: Union[float, Tuple[float, float]] = 0  # distance(df, target_attr, sensitive_group)
 
         if isinstance(distance, tuple):
             distance, pval = distance
