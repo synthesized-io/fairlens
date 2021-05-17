@@ -61,36 +61,39 @@ class FairnessScorer:
         self.sensitive_attrs = sensitive_attrs
 
 
-# def distribution_score(
-#     self,
-#     mode: str = "auto",
-#     alpha: float = 0.05,
-#     min_dist: Optional[float] = None,
-#     min_count: Optional[int] = 50,
-#     weighted: bool = True,
-#     max_comb: Optional[int] = 3,
-#     condense_output: bool = True,
-# ) -> Tuple[float, pd.DataFrame]:
-#     """Returns the biases and fairness score by analyzing the distribution difference between sensitive
-#     variables and the target variable.
+def distribution_score(
+    self,
+    mode: str = "auto",
+    alpha: float = 0.05,
+    min_dist: Optional[float] = None,
+    min_count: Optional[int] = 50,
+    weighted: bool = True,
+    max_comb: Optional[int] = 3,
+    condense_output: bool = True,
+) -> Tuple[float, pd.DataFrame]:
+    """Returns the biases and fairness score by analyzing the distribution difference between sensitive
+    variables and the target variable.
 
-#     Args:
-#         mode (str, optional):
-#             Choose a different metric to use. Defaults to automatically chosen metric depending on
-#             the distribution of the target variable.
-#         alpha (float, optional):
-#             Maximum p-value to accept a bias. Defaults to 0.05.
-#         min_dist (Optional[float], optional):
-#             If set, any bias with smaller distance than min_dist will be ignored. Defaults to None.
-#         min_count (Optional[int], optional):
-#             If set, any bias with less samples than min_count will be ignored. Defaults to 50.
-#         weighted (bool, optional):
-#             Whether to weight the average of biases on the size of each sample. Defaults to True.
-#         max_comb (Optional[int], optional):
-#             Max number of combinations of sensitive attributes to be considered. Defaults to 3.
-#         condense_output (bool, optional):
-#             Whether to return one row per group or one per group and target. Defaults to True.
-#     """
+    Args:
+        mode (str, optional):
+            Choose a different metric to use. Defaults to automatically chosen metric depending on
+            the distribution of the target variable.
+        alpha (float, optional):
+            Maximum p-value to accept a bias. Defaults to 0.05.
+        min_dist (Optional[float], optional):
+            If set, any bias with smaller distance than min_dist will be ignored. Defaults to None.
+        min_count (Optional[int], optional):
+            If set, any bias with less samples than min_count will be ignored. Defaults to 50.
+        weighted (bool, optional):
+            Whether to weight the average of biases on the size of each sample. Defaults to True.
+        max_comb (Optional[int], optional):
+            Max number of combinations of sensitive attributes to be considered. Defaults to 3.
+        condense_output (bool, optional):
+            Whether to return one row per group or one per group and target. Defaults to True.
+    """
+
+    pass
+
 
 #     df_pre = self.df
 
