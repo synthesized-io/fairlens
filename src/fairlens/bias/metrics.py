@@ -175,6 +175,8 @@ class EarthMoversDistanceCategorical(CategoricalDistanceMetric):
 
     @property
     def distance(self) -> float:
+        distance_metric = 1 - np.eye(len(self.pq))
+
         if "bins" in self.kwargs:
             # Use pair-wise euclidean distances between bin centers for scale data
             bins = self.kwargs["bins"]
@@ -182,8 +184,6 @@ class EarthMoversDistanceCategorical(CategoricalDistanceMetric):
 
             xx, yy = np.meshgrid(*bin_centers)
             distance_metric = np.abs(xx - yy).astype(np.float64)
-        else:
-            distance_metric = 1 - np.eye(len(self.pq))
 
         return pyemd.emd(self.p, self.q, distance_metric)
 
@@ -201,12 +201,6 @@ class KolmogorovSmirnovDistance(DistanceMetric):
 
     @property
     def distance(self) -> float:
-        """
-        Calculate the KS distance.
-
-        Returns:
-            The KS distance.
-        """
         return ks_2samp(self.x, self.y, **self.kwargs)[0]
 
     @property
