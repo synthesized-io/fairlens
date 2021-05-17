@@ -47,7 +47,7 @@ def plt_group_dist(
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
-        >>> plt_group_dist(df, 'RawScore', {'Ethnicity': ['African-American']}, {'Ethnicity': ['Caucasian']})
+        >>> plt_group_dist(df, "RawScore", {"Ethnicity": ["African-American"]}, {"Ethnicity": ["Caucasian"]})
         >>> plt.show()
     """
 
@@ -90,14 +90,14 @@ def plt_group_dist_mult(
         fade (bool, optional):
             Adds a fade to the histograms. Set false if alpha passed as kwarg. Defaults to False.
         **kwargs:
-            Additional keyword arguments passed to plt.hist
+            Additional keyword arguments passed to plt.hist()
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
-        >>> g1 = {'Ethnicity': ['African-American']}
-        >>> g2 = {'Ethnicity': ['Caucasian']}
-        >>> g3 = {'Ethnicity': ['Asian']}}
-        >>> plt_group_dist_mult(df, 'RawScore', [g1, g2, g3])
+        >>> g1 = {"Ethnicity": ["African-American"]}
+        >>> g2 = {"Ethnicity": ["Caucasian"]}
+        >>> g3 = {"Ethnicity": ["Asian"]}}
+        >>> plt_group_dist_mult(df, "RawScore", [g1, g2, g3])
         >>> plt.show()
     """
 
@@ -134,3 +134,47 @@ def plt_group_dist_mult(
 
     if legend:
         plt.legend([",".join([",".join(vals) for vals in group.values()]) for group in groups])
+
+
+def plt_attr_dist(df: pd.DataFrame, target_attr: str, attr: str, separate: bool = False, **kwargs):
+    """Plot the pdf of the all values in the column `attr` with respect to the target attribute.
+
+    Args:
+        df (pd.DataFrame):
+            The input dataframe.
+        target_attr (str):
+            The target attribute.
+        attr (str):
+            The attribute whose values' distributions are to be plotted.
+        separate (bool):
+            Separate into multiple plots (subplot). Defaults to False.
+        **kwargs:
+            Additional keyword arguments passed to plt_group_dist_mult()
+
+    Examples:
+        >>> df = pd.read_csv("datasets/compas.csv")
+        >>> plt_attr_dist(df, "RawScore", "Ethnicity")
+        >>> plt.show()
+    """
+
+    if "fade" not in kwargs and "alpha" not in kwargs:
+        kwargs["fade"] = True
+
+    if "normalize" not in kwargs:
+        kwargs["normalize"] = False
+
+    if "show_hist" not in kwargs and not kwargs["normalize"]:
+        kwargs["show_hist"] = True
+
+    legend = ["All"]
+    groups = [{attr: df[attr].unique()}]
+    for val in df[attr].unique():
+        groups.append({attr: [val]})
+        legend.append(str(val))
+
+    if separate:
+        raise NotImplementedError()
+
+    else:
+        plt_group_dist_mult(df, target_attr, groups, **kwargs)
+        plt.legend(legend)
