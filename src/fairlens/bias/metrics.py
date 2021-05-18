@@ -153,7 +153,7 @@ class EarthMoversDistance(DistanceMetric):
     Earth movers distance (EMD), aka Wasserstein 1-distance, for continous data.
     The samples are binned automatically by pyemd.
 
-    Keyword arguments are passed to pyemd.emd_samples. ie. extra_mass_penalty, distance
+    Keyword arguments are passed to pyemd.emd_samples. ie. extra_mass_penalty, distance, bins
     """
 
     @property
@@ -251,7 +251,7 @@ class LNorm(CategoricalDistanceMetric):
 
     @property
     def distance(self) -> float:
-        return np.linalg.norm(self.p - self.q)
+        return np.linalg.norm(self.p - self.q, **self.kwargs)
 
     @staticmethod
     def id():
