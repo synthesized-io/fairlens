@@ -35,9 +35,6 @@ def test_stat_distance():
     assert stat_distance(df, target_attr, df[pred1][target_attr], df[~pred1][target_attr], mode="emd") == res
     assert stat_distance(df, target_attr, x, y, mode="emd") == res
 
-    for mode in ["emd", "ks_distance"]:
-        assert stat_distance(df, target_attr, group1, group1, mode=mode, p_value=True) == (0, 1)
-
 
 def test_stat_distance_auto():
     res = stat_distance(df, target_attr, group1, group2, mode="auto")
