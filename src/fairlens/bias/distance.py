@@ -1,9 +1,10 @@
 from abc import abstractmethod
-from typing import Tuple, Union
+from typing import Optional
 
+import numpy as np
 import pandas as pd
 
-from . import p_value as pv
+# from . import p_value as pv
 from . import utils
 
 
@@ -18,67 +19,40 @@ class DistanceMetric:
     Subclasses must implement a distance method.
     """
 
-    def __init__(self, column: pd.Series, group1: pd.Series, group2: pd.Series, **kwargs):
-        """Initialize the distributions for computation.
-
-        Args:
-            column (pd.Series):
-                The column of data with respect to which the distance will be computed.
-            group1 (pd.Series):
-                The data in the column representing the first group.
-            group2 (pd.Series):
-                The data in the column representing the second group.
-            **kwargs:
-                Keyword arguments for the distance metrics.
-        """
-
-        self.x = group1
-        self.y = group2
-        self.xy = column
+    def __init__(self, **kwargs):
         self.kwargs = kwargs
 
-    def __call__(self, p_value: bool = False) -> Union[Tuple[float, float], float]:
+    def __call__(self, x: pd.Series, y: pd.Series) -> Optional[float]:
         """Calculate the distance between two distributions.
 
         Args:
-            p_value (bool, optional):
-                If True, a p value is calculated. By default this uses a permutation test unless the derived class
-                overrides the DistanceMetric.p_value method. Defaults to False.
+            x (pd.Series):
+                The data in the column representing the first group.
+            y (pd.Series):
+                The data in the column representing the second group.
 
         Returns:
-            Union[Tuple[float, float], float]:
-                The computed distance, paired with the p-value if the respective flag is set to True.
+            Optional[float]:
+                The computed distance.
         """
 
-        if p_value:
-            return self.distance, self.p_value
+        if not self.check_input(x, y):
+            return None
 
-        return self.distance
+        return self.distance(x, y)
 
-    @property
+    def check_input(self, x: pd.Series, y: pd.Series) -> bool:
+        return x.dtype == y.dtype
+
     @abstractmethod
-    def distance(self) -> float:
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
         """
         Derived classes must implement this.
         """
         ...
 
-    @property
-    def p_value(self) -> float:
-        """
-        Return a p-value for this metric using a permutation test. The null hypothesis
-        is that both data samples are from the same distribution.
-
-        Returns:
-            The p-value under the null hypothesis.
-        """
-
-        return pv.permutation_test(self.x, self.y, self._distance_call)
-
-    def _distance_call(self, x: pd.Series, y: pd.Series) -> float:
-        cls = type(self)
-        obj = cls(self.xy, x, y, **self.kwargs)
-        return obj.distance
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        raise NotImplementedError
 
     @staticmethod
     @abstractmethod
@@ -94,22 +68,25 @@ class CategoricalDistanceMetric(DistanceMetric):
     Base class for distance metrics that compare counts from two binned or categorical distributions.
 
     Subclasses must implement a distance method.
+
+    The default p-value for this metric uses a bootstrapped distribution of the null hypothesis (two-sided).
     """
 
-    def __init__(self, column: pd.Series, group1: pd.Series, group2: pd.Series, **kwargs):
-        super().__init__(column, group1, group2, **kwargs)
+    def __call__(self, x: pd.Series, y: pd.Series) -> Optional[float]:
+        if not self.check_input(x, y):
+            return None
 
         # Compute pdfs of the data
-        space = self.xy.unique()
-        p, q, pq = utils.compute_probabilities(space, self.x, self.y, self.xy)
+        all = pd.concat((x, y))
+        if utils.infer_distr_type(all).is_continuous():
+            shared_bins = np.histogram_bin_edges(all)
+            x, _ = np.histogram(x.values, bins=shared_bins)
+            y, _ = np.histogram(y.values, bins=shared_bins)
+        else:
+            space = all.unique()
+            x, y = utils.compute_probabilities(space, x, y)
 
-        self.p = p
-        self.q = q
-        self.pq = pq
+        return self.distance(x, y)
 
-    @property
-    def p_value(self) -> float:
-        """Returns a two-sided p-value for this metric using a bootstrapped distribution of the null hypothesis."""
-
-        ts_distribution = pv.bootstrap_binned_statistic((self.x, self.y), self._distance_call, n_samples=1000)
-        return pv.bootstrap_pvalue(self.distance, ts_distribution)
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        raise NotImplementedError

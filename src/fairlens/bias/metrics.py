@@ -6,6 +6,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import pandas as pd
 import pyemd
+from scipy.spatial.distance import jensenshannon
 from scipy.stats import entropy, ks_2samp
 
 from . import p_value as pv
@@ -105,23 +106,18 @@ def stat_distance(
 
         DistClass = class_map[mode]
 
-    dist_metric = DistClass(df[target_attr], group1, group2, **kwargs)
+    dist_metric = DistClass(**kwargs)
 
-    return dist_metric(p_value=p_value)
+    d = dist_metric(group1, group2)
 
+    if d is None:
+        raise IllegalArgumentException("Incompatible data inside series")
 
-class ClassImbalance(DistanceMetric):
-    """
-    Class imbalance between the number samples in both distributions.
-    """
+    if p_value:
+        p = dist_metric.p_value(group1, group2)
+        return d, p
 
-    @property
-    def distance(self) -> float:
-        return (self.x.nunique() - self.y.nunique()) / self.xy.nunique()
-
-    @staticmethod
-    def id():
-        return "class_imbalance"
+    return d
 
 
 class BinomialDistance(DistanceMetric):
@@ -132,15 +128,14 @@ class BinomialDistance(DistanceMetric):
     Data is assumed to be a series of 1, 0 (success, failure) Bernoulli random variates.
     """
 
-    @property
-    def distance(self) -> float:
-        return self.x.mean() - self.y.mean()
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return x.mean() - y.mean()
 
-    @property
-    def p_value(self) -> float:
-        p_obs = self.x.mean()
-        p_null = self.y.mean()
-        n = len(self.x)
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        p_obs = x.mean()
+        p_null = y.mean()
+        n = len(x)
+
         return pv.binominal_proportion_p_value(p_obs, p_null, n)
 
     @staticmethod
@@ -156,9 +151,8 @@ class EarthMoversDistance(DistanceMetric):
     Keyword arguments are passed to pyemd.emd_samples. ie. extra_mass_penalty, distance, bins
     """
 
-    @property
-    def distance(self) -> float:
-        return pyemd.emd_samples(self.x, self.y, **self.kwargs)
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return pyemd.emd_samples(x, y, **self.kwargs)
 
     @staticmethod
     def id():
@@ -170,12 +164,12 @@ class EarthMoversDistanceCategorical(CategoricalDistanceMetric):
     Earth movers distance (EMD), aka Wasserstein 1-distance, for categorical data.
 
     Bins can be included as a keyword argument 'bins' for pre-binned continous data, however
-    using EarthMoversDistance on the raw data is faster and recommended.
+    using EarthMoversDistance on the raw data is faster and recommended. Additional kwargs
+    will be passed to pyemd.emd.
     """
 
-    @property
-    def distance(self) -> float:
-        distance_metric = 1 - np.eye(len(self.pq))
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        distance_metric = 1 - np.eye(len(x))
 
         if "bins" in self.kwargs:
             # Use pair-wise euclidean distances between bin centers for scale data
@@ -185,7 +179,7 @@ class EarthMoversDistanceCategorical(CategoricalDistanceMetric):
             xx, yy = np.meshgrid(*bin_centers)
             distance_metric = np.abs(xx - yy).astype(np.float64)
 
-        return pyemd.emd(self.p, self.q, distance_metric)
+        return pyemd.emd(np.array(x).astype(np.float64), np.array(y).astype(np.float64), distance_metric, **self.kwargs)
 
     @staticmethod
     def id():
@@ -199,13 +193,11 @@ class KolmogorovSmirnovDistance(DistanceMetric):
     Keyword arguments are passed to scipy.stats.ks_2amp. ie. alternative, mode
     """
 
-    @property
-    def distance(self) -> float:
-        return ks_2samp(self.x, self.y, **self.kwargs)[0]
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return ks_2samp(x, y, **self.kwargs)[0]
 
-    @property
-    def p_value(self):
-        return ks_2samp(self.x, self.y, **self.kwargs)[1]
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        return ks_2samp(x, y, **self.kwargs)[1]
 
     @staticmethod
     def id():
@@ -216,11 +208,12 @@ class KullbackLeiblerDivergence(CategoricalDistanceMetric):
     """
     Kullback–Leibler Divergence or Relative Entropy between the probability distributions of the
     two groups with respect to the target attribute.
+
+    Keyword arguments are passed to scipy.stats.entropy. ie. base
     """
 
-    @property
-    def distance(self) -> float:
-        return entropy(self.p, self.q)
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return entropy(x, y, **self.kwargs)
 
     @staticmethod
     def id():
@@ -231,11 +224,12 @@ class JensenShannonDivergence(CategoricalDistanceMetric):
     """
     Jensen-Shannon Divergence or Relative Entropy between the probability distributions of the
     two groups with respect to the target attribute.
+
+    Keyword arguments are passed to scipy.spatial.distance. ie. base
     """
 
-    @property
-    def distance(self) -> float:
-        return (entropy(self.p, self.pq) + entropy(self.q, self.pq)) / 2
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return jensenshannon(x, y, **self.kwargs)
 
     @staticmethod
     def id():
@@ -249,9 +243,8 @@ class LNorm(CategoricalDistanceMetric):
     Keyword arguments are passed to np.linalg.norm. ie. ord
     """
 
-    @property
-    def distance(self) -> float:
-        return np.linalg.norm(self.p - self.q, **self.kwargs)
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return np.linalg.norm(x - y, **self.kwargs)
 
     @staticmethod
     def id():
@@ -263,9 +256,8 @@ class HellingerDistance(CategoricalDistanceMetric):
     Hellinger distance between the two distributions.
     """
 
-    @property
-    def distance(self) -> float:
-        return np.linalg.norm(np.sqrt(self.p) - np.sqrt(self.q)) / np.sqrt(2)
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return np.linalg.norm(np.sqrt(x) - np.sqrt(y)) / np.sqrt(2)
 
     @staticmethod
     def id():

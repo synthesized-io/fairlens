@@ -250,7 +250,7 @@ def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) ->
     return preds
 
 
-def compute_probabilities(space: np.ndarray, *data: pd.Series) -> Tuple[np.ndarray, ...]:
+def compute_probabilities(space: np.ndarray, *data: pd.Series) -> Tuple[pd.Series, ...]:
     """Compute the probability distributions for the given data and return them in arrays aligned to the space.
 
     Args:
@@ -261,8 +261,8 @@ def compute_probabilities(space: np.ndarray, *data: pd.Series) -> Tuple[np.ndarr
             Variable amount of pandas series containing the raw data.
 
     Returns:
-        Tuple[np.ndarray, ...]:
-            The aligned probabilities in a tuple of numpy arrays each of the same length as the space.
+        Tuple[pd.Series, ...]:
+            The aligned probabilities in a tuple of pd.Series each of the same length as the space.
     """
 
     n = len(data)
@@ -275,7 +275,7 @@ def compute_probabilities(space: np.ndarray, *data: pd.Series) -> Tuple[np.ndarr
 
     with np.errstate(divide="ignore", invalid="ignore"):
         for i in range(n):
-            ps[i] = np.nan_to_num(ps[i] / ps[i].sum())
+            ps[i] = pd.Series(np.nan_to_num(ps[i] / ps[i].sum()))
 
     return tuple(ps)
 
