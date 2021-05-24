@@ -112,10 +112,6 @@ def stat_distance(
     if d is None:
         raise IllegalArgumentException("Incompatible data inside series")
 
-    if p_value:
-        p = dist_metric.p_value(group1, group2)
-        return d, p
-
     return d
 
 
