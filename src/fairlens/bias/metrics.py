@@ -9,7 +9,6 @@ import pyemd
 from scipy.spatial.distance import jensenshannon
 from scipy.stats import entropy, ks_2samp
 
-from . import p_value as pv
 from . import utils
 from .distance import CategoricalDistanceMetric, DistanceMetric
 from .exceptions import IllegalArgumentException
@@ -134,13 +133,6 @@ class BinomialDistance(DistanceMetric):
             raise IllegalArgumentException("BinomialDistance must be passed series' of 1, 0 Bernoulli random variates")
 
         return x.mean() - y.mean()
-
-    def p_value(self, x: pd.Series, y: pd.Series) -> float:
-        p_obs = x.mean()
-        p_null = y.mean()
-        n = len(x)
-
-        return pv.binominal_proportion_p_value(p_obs, p_null, n)
 
     @staticmethod
     def id():
