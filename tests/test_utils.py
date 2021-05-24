@@ -17,18 +17,26 @@ def test_bin():
 def test_infer_dtype():
     cols = ["A", "B", "C"]
     df = pd.DataFrame(np.array([np.arange(11) * (i + 1) for i in range(len(cols))]).T, index=range(11), columns=cols)
-    assert str(utils.infer_dtype(df, "A")["A"].dtype) == "int64"
+    assert str(utils.infer_dtype(df["A"]).dtype) == "int64"
 
     df = pd.DataFrame(
         np.array([np.linspace(0, 10, 21) * (i + 1) for i in range(len(cols))]).T, index=range(21), columns=cols
     )
-    assert str(utils.infer_dtype(df, "A")["A"].dtype) == "float64"
+    assert str(utils.infer_dtype(df["A"]).dtype) == "float64"
 
 
 def test_infer_distr_type():
     assert utils.infer_distr_type(pd.Series(np.linspace(-20, 20, 200))).is_continuous()
     assert utils.infer_distr_type(pd.Series(np.linspace(-20, 20, 9))).is_categorical()
-    assert utils.infer_distr_type(pd.Series([1, 2] * 10)).is_binary()
+    assert utils.infer_distr_type(pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])).is_continuous()
+    assert utils.infer_distr_type(pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])).is_categorical()
+    assert utils.infer_distr_type(pd.Series([1, 0] * 10)).is_binary()
+    assert utils.infer_distr_type(pd.Series([1, 0, 1, 1])).is_binary()
+    assert utils.infer_distr_type(pd.Series([1, 1, 1])).is_binary()
+    assert utils.infer_distr_type(pd.Series([0])).is_binary()
+    assert utils.infer_distr_type(pd.Series([2, 2])).is_categorical()
+    assert utils.infer_distr_type(pd.Series(["hi", "hello"])).is_categorical()
+    assert utils.infer_distr_type(pd.Series(["n" + str(i) for i in np.arange(20)])).is_categorical()
 
 
 def test_get_predicates():

@@ -4,7 +4,6 @@ from typing import Optional
 import numpy as np
 import pandas as pd
 
-# from . import p_value as pv
 from . import utils
 
 
@@ -20,6 +19,13 @@ class DistanceMetric:
     """
 
     def __init__(self, **kwargs):
+        """Initialize distance metric.
+
+        Args:
+            kwargs:
+                Keyword arguments passed down to distance function.
+        """
+
         self.kwargs = kwargs
 
     def __call__(self, x: pd.Series, y: pd.Series) -> Optional[float]:
@@ -72,16 +78,33 @@ class CategoricalDistanceMetric(DistanceMetric):
     The default p-value for this metric uses a bootstrapped distribution of the null hypothesis (two-sided).
     """
 
+    def __init__(self, bin_edges: Optional[np.ndarray] = None, **kwargs):
+        """Initialize categorical distance metric.
+
+        Args:
+            bin_edges (Optional[np.ndarray], optional):
+                A list of bin edges used to bin continuous data by or to indicate bins of pre-binned data.
+            kwargs:
+                Keyword arguments passed down to distance function.
+        """
+
+        self.bin_edges = bin_edges
+        self.kwargs = kwargs
+
     def __call__(self, x: pd.Series, y: pd.Series) -> Optional[float]:
         if not self.check_input(x, y):
             return None
 
-        # Compute pdfs of the data
+        # Compute pdfs of the data, bin if continuous
         all = pd.concat((x, y))
         if utils.infer_distr_type(all).is_continuous():
-            shared_bins = np.histogram_bin_edges(all)
-            x, _ = np.histogram(x.values, bins=shared_bins)
-            y, _ = np.histogram(y.values, bins=shared_bins)
+            bin_edges = self.bin_edges or np.histogram_bin_edges(all, bins="auto")
+            x, _ = np.histogram(x, bins=bin_edges)
+            y, _ = np.histogram(y, bins=bin_edges)
+
+            x = pd.Series(x / x.sum())
+            y = pd.Series(y / y.sum())
+            self.bin_edges = bin_edges
         else:
             space = all.unique()
             x, y = utils.compute_probabilities(space, x, y)
