@@ -11,9 +11,8 @@ class DistanceMetric:
     """
     Base class for distance metrics that compare samples from two distributions.
 
-    Computes the distance between the probability distributions of group1 and group2 with respect to the
-    target attribute. If group1 is a dictionary and group2 is None then the distance is computed between
-    group1 and the rest of the dataset.
+    Computes the distance between the probability distributions of x and y with respect to the
+    target attribute.
 
     Subclasses must implement a distance method.
     """
@@ -48,7 +47,23 @@ class DistanceMetric:
         return self.distance(x, y)
 
     def check_input(self, x: pd.Series, y: pd.Series) -> bool:
-        return x.dtype == y.dtype
+        """Check whether the input is valid. Returns `False` if data isn't numeric by default.
+
+        Args:
+            x (pd.Series):
+                The data in the column representing the first group.
+            y (pd.Series):
+                The data in the column representing the second group.
+
+        Returns:
+            bool:
+                Whether or not the input is valid.
+        """
+
+        x_dtype = utils.infer_dtype(x).dtype
+        y_dtype = utils.infer_dtype(y).dtype
+
+        return x_dtype in ["int64", "float64"] and y_dtype in ["int64", "float64"]
 
     @abstractmethod
     def distance(self, x: pd.Series, y: pd.Series) -> float:
@@ -71,11 +86,14 @@ class DistanceMetric:
 
 class CategoricalDistanceMetric(DistanceMetric):
     """
-    Base class for distance metrics that compare counts from two binned or categorical distributions.
+    Base class for distance metrics that compare histograms from two distributions.
+
+    Continuous data is automatically binned to create histograms, bin_edges can be provided as an argument
+    and will be used to bin continous data. If the data has been pre-binned and consists of pd.Intervals
+    for instance, the histograms will be computed using the counts of each bin and the bin_edges, if given,
+    will be used in metrics such as EarthMoversDistanceCategorical to compute the distance space.
 
     Subclasses must implement a distance method.
-
-    The default p-value for this metric uses a bootstrapped distribution of the null hypothesis (two-sided).
     """
 
     def __init__(self, bin_edges: Optional[np.ndarray] = None, **kwargs):
@@ -90,6 +108,12 @@ class CategoricalDistanceMetric(DistanceMetric):
 
         self.bin_edges = bin_edges
         self.kwargs = kwargs
+
+    def check_input(self, x: pd.Series, y: pd.Series) -> bool:
+        x_dtype = utils.infer_dtype(x).dtype
+        y_dtype = utils.infer_dtype(y).dtype
+
+        return x_dtype == y_dtype
 
     def __call__(self, x: pd.Series, y: pd.Series) -> Optional[float]:
         if not self.check_input(x, y):
