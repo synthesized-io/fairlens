@@ -126,8 +126,10 @@ class CategoricalDistanceMetric(DistanceMetric):
             x, _ = np.histogram(x, bins=bin_edges)
             y, _ = np.histogram(y, bins=bin_edges)
 
-            x = pd.Series(x / x.sum())
-            y = pd.Series(y / y.sum())
+            with np.errstate(divide="ignore", invalid="ignore"):
+                x = pd.Series(np.nan_to_num(x / x.sum()))
+                y = pd.Series(np.nan_to_num(y / y.sum()))
+
             self.bin_edges = bin_edges
         else:
             space = all.unique()
