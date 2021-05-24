@@ -88,21 +88,19 @@ def bin(
     return binned
 
 
-def infer_dtype(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+def infer_dtype(col: pd.Series) -> pd.Series:
     """Infers the type of the data and converts the data to it.
 
     Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        column_name (str):
-            The name of the dataframe column to transform.
+        col (str):
+            The column of the dataframe to transform.
 
     Returns:
-        pd.DataFrame:
-            The dataframe converted to its inferred type.
+        pd.Series:
+            The column converted to its inferred type.
     """
 
-    column = df[column_name].copy()
+    column = col.copy()
 
     in_dtype = str(column.dtype)
 
@@ -127,13 +125,11 @@ def infer_dtype(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
     out_dtype = str(column.dtype)
 
     if out_dtype == in_dtype:
-        return df
+        return col
     elif out_dtype in ("i", "u", "f", "f8", "i8", "u8"):
-        df[column_name] = pd.to_numeric(df[column_name], errors="coerce")
-    else:
-        df[column_name] = df[column_name].astype(out_dtype, errors="ignore")
+        return pd.to_numeric(col, errors="coerce")
 
-    return df
+    return col.astype(out_dtype, errors="ignore")
 
 
 def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: int = 10) -> DistrType:
@@ -159,13 +155,15 @@ def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: i
         False
     """
 
-    n_unique = column.nunique()
-    num_rows = len(column)
+    unique = column.unique()
+    n_unique = len(unique)
+    n_rows = len(column)
+    dtype = infer_dtype(column).dtype
 
-    if n_unique > max(min_num_unique, ctl_mult * np.log(num_rows)):
+    if n_unique > max(min_num_unique, ctl_mult * np.log(n_rows)) and dtype in ["float64", "int64"]:
         return DistrType.Continuous
 
-    elif n_unique == 2:
+    elif (n_unique == 2 and 0 in unique and 1 in unique) or (unique == [1]).all() or (unique == [0]).all():
         return DistrType.Binary
 
     else:

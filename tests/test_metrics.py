@@ -41,8 +41,12 @@ def test_stat_distance_auto():
     assert stat_distance(df, target_attr, group1, group2, mode="ks_distance") == res
 
 
+def test_auto_binning():
+    res = stat_distance(df, target_attr, group1, group2, mode="emd_categorical")
+    assert stat_distance(df, target_attr, group1, group2, mode="emd") == res
+
+
 def test_binomial_distance():
-    assert BinomialDistance()(group1, group1) == 0
     assert BinomialDistance()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
     assert BinomialDistance()(pd.Series([1, 1]), pd.Series([0, 0])) == 1
     assert BinomialDistance()(pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 0, 0])) == 0.5

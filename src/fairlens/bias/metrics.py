@@ -129,6 +129,10 @@ class BinomialDistance(DistanceMetric):
     """
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
+
+        if (not utils.infer_distr_type(x).is_binary()) or (not utils.infer_distr_type(y).is_binary()):
+            raise IllegalArgumentException("BinomialDistance must be passed series' of 1, 0 Bernoulli random variates")
+
         return x.mean() - y.mean()
 
     def p_value(self, x: pd.Series, y: pd.Series) -> float:
@@ -171,12 +175,10 @@ class EarthMoversDistanceCategorical(CategoricalDistanceMetric):
     def distance(self, x: pd.Series, y: pd.Series) -> float:
         distance_metric = 1 - np.eye(len(x))
 
-        if "bins" in self.kwargs:
+        if self.bin_edges is not None:
             # Use pair-wise euclidean distances between bin centers for scale data
-            bins = self.kwargs["bins"]
-            bin_centers = 2 * (bins[:-1] + np.diff(bins) / 2.0,)
-
-            xx, yy = np.meshgrid(*bin_centers)
+            bin_centers = np.mean([self.bin_edges[:-1], self.bin_edges[1:]], axis=0)
+            xx, yy = np.meshgrid(bin_centers, bin_centers)
             distance_metric = np.abs(xx - yy).astype(np.float64)
 
         return pyemd.emd(np.array(x).astype(np.float64), np.array(y).astype(np.float64), distance_metric, **self.kwargs)
