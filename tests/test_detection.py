@@ -102,6 +102,7 @@ def test_dataframe_dict_numbers():
     res = {}
     assert dt.detect_names_df(df, deep_search=True) == res
 
+
 def test_default_config():
     col_names = [
         "gender",
@@ -170,4 +171,3 @@ def test_double_config_deep():
     assert dt.detect_names_df(df, deep_search=True) == res1
     dt.change_config("./configs/config_mock.json")
     assert dt.detect_names_df(df, deep_search=True) == res2
-
