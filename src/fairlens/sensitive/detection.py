@@ -1,6 +1,8 @@
 import pathlib
 from difflib import SequenceMatcher
 from typing import Callable, Dict, List, Optional, Union
+import pandas as pd
+
 
 import pandas as pd
 
@@ -85,7 +87,7 @@ def change_config(config_path: Union[str, pathlib.Path]):
     global sensitive_values_map
     sensitive_values_map = config.attr_value_dict
 
-
+    
 def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
     """Computes a distance between the input strings using the Ratcliff-Obershelp algorithm."""
     if s1 is None or s2 is None:
@@ -194,6 +196,7 @@ def _deep_search(
         pattern = "|".join(values)
         if s.str.contains(pattern).mean() > 0.6:
             return group_name
+
 
     # Fine grain search that will catch edge cases.
     for group_name, values in sensitive_values_map.items():
