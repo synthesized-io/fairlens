@@ -155,8 +155,7 @@ class EarthMoversDistanceCategorical(CategoricalDistanceMetric):
     """
     Earth movers distance (EMD), aka Wasserstein 1-distance, for categorical data.
 
-    Bins can be included as a keyword argument 'bins' for pre-binned continous data, however
-    using EarthMoversDistance on the raw data is faster and recommended. Additional kwargs
+    Using EarthMoversDistance on the raw data is faster and recommended. Additional kwargs
     will be passed to pyemd.emd.
     """
 
