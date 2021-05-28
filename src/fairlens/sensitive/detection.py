@@ -68,14 +68,17 @@ def detect_names_df(
         return sensitive_dict
 
 
-def change_config(config_path: Union[str, pathlib.Path]):
+def change_config(config_path: Union[str, pathlib.Path] = None):
     """Changes the default configuration that is used to detect sensitive attributes
     or sensitive dataframe columns, using the provided path to the new config file.
 
     Args:
-        config_path (Union[str, pathlib.Path])
+        config_path (Union[str, pathlib.Path]). Defaults to None.
     """
-    config.load_config(config_path)
+    if config_path:
+        config.load_config(config_path)
+    else:
+        config.load_config()
 
 
 def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:

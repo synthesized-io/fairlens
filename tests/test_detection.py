@@ -2,6 +2,9 @@ import pandas as pd
 
 from fairlens.sensitive import detection as dt
 
+MOCK_CONFIG_PATH = "./configs/config_mock.json"
+ENGB_CONFIG_PATH = "./configs/config_engb.json"
+
 
 def test_detect_name():
     assert dt._detect_name("Creed") == "Religion"
@@ -133,7 +136,7 @@ def test_change_config_shallow():
     data = [[1, "dog", None, 10, "a"], [2, None, "lizard", 12, "b"], [3, "cat", None, 10, "c"]]
     df = pd.DataFrame(data, columns=col_names)
     res = {"mammal": "Mammals", "reptile": "Reptiles"}
-    dt.change_config("./configs/config_mock.json")
+    dt.change_config(MOCK_CONFIG_PATH)
     assert dt.detect_names_df(df) == res
 
 
@@ -142,7 +145,7 @@ def test_change_config_deep():
     data = [[1, "dog", None, 10, "a"], [2, None, "yellow chameleon", 12, "b"], [3, "cat", None, 10, "c"]]
     df = pd.DataFrame(data, columns=col_names)
     res = {"M": "Mammals", "R": "Reptiles"}
-    dt.change_config("./configs/config_mock.json")
+    dt.change_config(MOCK_CONFIG_PATH)
     assert dt.detect_names_df(df, deep_search=True) == res
 
 
@@ -151,9 +154,9 @@ def test_double_config_shallow():
     df = pd.DataFrame(columns=col_names)
     res1 = {"gender": "Gender", "ethnicity": "Ethnicity"}
     res2 = {"mammal": "Mammals", "reptile": "Reptiles"}
-    dt.change_config("./configs/config_engb.json")
+    dt.change_config(ENGB_CONFIG_PATH)
     assert dt.detect_names_df(df) == res1
-    dt.change_config("./configs/config_mock.json")
+    dt.change_config(MOCK_CONFIG_PATH)
     assert dt.detect_names_df(df) == res2
 
 
@@ -167,7 +170,7 @@ def test_double_config_deep():
     df = pd.DataFrame(data, columns=col_names)
     res1 = {"R": "Religion", "F2": "Family Status"}
     res2 = {"B": "Birds", "F1": "Fish"}
-    dt.change_config("./configs/config_engb.json")
+    dt.change_config(ENGB_CONFIG_PATH)
     assert dt.detect_names_df(df, deep_search=True) == res1
-    dt.change_config("./configs/config_mock.json")
+    dt.change_config(MOCK_CONFIG_PATH)
     assert dt.detect_names_df(df, deep_search=True) == res2
