@@ -6,11 +6,7 @@ import pandas as pd
 
 from fairlens.sensitive import config
 
-config.default_config()
-
-sensitive_names_map: Dict[str, List[str]] = config.attr_synonym_dict
-
-sensitive_values_map: Dict[str, List[str]] = config.attr_value_dict
+config.load_config()
 
 
 def detect_names_df(
@@ -79,11 +75,7 @@ def change_config(config_path: Union[str, pathlib.Path]):
     Args:
         config_path (Union[str, pathlib.Path])
     """
-    config.change_config(config_path)
-    global sensitive_names_map
-    sensitive_names_map = config.attr_synonym_dict
-    global sensitive_values_map
-    sensitive_values_map = config.attr_value_dict
+    config.load_config(config_path)
 
 
 def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
@@ -115,19 +107,19 @@ def _detect_name(
     name = name.lower()
 
     # Check exact match
-    for group_name, attrs in sensitive_names_map.items():
+    for group_name, attrs in config.attr_synonym_dict.items():
         for attr in attrs:
             if name == attr:
                 return group_name
 
     # Check startswith / endswith
-    for group_name, attrs in sensitive_names_map.items():
+    for group_name, attrs in config.attr_synonym_dict.items():
         for attr in attrs:
             if name.startswith(attr) or name.endswith(attr):
                 return group_name
 
     # Check distance < threshold
-    for group_name, attrs in sensitive_names_map.items():
+    for group_name, attrs in config.attr_synonym_dict.items():
         for attr in attrs:
             dist = str_distance(name, attr)
             if dist < threshold:
@@ -180,7 +172,7 @@ def _deep_search(
     str_distance = str_distance or _ro_distance
 
     # Coarse grain search to check if there is an exact match to avoid mismatches.
-    for group_name, values in sensitive_values_map.items():
+    for group_name, values in config.attr_value_dict.items():
         # Skip sensitive groups that do not have defined possible values.
         if not values:
             continue
@@ -188,7 +180,7 @@ def _deep_search(
         if s.isin(values).mean() > 0.2:
             return group_name
 
-    for group_name, values in sensitive_values_map.items():
+    for group_name, values in config.attr_value_dict.items():
         if not values:
             continue
         pattern = "|".join(values)
@@ -196,7 +188,7 @@ def _deep_search(
             return group_name
 
     # Fine grain search that will catch edge cases.
-    for group_name, values in sensitive_values_map.items():
+    for group_name, values in config.attr_value_dict.items():
         for value in values:
             if s.map(lambda x: str_distance(x, value) < threshold).mean() > 0.1:
                 return group_name
