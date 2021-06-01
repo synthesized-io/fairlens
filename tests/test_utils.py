@@ -3,6 +3,8 @@ import pandas as pd
 
 from fairlens.bias import utils
 
+dfc = pd.read_csv("datasets/compas.csv")
+
 
 def test_bin():
     columns = ["A", "B", "C"]
@@ -49,6 +51,16 @@ def test_get_predicates_mult():
 
     assert df[preds[0]]["C"].nunique() == 1
     assert df[preds[1]]["C"].nunique() == 0
+
+    preds = utils.get_predicates_mult(
+        dfc, [{"Ethnicity": ["African-American", "African-Am"], "Sex": ["Male"]}, {"Ethnicity": ["Caucasian"]}]
+    )
+    pred1, pred2 = preds[0], preds[1]
+
+    assert dfc[pred1].equals(
+        dfc[((dfc["Ethnicity"] == "African-American") | (dfc["Ethnicity"] == "African-Am")) & (dfc["Sex"] == "Male")]
+    )
+    assert dfc[pred2].equals(dfc[dfc["Ethnicity"] == "Caucasian"])
 
 
 def test_align_probabilities():
