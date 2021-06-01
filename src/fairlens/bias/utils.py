@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -170,50 +170,6 @@ def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: i
         return DistrType.Categorical
 
 
-def get_predicates(
-    df: pd.DataFrame, group1: Dict[str, List[str]], group2: Optional[Dict[str, List[str]]] = None
-) -> Tuple[pd.Series, pd.Series]:
-    """Forms and returns pandas dataframe predicates which can be used to index group1 and group2.
-    If group2 is None the second predicate returned is the inverse of that used to index group1.
-
-    Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        group1 (Dict[str, List[Any]]):
-            The first group of interest.
-        group2 (Optional[Dict[str, List[str]]], optional):
-            The second group of interest. Defaults to None.
-
-    Raises:
-        InvalidAttributeError:
-            Indicates an ill-formed group input due to invalid attributes in this case.
-
-    Returns:
-        Tuple[pd.Series, pd.Series]:
-            A pair of series' that can be used to index the corresponding groups of data.
-    """
-
-    # Check all attributes are valid
-    attrs = set(group1.keys())
-    if group2:
-        attrs = attrs.union(set(group2.keys()))
-
-    if not attrs <= set(df.columns):
-        raise InvalidAttributeError(attrs)
-
-    # Form predicate for first group
-    pred1 = df[group1.keys()].isin(group1).any(axis=1)
-
-    # If group2 not given return the predicate and its inverse
-    if group2 is None:
-        return pred1, ~pred1
-
-    # Form predicate for second group
-    pred2 = df[group2.keys()].isin(group2).any(axis=1)
-
-    return pred1, pred2
-
-
 def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) -> List[pd.Series]:
     """Similar to get_predicates but works on multiple groups.
 
@@ -246,36 +202,6 @@ def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) ->
         preds.append(pred)
 
     return preds
-
-
-def compute_probabilities(space: np.ndarray, *data: pd.Series) -> Tuple[pd.Series, ...]:
-    """Compute the probability distributions for the given data and return them in arrays aligned to the space.
-
-    Args:
-        space (np.ndarray):
-            A space to align the counts with. ie. A list containing of all the unique values in the dataset,
-            a list of all natural numbers.
-        *data (pd.Series):
-            Variable amount of pandas series containing the raw data.
-
-    Returns:
-        Tuple[pd.Series, ...]:
-            The aligned probabilities in a tuple of pd.Series each of the same length as the space.
-    """
-
-    n = len(data)
-    ps = [np.zeros(len(space)) for group in data]
-    gs = [group.value_counts().to_dict() for group in data]
-
-    for i, val in enumerate(space):
-        for j in range(n):
-            ps[j][i] = gs[j].get(val, 0)
-
-    with np.errstate(divide="ignore", invalid="ignore"):
-        for i in range(n):
-            ps[i] = pd.Series(np.nan_to_num(ps[i] / ps[i].sum()))
-
-    return tuple(ps)
 
 
 def fd_opt_bins(column: pd.Series) -> int:
