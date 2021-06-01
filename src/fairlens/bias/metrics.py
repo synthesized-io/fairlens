@@ -14,6 +14,27 @@ from .distance import CategoricalDistanceMetric, DistanceMetric
 from .exceptions import IllegalArgumentException
 
 
+def auto_distance(column: pd.Series) -> Type[DistanceMetric]:
+    """Return the best statistical distance metric based on the distribution of the data.
+
+    Args:
+        column (pd.Series):
+            The input data in a pd.Series.
+
+    Returns:
+        Type[DistanceMetric]:
+            The class of the distance metric.
+    """
+
+    distr_type = utils.infer_distr_type(column)
+    if distr_type.is_continuous():
+        return KolmogorovSmirnovDistance
+    elif distr_type.is_binary():
+        return BinomialDistance
+
+    return EarthMoversDistanceCategorical
+
+
 def stat_distance(
     df: pd.DataFrame,
     target_attr: str,
@@ -79,62 +100,33 @@ def stat_distance(
     if not isinstance(group1, pd.Series) or not isinstance(group2, pd.Series):
         raise IllegalArgumentException()
 
-    DistClass: Optional[Type[DistanceMetric]] = None
+    # Choose the distance metric
+    dist_class = auto_distance(df[target_attr]) if mode == "auto" else utils.str_to_distance(mode)
 
-    # Choose statistical distance metric
-    if mode == "auto":
-        distr_type = utils.infer_distr_type(df[target_attr])
-        if distr_type.is_continuous():
-            DistClass = KolmogorovSmirnovDistance
-        elif distr_type.is_binary():
-            DistClass = BinomialDistance
-        else:
-            DistClass = EarthMoversDistanceCategorical
-
-    else:
-        class_map = {}
-        valid_modes = []
-        for cl in utils.get_all_subclasses(DistanceMetric):
-            id = cl.get_id()
-            if id:
-                class_map[id] = cl
-                valid_modes.append(id)
-            else:
-                valid_modes.append(cl.__name__)
-
-            # All mappings from class name to class kept for compatibility
-            class_map[cl.__name__] = cl
-
-        if mode not in class_map:
-            raise ValueError(f"Invalid mode. Valid modes include:\n{valid_modes}")
-
-        DistClass = class_map[mode]
-
-    assert DistClass is not None
-
-    dist_metric = DistClass(**kwargs)
-
-    d = dist_metric(group1, group2)
+    d = dist_class(**kwargs)(group1, group2)
 
     if d is None:
-        raise IllegalArgumentException("Incompatible data inside series'")
+        raise IllegalArgumentException("Incompatible data inside both series")
 
     return d
 
 
 class BinomialDistance(DistanceMetric):
     """
-    Difference distance between two binomal data samples.
+    Difference distance between two binary data samples.
     i.e p_x - p_y, where p_x, p_y are the probabilities of success in x and y, respectively.
     The p-value computed is for the null hypothesis is that the probability of success is p_y.
     Data is assumed to be a series of 1, 0 (success, failure) Bernoulli random variates.
     """
 
+    def check_input(self, x: pd.Series, y: pd.Series) -> bool:
+        return (
+            super().check_input(x, y)
+            and utils.infer_distr_type(x).is_binary()
+            and utils.infer_distr_type(y).is_binary()
+        )
+
     def distance(self, x: pd.Series, y: pd.Series) -> float:
-
-        if (not utils.infer_distr_type(x).is_binary()) or (not utils.infer_distr_type(y).is_binary()):
-            raise IllegalArgumentException("BinomialDistance must be passed series' of 1, 0 Bernoulli random variates")
-
         return x.mean() - y.mean()
 
     @property
