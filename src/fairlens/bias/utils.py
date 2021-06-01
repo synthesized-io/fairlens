@@ -1,9 +1,10 @@
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Type
 
 import numpy as np
 import pandas as pd
 
+from .distance import DistanceMetric
 from .exceptions import InvalidAttributeError
 
 
@@ -30,7 +31,7 @@ def bin(
     remove_outliers: Optional[float] = 0.1,
     quantile_based: bool = False,
     mean_bins=False,
-    **kwargs
+    **kwargs,
 ) -> pd.DataFrame:
     """Bin continous values into discrete bins.
 
@@ -222,13 +223,48 @@ def fd_opt_bins(column: pd.Series) -> int:
     return int((column.max() - column.min()) / (2 * iqr * (n ** (-1 / 3))))
 
 
-def get_all_subclasses(cls):
+def str_to_distance(mode: str) -> Type[DistanceMetric]:
+    """Maps a string to a distance metric.
+
+    Args:
+        mode (str):
+            The input string.
+
+    Raises:
+        ValueError:
+            The string doesn't map to a distance metric.
+
+    Returns:
+        Type[DistanceMetric]:
+            The class of the corresponding distance metric.
+    """
+
+    class_map = {}
+    valid_modes = []
+    for cl in _get_all_subclasses(DistanceMetric):
+        cls_id = cl.get_id()
+        if cls_id:
+            class_map[cls_id] = cl
+            valid_modes.append(id)
+        else:
+            valid_modes.append(cl.__name__)
+
+        # All mappings from class name to class kept for compatibility
+        class_map[cl.__name__] = cl
+
+    if mode not in class_map:
+        raise ValueError(f"Invalid mode. Valid modes include:\n{valid_modes}")
+
+    return class_map[mode]
+
+
+def _get_all_subclasses(cls):
     if len(cls.__subclasses__()) == 0:
         return [cls]
 
     all_subclasses = []
 
     for subclass in cls.__subclasses__():
-        all_subclasses.extend(get_all_subclasses(subclass))
+        all_subclasses.extend(_get_all_subclasses(subclass))
 
     return all_subclasses
