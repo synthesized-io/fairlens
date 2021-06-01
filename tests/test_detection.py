@@ -1,9 +1,12 @@
+import os
+
 import pandas as pd
 
 from fairlens.sensitive import detection as dt
 
-MOCK_CONFIG_PATH = "./configs/config_mock.json"
-ENGB_CONFIG_PATH = "./configs/config_engb.json"
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+MOCK_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_mock.json")
+ENGB_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_engb.json")
 
 
 def test_detect_name():

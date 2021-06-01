@@ -11,9 +11,7 @@ attr_value_dict: Dict[str, List[str]] = {}
 
 
 def load_config(config_path: Union[str, pathlib.Path] = DEFAULT_PATH):
-    json_path = os.path.join(PROJ_DIR, config_path)
-
-    json_file = open(json_path)
+    json_file = open(config_path)
     config_dict = json.load(json_file)
     json_file.close()
 
