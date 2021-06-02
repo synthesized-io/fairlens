@@ -14,13 +14,7 @@ def load_config(config_path: Union[str, pathlib.Path] = DEFAULT_PATH):
     with open(config_path) as json_file:
         config_dict = json.load(json_file)
 
-    syn_dict = dict()
-    val_dict = dict()
-
-    syn_dict = config_dict["synonyms"]
-    val_dict = config_dict["values"]
-
     global attr_synonym_dict
-    attr_synonym_dict = syn_dict
+    attr_synonym_dict = config_dict["synonyms"]
     global attr_value_dict
-    attr_value_dict = val_dict
+    attr_value_dict = config_dict["values"]
