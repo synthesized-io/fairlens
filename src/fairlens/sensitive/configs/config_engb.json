@@ -1,13 +1,19 @@
 {
-    "Age":
+    "synonyms":
         {
-            "synonyms": ["age", "DOB", "birth", "youth", "elder", "senior"],
-            "values": []
+            "Age": ["age", "DOB", "birth", "youth", "elder", "senior"],
+            "Gender": ["gender", "sex"],
+            "Ethnicity": ["race", "color", "ethnic", "breed", "culture"],
+            "Religion": ["religion", "creed", "cult", "doctrine"],
+            "Nationality": ["nation", "geography", "location", "native", "country", "region"],
+            "Family Status": ["family status", "family", "house", "marital", "children", "partner", "pregnant"],
+            "Disability": ["disability", "impairment"],
+            "Sexual Orientation": ["sexual orientation", "sexual", "orientation", "attracted"]
         },
-    "Gender":
+    "values":
         {
-            "synonyms": ["gender", "sex"],
-            "values": [
+            "Age": [],
+            "Gender": [
                 "male",
                 "female",
                 "gender",
@@ -19,12 +25,8 @@
                 "pangender",
                 "genderqueer",
                 "two-spirit"
-            ]
-        },
-    "Ethnicity":
-        {
-            "synonyms": ["race", "color", "ethnic", "breed", "culture"],
-            "values": [
+            ],
+            "Ethnicity": [
                 "caucasian",
                 "american",
                 "african",
@@ -38,12 +40,8 @@
                 "black",
                 "indian",
                 "romance"
-            ]
-        },
-    "Religion":
-        {
-            "synonyms": ["religion", "creed", "cult", "doctrine"],
-            "values": [
+            ],
+            "Religion": [
                 "christian",
                 "religion",
                 "islam",
@@ -54,12 +52,8 @@
                 "protestantism",
                 "daoism",
                 "pantheism"
-            ]
-        },
-    "Nationality":
-        {
-            "synonyms": ["nation", "geography", "location", "native", "country", "region"],
-            "values": [
+            ],
+            "Nationality": [
                 "english",
                 "irish",
                 "welsh",
@@ -174,17 +168,9 @@
                 "vietnamese",
                 "zambian",
                 "zimbabwean"
-            ]
-        },
-    "Family Status":
-        {
-            "synonyms": ["family status", "family", "house", "marital", "children", "partner", "pregnant"],
-            "values": ["married", "single", "widowed", "divorced", "separated", "pregnant"]
-        },
-    "Disability":
-        {
-            "synonyms": ["disability", "impairment"],
-            "values": [
+            ],
+            "Family Status": ["married", "single", "widowed", "divorced", "separated", "pregnant"],
+            "Disability": [
                 "hearing",
                 "impairment",
                 "sight",
@@ -204,12 +190,7 @@
                 "fibromyalgia",
                 "dystrophy",
                 "dementia"
-            ]
-        },
-    "Sexual Orientation":
-        {
-            "synonyms": ["sexual orientation", "sexual", "orientation", "attracted"],
-            "values": ["heterosexual", "asexual", "homosexual", "bisexual", "sexual"]
+            ],
+            "Sexual Orientation": ["heterosexual", "asexual", "homosexual", "bisexual", "sexual"]
         }
-
 }

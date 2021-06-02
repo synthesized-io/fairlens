@@ -17,9 +17,8 @@ def load_config(config_path: Union[str, pathlib.Path] = DEFAULT_PATH):
     syn_dict = dict()
     val_dict = dict()
 
-    for key, value in config_dict.items():
-        syn_dict[key] = value["synonyms"]
-        val_dict[key] = value["values"]
+    syn_dict = config_dict["synonyms"]
+    val_dict = config_dict["values"]
 
     global attr_synonym_dict
     attr_synonym_dict = syn_dict
