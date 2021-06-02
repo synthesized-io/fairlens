@@ -17,15 +17,8 @@ class DistanceMetric(ABC):
     Subclasses must implement a distance method.
     """
 
-    def __init__(self, **kwargs):
-        """Initialize distance metric.
-
-        Args:
-            kwargs:
-                Keyword arguments passed down to distance function.
-        """
-
-        self.kwargs = kwargs
+    def __init__(self, **kwargs) -> None:
+        super().__init__()
 
     def __call__(self, x: pd.Series, y: pd.Series) -> Optional[float]:
         """Calculate the distance between two distributions.
@@ -110,22 +103,18 @@ class CategoricalDistanceMetric(DistanceMetric):
     Subclasses must implement a distance_pdf method.
     """
 
-    def __init__(self, bin_edges: Optional[np.ndarray] = None, auto_bin: bool = True, **kwargs):
+    def __init__(self, bin_edges: Optional[np.ndarray] = None):
         """Initialize categorical distance metric.
 
         Args:
             bin_edges (Optional[np.ndarray], optional):
-                A list of bin edges used to bin continuous data by or to indicate bins of pre-binned data.
-            auto_bin (bool, optional):
-                If set to False, forces continuous data to be treated as categorical and does not automatically
-                bin using np.histogram(). Defaults to True.
-            kwargs:
-                Keyword arguments passed down to distance function.
+                A numpy array of bin edges used to bin continuous data or to indicate bins of pre-binned data
+                to metrics which take the distance space into account.
+                i.e. For bins [0-5, 5-10, 10-15, 15-20], bin_edges would be [0, 5, 10, 15, 20].
+                See numpy.histogram_bin_edges() for more information.
         """
 
         self.bin_edges = bin_edges
-        self.auto_bin = auto_bin
-        self.kwargs = kwargs
 
     def check_input(self, x: pd.Series, y: pd.Series) -> bool:
         x_dtype = utils.infer_dtype(x).dtype
@@ -137,8 +126,8 @@ class CategoricalDistanceMetric(DistanceMetric):
         joint = pd.concat((x, y))
         bin_edges = None
 
-        # Compute histograms of the data, bin if continuous and auto_bin set
-        if utils.infer_distr_type(joint).is_continuous() and self.auto_bin:
+        # Compute histograms of the data, bin if continuous
+        if utils.infer_distr_type(joint).is_continuous():
             bin_edges = self.bin_edges or np.histogram_bin_edges(joint, bins="auto")
             p, _ = np.histogram(x, bins=bin_edges)
             q, _ = np.histogram(y, bins=bin_edges)

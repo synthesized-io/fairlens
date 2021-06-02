@@ -138,12 +138,10 @@ class EarthMoversDistance(DistanceMetric):
     """
     Earth movers distance (EMD), aka Wasserstein 1-distance, for continous data.
     The samples are binned automatically by pyemd.
-
-    Keyword arguments are passed to pyemd.emd_samples, i.e. extra_mass_penalty, distance, bins
     """
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
-        return pyemd.emd_samples(x, y, **self.kwargs)
+        return pyemd.emd_samples(x, y)
 
     @property
     def id(self) -> str:
@@ -153,15 +151,13 @@ class EarthMoversDistance(DistanceMetric):
 class KolmogorovSmirnovDistance(DistanceMetric):
     """
     Kolmogorov-Smirnov (KS) distance between two data samples.
-
-    Keyword arguments are passed to scipy.stats.ks_2amp, i.e. alternative, mode
     """
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
-        return ks_2samp(x, y, **self.kwargs)[0]
+        return ks_2samp(x, y)[0]
 
     def p_value(self, x: pd.Series, y: pd.Series) -> float:
-        return ks_2samp(x, y, **self.kwargs)[1]
+        return ks_2samp(x, y)[1]
 
     @property
     def id(self) -> str:
@@ -172,24 +168,23 @@ class EarthMoversDistanceCategorical(CategoricalDistanceMetric):
     """
     Earth movers distance (EMD), aka Wasserstein 1-distance, for categorical data.
 
-    Using EarthMoversDistance on the raw data is faster and recommended. Additional kwargs
-    will be passed to pyemd.emd, i.e. extra_mass_penalty.
+    Using EarthMoversDistance on the raw data is faster and recommended.
     """
 
     def distance_pdf(self, p: pd.Series, q: pd.Series, bin_edges: Optional[np.ndarray]) -> float:
-        distance_metric = 1 - np.eye(len(p))
+        distance_matrix = 1 - np.eye(len(p))
 
         if bin_edges is not None:
             # Use pair-wise euclidean distances between bin centers for scale data
             bin_centers = np.mean([bin_edges[:-1], bin_edges[1:]], axis=0)
             xx, yy = np.meshgrid(bin_centers, bin_centers)
-            distance_metric = np.abs(xx - yy)
+            distance_matrix = np.abs(xx - yy)
 
         p = np.array(p).astype(np.float64)
         q = np.array(q).astype(np.float64)
-        distance_metric = distance_metric.astype(np.float64)
+        distance_matrix = distance_matrix.astype(np.float64)
 
-        return pyemd.emd(p, q, distance_metric, **self.kwargs)
+        return pyemd.emd(p, q, distance_matrix)
 
     @property
     def id(self) -> str:
@@ -199,12 +194,10 @@ class EarthMoversDistanceCategorical(CategoricalDistanceMetric):
 class KullbackLeiblerDivergence(CategoricalDistanceMetric):
     """
     Kullback–Leibler Divergence or Relative Entropy between two probability distributions.
-
-    Keyword arguments are passed to scipy.stats.entropy. ie. base
     """
 
     def distance_pdf(self, p: pd.Series, q: pd.Series, bin_edges: Optional[np.ndarray]) -> float:
-        return entropy(np.array(p), np.array(q), **self.kwargs)
+        return entropy(np.array(p), np.array(q))
 
     @property
     def id(self) -> str:
@@ -213,13 +206,11 @@ class KullbackLeiblerDivergence(CategoricalDistanceMetric):
 
 class JensenShannonDivergence(CategoricalDistanceMetric):
     """
-    Jensen-Shannon Divergence between two probability distributions
-
-    Keyword arguments are passed to scipy.spatial.distance. ie. base
+    Jensen-Shannon Divergence between two probability distributions.
     """
 
     def distance_pdf(self, p: pd.Series, q: pd.Series, bin_edges: Optional[np.ndarray]) -> float:
-        return jensenshannon(p, q, **self.kwargs)
+        return jensenshannon(p, q)
 
     @property
     def id(self) -> str:
@@ -229,12 +220,24 @@ class JensenShannonDivergence(CategoricalDistanceMetric):
 class LNorm(CategoricalDistanceMetric):
     """
     LP Norm between two probability distributions.
-
-    Keyword arguments are passed to np.linalg.norm. ie. ord
     """
 
+    def __init__(self, bin_edges: Optional[np.ndarray] = None, ord: Union[str, int] = 2):
+        """
+        Args:
+            bin_edges (Optional[np.ndarray], optional):
+                A list of bin edges used to bin continuous data by or to indicate bins of pre-binned data.
+                Defaults to None.
+            ord (Union[str, int], optional):
+                The order of the norm. Possible values include positive numbers, 'fro', 'nuc'.
+                See numpy.linalg.norm for more details. Defaults to 2.
+        """
+
+        super().__init__(bin_edges=bin_edges)
+        self.ord = ord
+
     def distance_pdf(self, p: pd.Series, q: pd.Series, bin_edges: Optional[np.ndarray]) -> float:
-        return np.linalg.norm(p - q, **self.kwargs)
+        return np.linalg.norm(p - q, ord=self.ord)
 
     @property
     def id(self) -> str:
