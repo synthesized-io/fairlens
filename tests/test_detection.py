@@ -139,8 +139,7 @@ def test_change_config_shallow():
     data = [[1, "dog", None, 10, "a"], [2, None, "lizard", 12, "b"], [3, "cat", None, 10, "c"]]
     df = pd.DataFrame(data, columns=col_names)
     res = {"mammal": "Mammals", "reptile": "Reptiles"}
-    dt.change_config(MOCK_CONFIG_PATH)
-    assert dt.detect_names_df(df) == res
+    assert dt.detect_names_df(df, config_path=MOCK_CONFIG_PATH) == res
 
 
 def test_change_config_deep():
@@ -148,8 +147,7 @@ def test_change_config_deep():
     data = [[1, "dog", None, 10, "a"], [2, None, "yellow chameleon", 12, "b"], [3, "cat", None, 10, "c"]]
     df = pd.DataFrame(data, columns=col_names)
     res = {"M": "Mammals", "R": "Reptiles"}
-    dt.change_config(MOCK_CONFIG_PATH)
-    assert dt.detect_names_df(df, deep_search=True) == res
+    assert dt.detect_names_df(df, deep_search=True, config_path=MOCK_CONFIG_PATH) == res
 
 
 def test_double_config_shallow():
@@ -157,10 +155,8 @@ def test_double_config_shallow():
     df = pd.DataFrame(columns=col_names)
     res1 = {"gender": "Gender", "ethnicity": "Ethnicity"}
     res2 = {"mammal": "Mammals", "reptile": "Reptiles"}
-    dt.change_config(ENGB_CONFIG_PATH)
-    assert dt.detect_names_df(df) == res1
-    dt.change_config(MOCK_CONFIG_PATH)
-    assert dt.detect_names_df(df) == res2
+    assert dt.detect_names_df(df, config_path=ENGB_CONFIG_PATH) == res1
+    assert dt.detect_names_df(df, config_path=MOCK_CONFIG_PATH) == res2
 
 
 def test_double_config_deep():
@@ -173,7 +169,5 @@ def test_double_config_deep():
     df = pd.DataFrame(data, columns=col_names)
     res1 = {"R": "Religion", "F2": "Family Status"}
     res2 = {"B": "Birds", "F1": "Fish"}
-    dt.change_config(ENGB_CONFIG_PATH)
-    assert dt.detect_names_df(df, deep_search=True) == res1
-    dt.change_config(MOCK_CONFIG_PATH)
-    assert dt.detect_names_df(df, deep_search=True) == res2
+    assert dt.detect_names_df(df, deep_search=True, config_path=ENGB_CONFIG_PATH) == res1
+    assert dt.detect_names_df(df, deep_search=True, config_path=MOCK_CONFIG_PATH) == res2
