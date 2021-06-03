@@ -1,10 +1,13 @@
+import json
+import os
 import pathlib
 from difflib import SequenceMatcher
-from typing import Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
-from fairlens.sensitive import config
+PROJ_DIR = os.path.dirname(os.path.abspath(__file__))
+DEFAULT_CONFIG_PATH = os.path.join(PROJ_DIR, "./configs/config_engb.json")
 
 attr_synonym_dict: Dict[str, List[str]] = {}
 attr_value_dict: Dict[str, List[str]] = {}
@@ -49,18 +52,17 @@ def detect_names_df(
         >>> detect_names_dict_dataframe(df)
         {"native": "Nationality", "location": "Nationality", "house": "Family Status", "religion": "Religion"}
     """
-    global attr_synonym_dict, attr_value_dict
     if config_path:
-        attr_synonym_dict, attr_value_dict = config.load_config(config_path)
+        attr_synonym_dict, attr_value_dict = load_config(config_path)
     else:
-        attr_synonym_dict, attr_value_dict = config.load_config()
+        attr_synonym_dict, attr_value_dict = load_config()
 
     if isinstance(df, list):
         cols = df
     else:
         cols = df.columns
 
-    sensitive_dict = _detect_names_dict(cols, threshold, str_distance)
+    sensitive_dict = _detect_names_dict(cols, threshold, str_distance, attr_synonym_dict)
 
     if isinstance(df, list):
         return sensitive_dict
@@ -72,13 +74,20 @@ def detect_names_df(
         non_sensitive_cols = list(set(cols) - set(sensitive_cols))
 
         for non_sensitive_col in non_sensitive_cols:
-            group_name = _deep_search(df[non_sensitive_col], threshold, str_distance)
+            group_name = _deep_search(df[non_sensitive_col], threshold, str_distance, attr_value_dict)
 
             if group_name is not None:
                 sensitive_dict[non_sensitive_col] = group_name
         return sensitive_dict
     else:
         return sensitive_dict
+
+
+def load_config(config_path: Union[str, pathlib.Path] = DEFAULT_CONFIG_PATH) -> Tuple[Any, Any]:
+    with open(config_path) as json_file:
+        config_dict = json.load(json_file)
+
+    return config_dict["synonyms"], config_dict["values"]
 
 
 def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
@@ -90,7 +99,10 @@ def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
 
 
 def _detect_name(
-    name: str, threshold: float = 0.1, str_distance: Callable[[Optional[str], Optional[str]], float] = None
+    name: str,
+    threshold: float = 0.1,
+    str_distance: Callable[[Optional[str], Optional[str]], float] = None,
+    attr_synonym_dict: Dict[str, List[str]] = None,
 ) -> Optional[str]:
     """Detects whether a given attribute is sensitive and returns the corresponding sensitive group.
     Args:
@@ -104,9 +116,8 @@ def _detect_name(
         Optional[str]:
             The sensitive name corresponding to the input.
     """
-    global attr_value_dict, attr_synonym_dict
-    if not attr_value_dict or not attr_synonym_dict:
-        (attr_synonym_dict, attr_value_dict) = config.load_config()
+    if attr_synonym_dict is None:
+        attr_synonym_dict, _ = load_config()
 
     str_distance = str_distance or _ro_distance
 
@@ -135,7 +146,10 @@ def _detect_name(
 
 
 def _detect_names_dict(
-    names: List[str], threshold: float = 0.1, str_distance: Callable[[Optional[str], Optional[str]], float] = None
+    names: List[str],
+    threshold: float = 0.1,
+    str_distance: Callable[[Optional[str], Optional[str]], float] = None,
+    attr_synonym_dict: Dict[str, List[str]] = None,
 ) -> Dict[str, Optional[str]]:
     """Creates a dictionary which maps the attribute names to the corresponding sensitive attribute.
     Args:
@@ -153,10 +167,15 @@ def _detect_names_dict(
         >>> _detect_names_dict(["age", "gender", "legality", "risk"])
         {"age": "Age", "gender": "Gender", "legality": None, "risk": None}
     """
+    if attr_synonym_dict is None:
+        attr_synonym_dict, _ = load_config()
+
     names_dict = dict()
 
     for name in names:
-        names_dict[name] = _detect_name(name, threshold=threshold, str_distance=str_distance)
+        names_dict[name] = _detect_name(
+            name, threshold=threshold, str_distance=str_distance, attr_synonym_dict=attr_synonym_dict
+        )
 
     # Remove columns with 'None' values.
     for key, value in dict(names_dict).items():
@@ -167,8 +186,13 @@ def _detect_names_dict(
 
 
 def _deep_search(
-    s: pd.Series, threshold: float = 0.1, str_distance: Callable[[Optional[str], Optional[str]], float] = None
+    s: pd.Series,
+    threshold: float = 0.1,
+    str_distance: Callable[[Optional[str], Optional[str]], float] = None,
+    attr_value_dict: Dict[str, List[str]] = None,
 ) -> Optional[str]:
+    if attr_value_dict is None:
+        _, attr_value_dict = load_config()
 
     # Avoid checking number values as they can be inconclusive.
     if s.dtype.kind in ["i", "f", "m", "M"]:
