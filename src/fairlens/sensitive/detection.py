@@ -84,6 +84,18 @@ def detect_names_df(
 
 
 def load_config(config_path: Union[str, pathlib.Path] = DEFAULT_CONFIG_PATH) -> Tuple[Any, Any]:
+    """Changes the configuration that creates the underlying synonym and possible value dictionaries
+    on which the shallow and deep search algorithms for sensitive attributes are based.
+
+    Args:
+        config_path (Union[str, pathlib.Path], optional):
+            The path of the JSON file containing the configuration. Defaults to DEFAULT_CONFIG_PATH.
+
+    Returns:
+        Tuple[Any, Any]:
+            Returns a tuple containing the synonym and value dictionaries in a format readable by the
+            main detection function.
+    """
     with open(config_path) as json_file:
         config_dict = json.load(json_file)
 
@@ -112,6 +124,10 @@ def _detect_name(
             The threshold for the string distance function. Defaults to 0.1.
         str_distance (Callable[[str, str], float], optional):
             The string distance function. Defaults to Ratcliff-Obershelp algorithm.
+        attr_synonym_dict (Dict[str, List[str]]):
+            The dictionary of sensitive category synonyms that is used for the shallow search.
+            If none is passed, it defaults to the configuration describing protected attributes
+            and groups according to the UK Government.
     Returns:
         Optional[str]:
             The sensitive name corresponding to the input.
@@ -159,8 +175,12 @@ def _detect_names_dict(
             The threshold for the string distance function. Defaults to 0.1.
         str_distance (Callable[[str, str], float], optional):
             The string distance function. Defaults to Ratcliff-Obershelp algorithm.
+        attr_synonym_dict (Dict[str, List[str]]):
+            The dictionary of sensitive category synonyms that is used for the shallow search.
+            If none is passed, it defaults to the configuration describing protected attributes
+            and groups according to the UK Government.
     Returns:
-        Dict[str, str]:
+        Dict[str, Optional[str]]:
             A dictionary containing a mapping from attribute names to a string representing the corresponding
             sensitive attribute category or None.
     Examples:
