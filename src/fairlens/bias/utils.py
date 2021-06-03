@@ -1,10 +1,9 @@
 from enum import Enum
-from typing import Dict, List, Optional, Type
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
 
-from .distance import DistanceMetric
 from .exceptions import InvalidAttributeError
 
 
@@ -156,15 +155,17 @@ def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: i
         False
     """
 
-    unique = column.unique()
+    col = infer_dtype(column)
+
+    unique = col.unique()
     n_unique = len(unique)
-    n_rows = len(column)
-    dtype = infer_dtype(column).dtype
+    n_rows = len(col)
+    dtype = col.dtype
 
     if n_unique > max(min_num_unique, ctl_mult * np.log(n_rows)) and dtype in ["float64", "int64"]:
         return DistrType.Continuous
 
-    elif (n_unique == 2 and 0 in unique and 1 in unique) or (unique == [1]).all() or (unique == [0]).all():
+    elif n_unique == 2 and np.isin(unique, [0, 1]).all():
         return DistrType.Binary
 
     else:
@@ -221,50 +222,3 @@ def fd_opt_bins(column: pd.Series) -> int:
     iqr = column.quantile(0.75) - column.quantile(0.25)
 
     return int((column.max() - column.min()) / (2 * iqr * (n ** (-1 / 3))))
-
-
-def str_to_distance(mode: str) -> Type[DistanceMetric]:
-    """Maps a string to a distance metric.
-
-    Args:
-        mode (str):
-            The input string.
-
-    Raises:
-        ValueError:
-            The string doesn't map to a distance metric.
-
-    Returns:
-        Type[DistanceMetric]:
-            The class of the corresponding distance metric.
-    """
-
-    class_map = {}
-    valid_modes = []
-    for cl in _get_all_subclasses(DistanceMetric):
-        cls_id = cl.get_id()
-        if cls_id:
-            class_map[cls_id] = cl
-            valid_modes.append(id)
-        else:
-            valid_modes.append(cl.__name__)
-
-        # All mappings from class name to class kept for compatibility
-        class_map[cl.__name__] = cl
-
-    if mode not in class_map:
-        raise ValueError(f"Invalid mode. Valid modes include:\n{valid_modes}")
-
-    return class_map[mode]
-
-
-def _get_all_subclasses(cls):
-    if len(cls.__subclasses__()) == 0:
-        return [cls]
-
-    all_subclasses = []
-
-    for subclass in cls.__subclasses__():
-        all_subclasses.extend(_get_all_subclasses(subclass))
-
-    return all_subclasses

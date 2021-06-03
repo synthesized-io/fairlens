@@ -1,5 +1,6 @@
+import inspect
 from abc import ABC, abstractmethod
-from typing import Optional
+from typing import Dict, Optional, Type
 
 import numpy as np
 import pandas as pd
@@ -17,8 +18,20 @@ class DistanceMetric(ABC):
     Subclasses must implement a distance method.
     """
 
-    def __init__(self, **kwargs) -> None:
-        super().__init__()
+    class_dict: Dict[str, Type["DistanceMetric"]] = {}
+
+    def __init__(self, **kwargs):
+        ...
+
+    def __init_subclass__(cls, **kwargs):
+        super().__init_subclass__(**kwargs)
+
+        if not inspect.isabstract(cls):
+            cls_id = cls.get_id()
+            if cls_id:
+                cls.class_dict[cls_id] = cls
+            else:
+                cls.class_dict[cls.__name__] = cls
 
     def __call__(self, x: pd.Series, y: pd.Series) -> Optional[float]:
         """Calculate the distance between two distributions.
@@ -40,7 +53,7 @@ class DistanceMetric(ABC):
         return self.distance(x, y)
 
     def check_input(self, x: pd.Series, y: pd.Series) -> bool:
-        """Check whether the input is valid. Returns `False` if data isn't numeric by default.
+        """Check whether the input is valid. Returns False if x and y have different dtypes by default.
 
         Args:
             x (pd.Series):
@@ -56,7 +69,7 @@ class DistanceMetric(ABC):
         x_dtype = utils.infer_dtype(x).dtype
         y_dtype = utils.infer_dtype(y).dtype
 
-        return x_dtype in ["int64", "float64"] and y_dtype in ["int64", "float64"]
+        return x_dtype == y_dtype
 
     @abstractmethod
     def distance(self, x: pd.Series, y: pd.Series) -> float:
@@ -91,6 +104,20 @@ class DistanceMetric(ABC):
         return cls().id
 
 
+class ContinuousDistanceMetric(DistanceMetric):
+    """
+    Base class for distance metrics on continuous data.
+
+    Subclasses must implement a distance method.
+    """
+
+    def check_input(self, x: pd.Series, y: pd.Series) -> bool:
+        x_dtype = utils.infer_dtype(x).dtype
+        y_dtype = utils.infer_dtype(y).dtype
+
+        return x_dtype in ["int64", "float64"] and y_dtype in ["int64", "float64"]
+
+
 class CategoricalDistanceMetric(DistanceMetric):
     """
     Base class for distance metrics on categorical data.
@@ -115,12 +142,6 @@ class CategoricalDistanceMetric(DistanceMetric):
         """
 
         self.bin_edges = bin_edges
-
-    def check_input(self, x: pd.Series, y: pd.Series) -> bool:
-        x_dtype = utils.infer_dtype(x).dtype
-        y_dtype = utils.infer_dtype(y).dtype
-
-        return x_dtype == y_dtype
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
         joint = pd.concat((x, y))
@@ -166,16 +187,5 @@ class CategoricalDistanceMetric(DistanceMetric):
         Returns:
             float:
                 The computed distance.
-        """
-        ...
-
-    def p_value(self, x: pd.Series, y: pd.Series) -> float:
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def id(self) -> str:
-        """
-        A string identifier for the method. Used by fairlens.metrics.stat_distance()
         """
         ...

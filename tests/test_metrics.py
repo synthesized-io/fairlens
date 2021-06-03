@@ -1,17 +1,14 @@
 import numpy as np
 import pandas as pd
 
-from fairlens.bias.metrics import (  # isort:skip
-    BinomialDistance,
-    EarthMoversDistance,
-    EarthMoversDistanceCategorical,
-    HellingerDistance,
-    JensenShannonDivergence,
-    KolmogorovSmirnovDistance,
-    KullbackLeiblerDivergence,
-    LNorm,
-    stat_distance,
-)
+from fairlens.bias.metrics import BinomialDistance
+from fairlens.bias.metrics import EarthMoversDistance as EMD
+from fairlens.bias.metrics import EarthMoversDistanceCategorical as EMDC
+from fairlens.bias.metrics import HellingerDistance
+from fairlens.bias.metrics import JensenShannonDivergence as JS
+from fairlens.bias.metrics import KolmogorovSmirnovDistance as KS
+from fairlens.bias.metrics import KullbackLeiblerDivergence as KL
+from fairlens.bias.metrics import LNorm, stat_distance
 
 df = pd.read_csv("datasets/compas.csv")
 pred1 = df["Ethnicity"] == "Caucasian"
@@ -29,7 +26,7 @@ def test_stat_distance():
     y = {"Ethnicity": [e for e in list(df["Ethnicity"].unique()) if e != "Caucasian"]}
     xy = {"Ethnicity": list(df["Ethnicity"].unique())}
 
-    res = EarthMoversDistance()(group1, target)
+    res = EMD()(group1, target)
     assert stat_distance(df, target_attr, group1, target, mode="emd") == res
     assert stat_distance(df, target_attr, x, xy, mode="emd") == res
 
@@ -53,46 +50,56 @@ def test_binomial_distance():
     assert BinomialDistance()(pd.Series([1, 1]), pd.Series([0, 0])) == 1
     assert BinomialDistance()(pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 0, 0])) == 0.5
 
+    assert BinomialDistance()(pd.Series([True, False]), pd.Series([True, False])) == 0
+    assert BinomialDistance()(pd.Series([False, False]), pd.Series([True, True])) == -1
+    assert BinomialDistance()(pd.Series([True, False, True, True]), pd.Series([True, False, False, False])) == 0.5
+
 
 def test_emd():
-    assert EarthMoversDistance()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
-    assert EarthMoversDistance()(pd.Series([1, 1, 1]), pd.Series([0, 0, 0])) == 0.75
-    assert EarthMoversDistance()(pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 0, 0])) == 0.375
+    assert EMD()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
+    assert EMD()(pd.Series([1, 1, 1]), pd.Series([0, 0, 0])) == 0.75
+    assert EMD()(pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 0, 0])) == 0.375
 
-    assert EarthMoversDistance()(group1, group1) == 0
-    assert EarthMoversDistance()(group1, group3) > EarthMoversDistance()(group1, group2)
+    assert EMD()(group1, group1) == 0
+    assert EMD()(group1, group3) > EMD()(group1, group2)
 
 
 def test_emd_categorical():
-    assert EarthMoversDistanceCategorical()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
-    assert EarthMoversDistanceCategorical()(pd.Series([1]), pd.Series([0, 1])) == 0.5
-    assert EarthMoversDistanceCategorical()(pd.Series([1, 1]), pd.Series([0, 0])) == 1
+    assert EMDC()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
+    assert EMDC()(pd.Series([1]), pd.Series([0, 1])) == 0.5
+    assert EMDC()(pd.Series([1, 1]), pd.Series([0, 0])) == 1
 
-    assert EarthMoversDistanceCategorical()(group1, group1) == 0
-    assert EarthMoversDistanceCategorical()(group1, group3) > EarthMoversDistanceCategorical()(group1, group2)
+    assert EMDC()(pd.Series(["b"]), pd.Series(["a", "b"])) == 0.5
+    assert EMDC()(pd.Series(["b", "b"]), pd.Series(["a", "a"])) == 1
+
+    assert EMDC()(group1, group1) == 0
+    assert EMDC()(group1, group3) > EMDC()(group1, group2)
+
+    assert EMDC(bin_edges=[0, 1])(group1, group2) == 0
+    assert EMDC()(group1, group2) == EMD()(group1, group2)
 
 
 def test_ks_distance():
-    assert KolmogorovSmirnovDistance()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
-    assert KolmogorovSmirnovDistance()(pd.Series([1, 1, 1]), pd.Series([0, 0, 0])) == 1
-    assert KolmogorovSmirnovDistance()(pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 0, 0])) == 0.5
+    assert KS()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
+    assert KS()(pd.Series([1, 1, 1]), pd.Series([0, 0, 0])) == 1
+    assert KS()(pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 0, 0])) == 0.5
 
-    assert KolmogorovSmirnovDistance()(group1, group1) == 0
-    assert KolmogorovSmirnovDistance()(group1, group3) > KolmogorovSmirnovDistance()(group1, group2)
+    assert KS()(group1, group1) == 0
+    assert KS()(group1, group3) > KS()(group1, group2)
 
 
 def test_kl_divergence():
-    assert KullbackLeiblerDivergence()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
-    assert KullbackLeiblerDivergence()(pd.Series([1, 1]), pd.Series([0, 0])) == float("inf")
+    assert KL()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
+    assert KL()(pd.Series([1, 1]), pd.Series([0, 0])) == float("inf")
 
-    assert KullbackLeiblerDivergence()(group1, group1) == 0
+    assert KL()(group1, group1) == 0
 
 
 def test_js_divergence():
-    assert JensenShannonDivergence()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
+    assert JS()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
 
-    assert JensenShannonDivergence()(group1, group1) == 0
-    assert JensenShannonDivergence()(group1, group3) > JensenShannonDivergence()(group1, group2)
+    assert JS()(group1, group1) == 0
+    assert JS()(group1, group3) > JS()(group1, group2)
 
 
 def test_norm():

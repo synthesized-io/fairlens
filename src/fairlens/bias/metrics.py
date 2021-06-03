@@ -11,7 +11,6 @@ from scipy.stats import entropy, ks_2samp
 
 from . import utils
 from .distance import CategoricalDistanceMetric, DistanceMetric
-from .exceptions import IllegalArgumentException
 
 
 def auto_distance(column: pd.Series) -> Type[DistanceMetric]:
@@ -98,15 +97,20 @@ def stat_distance(
         group2 = df[pred2][target_attr]
 
     if not isinstance(group1, pd.Series) or not isinstance(group2, pd.Series):
-        raise IllegalArgumentException()
+        raise TypeError("group1, group2 must be pd.Series or dictionaries")
 
     # Choose the distance metric
-    dist_class = auto_distance(df[target_attr]) if mode == "auto" else utils.str_to_distance(mode)
+    if mode == "auto":
+        dist_class = auto_distance(df[target_attr])
+    elif mode in DistanceMetric.class_dict:
+        dist_class = DistanceMetric.class_dict[mode]
+    else:
+        raise ValueError(f"Invalid mode. Valid modes include:\n{DistanceMetric.class_dict.keys()}")
 
     d = dist_class(**kwargs)(group1, group2)
 
     if d is None:
-        raise IllegalArgumentException("Incompatible data inside both series")
+        raise ValueError("Incompatible data inside both series")
 
     return d
 
@@ -120,11 +124,7 @@ class BinomialDistance(DistanceMetric):
     """
 
     def check_input(self, x: pd.Series, y: pd.Series) -> bool:
-        return (
-            super().check_input(x, y)
-            and utils.infer_distr_type(x).is_binary()
-            and utils.infer_distr_type(y).is_binary()
-        )
+        return utils.infer_distr_type(pd.concat((x, y))).is_binary()
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
         return x.mean() - y.mean()
