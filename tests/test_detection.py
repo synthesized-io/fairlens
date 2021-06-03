@@ -1,6 +1,12 @@
+import os
+
 import pandas as pd
 
 from fairlens.sensitive import detection as dt
+
+TEST_DIR = os.path.dirname(os.path.abspath(__file__))
+MOCK_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_mock.json")
+ENGB_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_engb.json")
 
 
 def test_detect_name():
@@ -101,3 +107,67 @@ def test_dataframe_dict_numbers():
     df = pd.DataFrame(data, columns=col_names)
     res = {}
     assert dt.detect_names_df(df, deep_search=True) == res
+
+
+def test_default_config():
+    col_names = [
+        "gender",
+        "religion",
+        "nationality",
+        "family status",
+        "sexual orientation",
+        "age",
+        "ethnicity",
+        "disability",
+    ]
+    df = pd.DataFrame(columns=col_names)
+    res = {
+        "gender": "Gender",
+        "religion": "Religion",
+        "nationality": "Nationality",
+        "family status": "Family Status",
+        "sexual orientation": "Sexual Orientation",
+        "age": "Age",
+        "ethnicity": "Ethnicity",
+        "disability": "Disability",
+    }
+    assert dt.detect_names_df(df) == res
+
+
+def test_change_config_shallow():
+    col_names = ["Credit", "mammal", "reptile", "Score", "Gender"]
+    data = [[1, "dog", None, 10, "a"], [2, None, "lizard", 12, "b"], [3, "cat", None, 10, "c"]]
+    df = pd.DataFrame(data, columns=col_names)
+    res = {"mammal": "Mammals", "reptile": "Reptiles"}
+    assert dt.detect_names_df(df, config_path=MOCK_CONFIG_PATH) == res
+
+
+def test_change_config_deep():
+    col_names = ["Credit", "M", "R", "Score", "Gender"]
+    data = [[1, "dog", None, 10, "a"], [2, None, "yellow chameleon", 12, "b"], [3, "cat", None, 10, "c"]]
+    df = pd.DataFrame(data, columns=col_names)
+    res = {"M": "Mammals", "R": "Reptiles"}
+    assert dt.detect_names_df(df, deep_search=True, config_path=MOCK_CONFIG_PATH) == res
+
+
+def test_double_config_shallow():
+    col_names = ["Credit", "mammal", "reptile", "Score", "gender", "Rand", "ethnicity"]
+    df = pd.DataFrame(columns=col_names)
+    res1 = {"gender": "Gender", "ethnicity": "Ethnicity"}
+    res2 = {"mammal": "Mammals", "reptile": "Reptiles"}
+    assert dt.detect_names_df(df, config_path=ENGB_CONFIG_PATH) == res1
+    assert dt.detect_names_df(df, config_path=MOCK_CONFIG_PATH) == res2
+
+
+def test_double_config_deep():
+    col_names = ["Credit", "B", "R", "Score", "F1", "Rand", "F2"]
+    data = [
+        [10, "golden oriole", "islam", 20, "white shark", "xyz", "married"],
+        [20, "osprey", "christian", 10, "angler fish", "abc", "divorced"],
+        [30, None, None, 30, None, None, None],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    res1 = {"R": "Religion", "F2": "Family Status"}
+    res2 = {"B": "Birds", "F1": "Fish"}
+    assert dt.detect_names_df(df, deep_search=True, config_path=ENGB_CONFIG_PATH) == res1
+    assert dt.detect_names_df(df, deep_search=True, config_path=MOCK_CONFIG_PATH) == res2
