@@ -10,7 +10,7 @@ from scipy.spatial.distance import jensenshannon
 from scipy.stats import entropy, ks_2samp
 
 from . import utils
-from .distance import CategoricalDistanceMetric, DistanceMetric
+from .distance import CategoricalDistanceMetric, ContinuousDistanceMetric, DistanceMetric
 
 
 def auto_distance(column: pd.Series) -> Type[DistanceMetric]:
@@ -115,7 +115,7 @@ def stat_distance(
     return d
 
 
-class BinomialDistance(DistanceMetric):
+class BinomialDistance(ContinuousDistanceMetric):
     """
     Difference distance between two binary data samples.
     i.e p_x - p_y, where p_x, p_y are the probabilities of success in x and y, respectively.
@@ -134,7 +134,7 @@ class BinomialDistance(DistanceMetric):
         return "binomial"
 
 
-class EarthMoversDistance(DistanceMetric):
+class EarthMoversDistance(ContinuousDistanceMetric):
     """
     Earth movers distance (EMD), aka Wasserstein 1-distance, for continous data.
     The samples are binned automatically by pyemd.
@@ -148,7 +148,7 @@ class EarthMoversDistance(DistanceMetric):
         return "emd"
 
 
-class KolmogorovSmirnovDistance(DistanceMetric):
+class KolmogorovSmirnovDistance(ContinuousDistanceMetric):
     """
     Kolmogorov-Smirnov (KS) distance between two data samples.
     """

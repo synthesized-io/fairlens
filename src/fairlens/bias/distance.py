@@ -52,6 +52,7 @@ class DistanceMetric(ABC):
 
         return self.distance(x, y)
 
+    @abstractmethod
     def check_input(self, x: pd.Series, y: pd.Series) -> bool:
         """Check whether the input is valid. Returns False if x and y have different dtypes by default.
 
@@ -65,11 +66,7 @@ class DistanceMetric(ABC):
             bool:
                 Whether or not the input is valid.
         """
-
-        x_dtype = utils.infer_dtype(x).dtype
-        y_dtype = utils.infer_dtype(y).dtype
-
-        return x_dtype == y_dtype
+        ...
 
     @abstractmethod
     def distance(self, x: pd.Series, y: pd.Series) -> float:
@@ -142,6 +139,12 @@ class CategoricalDistanceMetric(DistanceMetric):
         """
 
         self.bin_edges = bin_edges
+
+    def check_input(self, x: pd.Series, y: pd.Series) -> bool:
+        x_dtype = utils.infer_dtype(x).dtype
+        y_dtype = utils.infer_dtype(y).dtype
+
+        return x_dtype == y_dtype
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
         joint = pd.concat((x, y))
