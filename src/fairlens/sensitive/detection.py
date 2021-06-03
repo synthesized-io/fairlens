@@ -4,7 +4,6 @@ import pathlib
 from difflib import SequenceMatcher
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
-
 import pandas as pd
 
 PROJ_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -120,7 +119,9 @@ def find_sensitive_correlations(
     """
     str_distance = str_distance or _ro_distance
 
-    sensitive_dict = detect_names_df(df, threshold=threshold, str_distance=str_distance, deep_search=True, config_path=config_path)
+    sensitive_dict = detect_names_df(
+        df, threshold=threshold, str_distance=str_distance, deep_search=True, config_path=config_path
+    )
 
     non_sensitive_cols = list(set(df.columns) - set(sensitive_dict.keys()))
 
@@ -188,7 +189,9 @@ def find_column_correlation(
     """
     str_distance = str_distance or _ro_distance
 
-    sensitive_dict = detect_names_df(df, threshold=threshold, str_distance=str_distance, deep_search=True, config_path=config_path)
+    sensitive_dict = detect_names_df(
+        df, threshold=threshold, str_distance=str_distance, deep_search=True, config_path=config_path
+    )
 
     correlation_list = list()
 
@@ -233,6 +236,11 @@ def load_config(config_path: Union[str, pathlib.Path] = DEFAULT_CONFIG_PATH) -> 
         config_dict = json.load(json_file)
 
     return config_dict["synonyms"], config_dict["values"]
+
+
+def change_default_config_path(config_path: Union[str, pathlib.Path]):
+    global DEFAULT_CONFIG_PATH
+    DEFAULT_CONFIG_PATH = os.path.join(PROJ_DIR, config_path)
 
 
 def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:

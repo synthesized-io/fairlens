@@ -200,7 +200,7 @@ def test_series_correlation():
     assert set(dt.find_column_correlation(s1, df, corr_cutoff=0.9)) == set(res1)
     assert set(dt.find_column_correlation(s2, df, corr_cutoff=0.9)) == set(res2)
 
-    
+
 def test_default_config():
     col_names = [
         "gender",
