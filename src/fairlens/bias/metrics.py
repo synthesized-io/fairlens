@@ -1,295 +1,257 @@
-from typing import Dict, Hashable, List, Optional, Tuple, Union
+"""
+Collection of Metrics that measure the distance, or similarity, between two datasets.
+"""
+from typing import Dict, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import pandas as pd
-from pyemd import emd as pemd
+import pyemd
+from scipy.spatial.distance import jensenshannon
 from scipy.stats import entropy, ks_2samp
 
 from . import utils
-from .exceptions import InsufficientParamError
+from .distance import CategoricalDistanceMetric, ContinuousDistanceMetric, DistanceMetric
 
 
-def class_imbalance(
-    df: pd.DataFrame, target_attr: str, group1: Dict[str, List[str]], group2: Dict[str, List[str]]
-) -> float:
-    """Computes the class imbalance between group1 and group2 with respect to the target attribute.
+def auto_distance(column: pd.Series) -> Type[DistanceMetric]:
+    """Return the best statistical distance metric based on the distribution of the data.
 
     Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        target_attr (str):
-            The target attribute in the dataframe.
-        group1 (Dict[str, List[str]]):
-            The first group of interest.
-        group2 (Dict[str, List[str]]):
-            The second group of interest.
+        column (pd.Series):
+            The input data in a pd.Series.
 
     Returns:
-        float:
-            The class imbalance as a float.
-
-    Examples:
-        >>> df = pd.read_csv("datasets/compas.csv")
-        >>> class_imbalance(df, 'RawScore', {'Ethnicity': ['African-American']}, {'Ethnicity': ['Caucasian']})
-        0.021244309559939303
+        Type[DistanceMetric]:
+            The class of the distance metric.
     """
 
-    pred1, pred2 = utils.get_predicates(df, group1, group2)
+    distr_type = utils.infer_distr_type(column)
+    if distr_type.is_continuous():
+        return KolmogorovSmirnovDistance
+    elif distr_type.is_binary():
+        return BinomialDistance
 
-    return (df[pred1][target_attr].nunique() - df[pred2][target_attr].nunique()) / df[target_attr].nunique()
+    return EarthMoversDistanceCategorical
 
 
-def emd(
+def stat_distance(
     df: pd.DataFrame,
     target_attr: str,
-    group1: Optional[Dict[str, List[str]]] = None,
-    group2: Optional[Dict[str, List[str]]] = None,
-    counts: Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int]]] = None,
-) -> float:
-    """Computes the Earth Mover's Distance between the probability distributions of group1 and group2 with
-    respect to the target attribute. If group2 is None then the distance computed is between group1 and the
-    remaining data points. Alternatively precomputed aggregated counts for each of the groups can be provided.
+    group1: Union[Dict[str, List[str]], pd.Series],
+    group2: Union[Optional[Dict[str, List[str]]], pd.Series] = None,
+    mode: str = "auto",
+    p_value: bool = False,
+    **kwargs,
+) -> Union[float, Tuple[float, float]]:
+    """Computes the statistical distance between two probability distributions ie. group 1 and group 2, with respect
+    to the target attribute. The distance metric can be chosen through the mode parameter. If mode is set to "auto",
+    the most suitable metric depending on the target attributes' distribution is chosen.
+
+    If group1 is a dictionary and group2 is None then the distance is computed between group1 and the rest of the
+    dataset.
 
     Args:
         df (pd.DataFrame):
             The input datafame.
         target_attr (str):
             The target attribute in the dataframe.
-        group1 (Optional[Dict[str, List[str]]]):
-            The first group of interest. Defaults to None.
-        group2 (Optional[Dict[str, List[str]]], optional):
-            The second group of interest. Defaults to None.
-        counts (Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int]]], optional):
-            A tuple containing the counts of the first and second group, each in a dictionary mapping
-            from value to counts. These counts can be interpreted as the histograms between which the
-            metric will be computed. Overrides group1 and group2. Defaults to None.
+        group1 (Union[Dict[str, List[str]], pd.Series]):
+            The first group of interest. Can be a dictionary mapping from attribute to values
+            or the raw data in a pandas series.
+        group2 (Union[Optional[Dict[str, List[str]]], pd.Series]], optional):
+            The second group of interest. Can be a dictionary mapping from attribute to values
+            or the raw data in a pandas series. Defaults to None.
+        mode (str):
+            Which distance metric to use. Can be the names of classes from fairlens.bias.metrics, or their
+            __repr__() strings. If set to "auto", it automatically picks the best metric based on the
+            distribution of the target attribute. Defaults to "auto".
+        p_value (bool):
+            Returns the a suitable p-value for the metric if it exists. Defaults to False.
+        **kwargs:
+            Keyword arguments for the distance metric. Passed to the __init__ function of distance metrics.
 
     Returns:
-        float:
-            The Earth Mover's Distance as a float.
+        Union[float, Tuple[float, float]]:
+            The distance as a float, and the p-value if p_value is set to True and can be computed.
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
-        >>> emd(df, 'RawScore', {'Ethnicity': ['African-American']}, {'Ethnicity': ['Caucasian']})
-        0.15406599999999984
-        >>> metrics.emd(df, 'RawScore', {'Ethnicity': ['African-American']})
-        0.16237499999999971
+        >>> group1 = {"Ethnicity": ["African-American", "African-Am"]}
+        >>> group2 = {"Ethnicity": ["Caucasian"]}
+        >>> group3 = {"Ethnicity": ["Asian"]}
+        >>> stat_distance(df, "RawScore", group1, group2, mode="auto")
+        0.1133214633580949
+        >>> stat_distance(df, "RawScore", group3, group2, mode="auto", p_value=True)
+        (0.0816143577815524, 0.02693435054772131)
     """
 
-    if counts is None:
-        if group1 is None:
-            raise InsufficientParamError()
+    # Parse group arguments into pandas series'
+    if isinstance(group1, dict) and (isinstance(group2, dict) or group2 is None):
+        if group2 is None:
+            pred1 = utils.get_predicates_mult(df, [group1])[0]
+            pred2 = ~pred1
+        else:
+            pred1, pred2 = tuple(utils.get_predicates_mult(df, [group1, group2]))
 
-        # Find the predicates for the two groups
-        pred1, pred2 = utils.get_predicates(df, group1, group2)
+        group1 = df[pred1][target_attr]
+        group2 = df[pred2][target_attr]
 
-        # Compute the histogram / counts for each group
-        g1_counts = df[pred1][target_attr].value_counts().to_dict()
-        g2_counts = df[pred2][target_attr].value_counts().to_dict()
+    if not isinstance(group1, pd.Series) or not isinstance(group2, pd.Series):
+        raise TypeError("group1, group2 must be pd.Series or dictionaries")
 
-        counts = g1_counts, g2_counts
+    # Choose the distance metric
+    if mode == "auto":
+        dist_class = auto_distance(df[target_attr])
+    elif mode in DistanceMetric.class_dict:
+        dist_class = DistanceMetric.class_dict[mode]
+    else:
+        raise ValueError(f"Invalid mode. Valid modes include:\n{DistanceMetric.class_dict.keys()}")
 
-    space = df[target_attr].unique()
+    d = dist_class(**kwargs)(group1, group2)
 
-    p = utils.align_probabilities(counts[0], space)
-    q = utils.align_probabilities(counts[1], space)
+    if d is None:
+        raise ValueError("Incompatible data inside both series")
 
-    xx, yy = np.meshgrid(space, space)
-    distance_space = np.abs(xx - yy)
-
-    return pemd(p, q, distance_space)
+    return d
 
 
-def ks_distance(
-    df: pd.DataFrame, target_attr: str, group1: Dict[str, List[str]], group2: Optional[Dict[str, List[str]]] = None
-) -> Tuple[float, float]:
-    """Performs the Kolmogorov–Smirnov test between the probability distributions of group1 and group2 with
-    respect to the target attribute. If group2 is None then the distance is computed between group1 and the
-    rest of the dataset. Returns the Kolmogorov–Smirnov statistical distance and the associated p-value.
-
-    Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        target_attr (str):
-            The target attribute in the dataframe.
-        group1 (Dict[str, List[str]]):
-            The first group of interest.
-        group2 (Optional[Dict[str, List[str]]], optional):
-            The second group of interest. Defaults to None.
-
-    Returns:
-        Tuple[float, float]:
-            A tuple containing the Kolmogorov–Smirnov statistic
-
-    Examples:
-        >>> df = pd.read_csv("datasets/compas.csv")
-        >>> ks_distance(df, 'RawScore', {'Sex': ['Male']}, {'Sex': ['Female']})
-        (0.0574598854742705, 2.585181602569765e-30)
-        >>> ks_distance(df, 'RawScore', {'FirstName': ['Stephanie']}, {'FirstName': ['Kevin']})
-        (0.0744047619047619, 0.8522462138629425)
+class BinomialDistance(ContinuousDistanceMetric):
+    """
+    Difference distance between two binary data samples.
+    i.e p_x - p_y, where p_x, p_y are the probabilities of success in x and y, respectively.
+    The p-value computed is for the null hypothesis is that the probability of success is p_y.
+    Data is assumed to be a series of 1, 0 (success, failure) Bernoulli random variates.
     """
 
-    pred1, pred2 = utils.get_predicates(df, group1, group2)
+    def check_input(self, x: pd.Series, y: pd.Series) -> bool:
+        return utils.infer_distr_type(pd.concat((x, y))).is_binary()
 
-    statistic, pval = ks_2samp(df[pred1][target_attr], df[pred2][target_attr])
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return x.mean() - y.mean()
 
-    return statistic, pval
+    @property
+    def id(self) -> str:
+        return "binomial"
 
 
-def kl_divergence(
-    df: pd.DataFrame,
-    target_attr: str,
-    group1: Optional[Dict[str, List[str]]] = None,
-    group2: Optional[Dict[str, List[str]]] = None,
-    counts: Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int]]] = None,
-) -> float:
-    """Computes the Kullback–Leibler Divergence or Relative Entropy between the probability distributions of the
-    two groups with respect to the target attribute. If group2 is None then the distance is computed between
-    group1 and the rest of the dataset. Alternatively precomputed aggregated counts for each of the groups
-    can be provided.
-
-    Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        target_attr (str):
-            The target attribute in the dataframe.
-        group1 (Dict[str, List[str]]):
-            The first group of interest.
-        group2 (Optional[Dict[str, List[str]]], optional):
-            The first group of interest. Defaults to None.
-        counts (Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int]]], optional):
-            A tuple containing the counts of the first and second group, each in a dictionary mapping
-            from value to counts. These counts can be interpreted as the histograms between which the
-            metric will be computed. Overrides group1 and group2. Defaults to None.
-
-    Returns:
-        float:
-            The entropy as a float.
+class EarthMoversDistance(ContinuousDistanceMetric):
+    """
+    Earth movers distance (EMD), aka Wasserstein 1-distance, for continous data.
+    The samples are binned automatically by pyemd.
     """
 
-    if counts is None:
-        if group1 is None:
-            raise InsufficientParamError()
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return pyemd.emd_samples(x, y)
 
-        # Find the predicates for the two groups
-        pred1, pred2 = utils.get_predicates(df, group1, group2)
-
-        # Compute the histogram / counts for each group
-        g1_counts = df[pred1][target_attr].value_counts().to_dict()
-        g2_counts = df[pred2][target_attr].value_counts().to_dict()
-
-        counts = g1_counts, g2_counts
-
-    space = df[target_attr].unique()
-
-    p = utils.align_probabilities(counts[0], space)
-    q = utils.align_probabilities(counts[1], space)
-
-    return entropy(p, q)
+    @property
+    def id(self) -> str:
+        return "emd"
 
 
-def js_divergence(
-    df: pd.DataFrame,
-    target_attr: str,
-    group1: Optional[Dict[str, List[str]]] = None,
-    group2: Optional[Dict[str, List[str]]] = None,
-    counts: Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int], Dict[Hashable, int]]] = None,
-) -> float:
-    """Computes the Jensen-Shannon Divergence between the probability distributions of the two groups with respect
-    to the target attribute. If group2 is None then the distance is computed between group1 and the rest of the
-    dataset. Alternatively precomputed aggregated counts for each of the groups can be provided.
-
-    Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        target_attr (str):
-            The target attribute in the dataframe.
-        group1 (Optional[Dict[str, List[str]]], optional):
-            The first group of interest. Defaults to None
-        group2 (Optional[Dict[str, List[str]]], optional):
-            The second group of interest. Defaults to None.
-        counts (Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int], Dict[Hashable, int]]], optional):
-            A tuple containing the counts of the 2 groups and the entire dataset, each in a dictionary mapping
-            from value to counts. These counts can be interpreted as the histograms between which the
-            metric will be computed. Overrides group1 and group2. Defaults to None.
-
-    Returns:
-        float:
-            The entropy as a float.
+class KolmogorovSmirnovDistance(ContinuousDistanceMetric):
+    """
+    Kolmogorov-Smirnov (KS) distance between two data samples.
     """
 
-    if counts is None:
-        if group1 is None:
-            raise InsufficientParamError()
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return ks_2samp(x, y)[0]
 
-        # Find the predicates for the two groups
-        pred1, pred2 = utils.get_predicates(df, group1, group2)
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        return ks_2samp(x, y)[1]
 
-        # Compute the histogram / counts for each group
-        g1_counts = df[pred1][target_attr].value_counts().to_dict()
-        g2_counts = df[pred2][target_attr].value_counts().to_dict()
-        total_counts = df[target_attr].value_counts().to_dict()
-
-        counts = g1_counts, g2_counts, total_counts
-
-    space = df[target_attr].unique()
-
-    p = utils.align_probabilities(counts[0], space)
-    q = utils.align_probabilities(counts[1], space)
-    pq = utils.align_probabilities(counts[2], space)
-
-    return (entropy(p, pq) + entropy(q, pq)) / 2
+    @property
+    def id(self) -> str:
+        return "ks_distance"
 
 
-def lp_norm(
-    df: pd.DataFrame,
-    target_attr: str,
-    group1: Dict[str, List[str]],
-    group2: Optional[Dict[str, List[str]]] = None,
-    order: Union[int, str] = 2,
-    counts: Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int]]] = None,
-) -> float:
-    """Computes the LP Norm between the probability distributions of the two groups with respect to the
-    target attribute. If group2 is None then the distance is computed between group1 and the rest of the
-    dataset. Alternatively precomputed aggregated counts for each of the groups can be provided.
+class EarthMoversDistanceCategorical(CategoricalDistanceMetric):
+    """
+    Earth movers distance (EMD), aka Wasserstein 1-distance, for categorical data.
 
-    Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        target_attr (str):
-            The target attribute in the dataframe.
-        group1 (Dict[str, List[str]]):
-            The first group of interest.
-        group2 (Optional[Dict[str, List[str]]], optional):
-            The second group of interest. Defaults to None.
-        order (Union[int, str], optional):
-            The order of the norm (p). Passed as 'ord' to numpy.linalg.norm. Defaults to 2.
-        counts (Optional[Tuple[Dict[Hashable, int], Dict[Hashable, int]]], optional):
-            A tuple containing the counts of the 2 groups and the entire dataset, each in a dictionary mapping
-            from value to counts. These counts can be interpreted as the histograms between which the
-            metric will be computed. Overrides group1 and group2. Defaults to None.
-
-    Returns:
-        float:
-            The norm as a float.
+    Using EarthMoversDistance on the raw data is faster and recommended.
     """
 
-    if counts is None:
-        if group1 is None:
-            raise InsufficientParamError()
+    def distance_pdf(self, p: pd.Series, q: pd.Series, bin_edges: Optional[np.ndarray]) -> float:
+        distance_matrix = 1 - np.eye(len(p))
 
-        # Find the predicates for the two groups
-        pred1, pred2 = utils.get_predicates(df, group1, group2)
+        if bin_edges is not None:
+            # Use pair-wise euclidean distances between bin centers for scale data
+            bin_centers = np.mean([bin_edges[:-1], bin_edges[1:]], axis=0)
+            xx, yy = np.meshgrid(bin_centers, bin_centers)
+            distance_matrix = np.abs(xx - yy)
 
-        # Compute the histogram / counts for each group
-        g1_counts = df[pred1][target_attr].value_counts().to_dict()
-        g2_counts = df[pred2][target_attr].value_counts().to_dict()
+        p = np.array(p).astype(np.float64)
+        q = np.array(q).astype(np.float64)
+        distance_matrix = distance_matrix.astype(np.float64)
 
-        counts = g1_counts, g2_counts
+        return pyemd.emd(p, q, distance_matrix)
 
-    space = df[target_attr].unique()
+    @property
+    def id(self) -> str:
+        return "emd_categorical"
 
-    p = utils.align_probabilities(counts[0], space)
-    q = utils.align_probabilities(counts[1], space)
 
-    return np.linalg.norm(p - q, ord=order)
+class KullbackLeiblerDivergence(CategoricalDistanceMetric):
+    """
+    Kullback–Leibler Divergence or Relative Entropy between two probability distributions.
+    """
+
+    def distance_pdf(self, p: pd.Series, q: pd.Series, bin_edges: Optional[np.ndarray]) -> float:
+        return entropy(np.array(p), np.array(q))
+
+    @property
+    def id(self) -> str:
+        return "kl_divergence"
+
+
+class JensenShannonDivergence(CategoricalDistanceMetric):
+    """
+    Jensen-Shannon Divergence between two probability distributions.
+    """
+
+    def distance_pdf(self, p: pd.Series, q: pd.Series, bin_edges: Optional[np.ndarray]) -> float:
+        return jensenshannon(p, q)
+
+    @property
+    def id(self) -> str:
+        return "js_divergence"
+
+
+class LNorm(CategoricalDistanceMetric):
+    """
+    LP Norm between two probability distributions.
+    """
+
+    def __init__(self, bin_edges: Optional[np.ndarray] = None, ord: Union[str, int] = 2):
+        """
+        Args:
+            bin_edges (Optional[np.ndarray], optional):
+                A list of bin edges used to bin continuous data by or to indicate bins of pre-binned data.
+                Defaults to None.
+            ord (Union[str, int], optional):
+                The order of the norm. Possible values include positive numbers, 'fro', 'nuc'.
+                See numpy.linalg.norm for more details. Defaults to 2.
+        """
+
+        super().__init__(bin_edges=bin_edges)
+        self.ord = ord
+
+    def distance_pdf(self, p: pd.Series, q: pd.Series, bin_edges: Optional[np.ndarray]) -> float:
+        return np.linalg.norm(p - q, ord=self.ord)
+
+    @property
+    def id(self) -> str:
+        return "norm"
+
+
+class HellingerDistance(CategoricalDistanceMetric):
+    """
+    Hellinger distance between two probability distributions.
+    """
+
+    def distance_pdf(self, p: pd.Series, q: pd.Series, bin_edges: Optional[np.ndarray]) -> float:
+        return np.linalg.norm(np.sqrt(p) - np.sqrt(q)) / np.sqrt(2)
+
+    @property
+    def id(self) -> str:
+        return "hellinger"

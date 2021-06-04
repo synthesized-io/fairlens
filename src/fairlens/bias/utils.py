@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, Hashable, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import numpy as np
 import pandas as pd
@@ -30,7 +30,7 @@ def bin(
     remove_outliers: Optional[float] = 0.1,
     quantile_based: bool = False,
     mean_bins=False,
-    **kwargs
+    **kwargs,
 ) -> pd.DataFrame:
     """Bin continous values into discrete bins.
 
@@ -88,21 +88,19 @@ def bin(
     return binned
 
 
-def infer_dtype(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
+def infer_dtype(col: pd.Series) -> pd.Series:
     """Infers the type of the data and converts the data to it.
 
     Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        column_name (str):
-            The name of the dataframe column to transform.
+        col (str):
+            The column of the dataframe to transform.
 
     Returns:
-        pd.DataFrame:
-            The dataframe converted to its inferred type.
+        pd.Series:
+            The column converted to its inferred type.
     """
 
-    column = df[column_name].copy()
+    column = col.copy()
 
     in_dtype = str(column.dtype)
 
@@ -127,13 +125,11 @@ def infer_dtype(df: pd.DataFrame, column_name: str) -> pd.DataFrame:
     out_dtype = str(column.dtype)
 
     if out_dtype == in_dtype:
-        return df
+        return col
     elif out_dtype in ("i", "u", "f", "f8", "i8", "u8"):
-        df[column_name] = pd.to_numeric(df[column_name], errors="coerce")
-    else:
-        df[column_name] = df[column_name].astype(out_dtype, errors="ignore")
+        return pd.to_numeric(col, errors="coerce")
 
-    return df
+    return col.astype(out_dtype, errors="ignore")
 
 
 def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: int = 10) -> DistrType:
@@ -159,61 +155,21 @@ def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: i
         False
     """
 
-    n_unique = column.nunique()
-    num_rows = len(column)
+    col = infer_dtype(column)
 
-    if n_unique > max(min_num_unique, ctl_mult * np.log(num_rows)):
+    unique = col.unique()
+    n_unique = len(unique)
+    n_rows = len(col)
+    dtype = col.dtype
+
+    if n_unique > max(min_num_unique, ctl_mult * np.log(n_rows)) and dtype in ["float64", "int64"]:
         return DistrType.Continuous
 
-    elif n_unique == 2:
+    elif n_unique == 2 and np.isin(unique, [0, 1]).all():
         return DistrType.Binary
 
     else:
         return DistrType.Categorical
-
-
-def get_predicates(
-    df: pd.DataFrame, group1: Dict[str, List[str]], group2: Optional[Dict[str, List[str]]] = None
-) -> Tuple[pd.Series, pd.Series]:
-    """Forms and returns pandas dataframe predicates which can be used to index group1 and group2.
-    If group2 is None the second predicate returned is the inverse of that used to index group1.
-
-    Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        group1 (Dict[str, List[Any]]):
-            The first group of interest.
-        group2 (Optional[Dict[str, List[str]]], optional):
-            The second group of interest. Defaults to None.
-
-    Raises:
-        InvalidAttributeError:
-            Indicates an ill-formed group input due to invalid attributes in this case.
-
-    Returns:
-        Tuple[pd.Series, pd.Series]:
-            A pair of series' that can be used to index the corresponding groups of data.
-    """
-
-    # Check all attributes are valid
-    attrs = set(group1.keys())
-    if group2:
-        attrs = attrs.union(set(group2.keys()))
-
-    if not attrs <= set(df.columns):
-        raise InvalidAttributeError(attrs)
-
-    # Form predicate for first group
-    pred1 = df[group1.keys()].isin(group1).all(axis=1)
-
-    # If group2 not given return the predicate and its inverse
-    if group2 is None:
-        return pred1, ~pred1
-
-    # Form predicate for second group
-    pred2 = df[group2.keys()].isin(group2).all(axis=1)
-
-    return pred1, pred2
 
 
 def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) -> List[pd.Series]:
@@ -266,27 +222,3 @@ def fd_opt_bins(column: pd.Series) -> int:
     iqr = column.quantile(0.75) - column.quantile(0.25)
 
     return int((column.max() - column.min()) / (2 * iqr * (n ** (-1 / 3))))
-
-
-def align_probabilities(group_counts: Dict[Hashable, int], space: np.ndarray) -> np.ndarray:
-    """Align the counts for the given group and return the probabilities aligned with the space.
-
-    Args:
-        group_counts (Dict[Hashable, int]):
-            A mapping from the values in the group to their counts / frequency.
-        space (np.ndarray):
-            A space to align the counts with. ie. A list containing of all the unique values in the dataset,
-            or the a list of all natural numbers.
-
-    Returns:
-        np.ndarray:
-            The aligned probabilities in an array of the same length as space.
-    """
-
-    p = np.zeros(len(space))
-    for i, val in enumerate(space):
-        p[i] = group_counts.get(val, 0)
-
-    p /= p.sum()
-
-    return p
