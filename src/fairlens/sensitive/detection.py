@@ -4,7 +4,9 @@ import pathlib
 from difflib import SequenceMatcher
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
+import numpy as np
 import pandas as pd
+import scipy.stats as ss
 
 PROJ_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_CONFIG_PATH = os.path.join(PROJ_DIR, "./configs/config_engb.json")
@@ -249,6 +251,18 @@ def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
         return 1
 
     return 1 - SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
+
+
+def _cramers_v(sr_a: pd.Series, sr_b: pd.Series):
+    confusion_matrix = pd.crosstab(sr_a, sr_b)
+    chi2 = ss.chi2_contingency(confusion_matrix)[0]
+    n = confusion_matrix.sum().sum()
+    phi2 = chi2 / n
+    r, k = confusion_matrix.shape
+    phi2corr = max(0, phi2 - ((k - 1) * (r - 1)) / (n - 1))
+    rcorr = r - ((r - 1) ** 2) / (n - 1)
+    kcorr = k - ((k - 1) ** 2) / (n - 1)
+    return np.sqrt(phi2corr / min((kcorr - 1), (rcorr - 1)))
 
 
 def _detect_name(
