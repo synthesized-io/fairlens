@@ -131,8 +131,11 @@ def find_sensitive_correlations(
 
     for non_sensitive_col in non_sensitive_cols:
         col1 = df[non_sensitive_col]
+
         if df[non_sensitive_col].map(type).eq(str).all():
-            col1 = df[non_sensitive_col].astype("category").cat.codes
+            is_categorical = True
+        else:
+            is_categorical = False
 
         correlation_list = list()
 
@@ -140,10 +143,22 @@ def find_sensitive_correlations(
             col2 = df[sensitive_col]
             # Turn string columns into numerical representation to be able to correlate.
             if df[sensitive_col].map(type).eq(str).all():
-                col2 = df[sensitive_col].astype("category").cat.codes
+                if is_categorical:
+                    # If both columns are categorical, we use Cramer's V.
+                    if _cramers_v(col1, col2) > corr_cutoff:
+                        correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
+                else:
+                    # If one column is numeric, we can use numerical encodings.
+                    col2 = col2.astype("category").cat.codes
 
-            if abs(col1.corr(col2)) > corr_cutoff:
-                correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
+                    if abs(col1.corr(col2)) > corr_cutoff:
+                        correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
+            else:
+                if is_categorical:
+                    col1 = col1.astype("category").cat.codes
+
+                if abs(col1.corr(col2)) > corr_cutoff:
+                    correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
 
         if len(correlation_list) > 0:
             correlation_dict[non_sensitive_col] = correlation_list
@@ -206,17 +221,32 @@ def find_column_correlation(
         col1 = col
 
     if col1.map(type).eq(str).all():
-        col1 = col1.astype("category").cat.codes
+        is_categorical = True
+    else:
+        is_categorical = False
+        # col1 = col1.astype("category").cat.codes
 
     for sensitive_col in sensitive_dict.keys():
         col2 = df[sensitive_col]
 
         # Turn string columns into numerical representations.
         if df[sensitive_col].map(type).eq(str).all():
-            col2 = col2.astype("category").cat.codes
+            if is_categorical:
+                # If both columns are categorical, we use Cramer's V.
+                if _cramers_v(col1, col2) > corr_cutoff:
+                    correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
+            else:
+                # If one column is numeric, we can use numerical encodings.
+                col2 = col2.astype("category").cat.codes
 
-        if abs(col1.corr(col2)) > corr_cutoff:
-            correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
+                if abs(col1.corr(col2)) > corr_cutoff:
+                    correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
+        else:
+            if is_categorical:
+                col1 = col1.astype("category").cat.codes
+
+            if abs(col1.corr(col2)) > corr_cutoff:
+                correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
 
     return correlation_list
 
