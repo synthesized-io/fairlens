@@ -14,11 +14,11 @@ from fairlens.bias.metrics import Norm, stat_distance
 
 df = pd.read_csv("datasets/compas.csv")
 pred1 = df["Ethnicity"] == "Caucasian"
-pred2 = (df["Ethnicity"] == "African-American") | (df["Ethnicity"] == "African-Am")
+pred2 = df["Ethnicity"] == "African-American"
 target_attr = "RawScore"
 group1 = df[pred1][target_attr]
 group2 = df[pred2][target_attr]
-group3 = group2.sort_values()[: len(group2) // 2]
+group3 = group2.sort_values()[len(group2) // 2 :]
 group4 = df[~pred1][target_attr]
 target = df[target_attr]
 
