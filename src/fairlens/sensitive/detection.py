@@ -234,10 +234,10 @@ def change_default_config_path(config_path: Union[str, pathlib.Path]):
 
 
 def _compute_series_correlation(sr_a: pd.Series, sr_b: pd.Series, corr_cutoff: float = 0.75) -> bool:
+    is_categorical = False
+
     if sr_a.map(type).eq(str).all():
         is_categorical = True
-    else:
-        is_categorical = False
 
     if sr_b.map(type).eq(str).all():
         if is_categorical:
@@ -245,17 +245,15 @@ def _compute_series_correlation(sr_a: pd.Series, sr_b: pd.Series, corr_cutoff: f
             if _cramers_v(sr_a, sr_b) > corr_cutoff:
                 return True
         else:
-            # If one column is numeric, we can use numerical encodings.
+            # If one column is numeric, we can use numerical encodings and Pearson's.
             sr_b = sr_b.astype("category").cat.codes
-
-            if abs(sr_a.corr(sr_b)) > corr_cutoff:
-                return True
     else:
+        # If one column is numeric, we can use numerical encodings and Pearson's.
         if is_categorical:
             sr_a = sr_a.astype("category").cat.codes
 
-        if abs(sr_a.corr(sr_b)) > corr_cutoff:
-            return True
+    if abs(sr_a.corr(sr_b)) > corr_cutoff:
+        return True
 
     return False
 
