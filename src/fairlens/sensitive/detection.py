@@ -132,33 +132,13 @@ def find_sensitive_correlations(
     for non_sensitive_col in non_sensitive_cols:
         col1 = df[non_sensitive_col]
 
-        if df[non_sensitive_col].map(type).eq(str).all():
-            is_categorical = True
-        else:
-            is_categorical = False
-
         correlation_list = list()
 
         for sensitive_col in sensitive_dict.keys():
             col2 = df[sensitive_col]
-            # Turn string columns into numerical representation to be able to correlate.
-            if df[sensitive_col].map(type).eq(str).all():
-                if is_categorical:
-                    # If both columns are categorical, we use Cramer's V.
-                    if _cramers_v(col1, col2) > corr_cutoff:
-                        correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
-                else:
-                    # If one column is numeric, we can use numerical encodings.
-                    col2 = col2.astype("category").cat.codes
 
-                    if abs(col1.corr(col2)) > corr_cutoff:
-                        correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
-            else:
-                if is_categorical:
-                    col1 = col1.astype("category").cat.codes
-
-                if abs(col1.corr(col2)) > corr_cutoff:
-                    correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
+            if _compute_series_correlation(col1, col2, corr_cutoff):
+                correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
 
         if len(correlation_list) > 0:
             correlation_dict[non_sensitive_col] = correlation_list
@@ -220,33 +200,11 @@ def find_column_correlation(
     else:
         col1 = col
 
-    if col1.map(type).eq(str).all():
-        is_categorical = True
-    else:
-        is_categorical = False
-        # col1 = col1.astype("category").cat.codes
-
     for sensitive_col in sensitive_dict.keys():
         col2 = df[sensitive_col]
 
-        # Turn string columns into numerical representations.
-        if df[sensitive_col].map(type).eq(str).all():
-            if is_categorical:
-                # If both columns are categorical, we use Cramer's V.
-                if _cramers_v(col1, col2) > corr_cutoff:
-                    correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
-            else:
-                # If one column is numeric, we can use numerical encodings.
-                col2 = col2.astype("category").cat.codes
-
-                if abs(col1.corr(col2)) > corr_cutoff:
-                    correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
-        else:
-            if is_categorical:
-                col1 = col1.astype("category").cat.codes
-
-            if abs(col1.corr(col2)) > corr_cutoff:
-                correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
+        if _compute_series_correlation(col1, col2, corr_cutoff):
+            correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
 
     return correlation_list
 
@@ -275,6 +233,33 @@ def change_default_config_path(config_path: Union[str, pathlib.Path]):
     DEFAULT_CONFIG_PATH = os.path.join(PROJ_DIR, config_path)
 
 
+def _compute_series_correlation(sr_a: pd.Series, sr_b: pd.Series, corr_cutoff: float = 0.75) -> bool:
+    if sr_a.map(type).eq(str).all():
+        is_categorical = True
+    else:
+        is_categorical = False
+
+    if sr_b.map(type).eq(str).all():
+        if is_categorical:
+            # If both columns are categorical, we use Cramer's V.
+            if _cramers_v(sr_a, sr_b) > corr_cutoff:
+                return True
+        else:
+            # If one column is numeric, we can use numerical encodings.
+            sr_b = sr_b.astype("category").cat.codes
+
+            if abs(sr_a.corr(sr_b)) > corr_cutoff:
+                return True
+    else:
+        if is_categorical:
+            sr_a = sr_a.astype("category").cat.codes
+
+        if abs(sr_a.corr(sr_b)) > corr_cutoff:
+            return True
+
+    return False
+
+
 def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
     """Computes a distance between the input strings using the Ratcliff-Obershelp algorithm."""
     if s1 is None or s2 is None:
@@ -283,7 +268,7 @@ def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
     return 1 - SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
 
 
-def _cramers_v(sr_a: pd.Series, sr_b: pd.Series):
+def _cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
     confusion_matrix = pd.crosstab(sr_a, sr_b)
     chi2 = ss.chi2_contingency(confusion_matrix)[0]
     n = confusion_matrix.sum().sum()
