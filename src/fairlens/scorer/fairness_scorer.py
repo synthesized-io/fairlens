@@ -1,6 +1,9 @@
 import logging
 from itertools import combinations
+<<<<<<< HEAD
 from typing import Optional, Sequence, Tuple
+=======
+>>>>>>> integrate stat_distance with distribution score
 
 <<<<<<< HEAD
 import pandas as pd
@@ -12,16 +15,21 @@ from ..sensitive.detection import detect_names_df
 =======
 # from math import factorial
 # from typing import Any, Dict, List, Optional, Sized, Tuple, Union
-from typing import List, Optional, Tuple, Union
+from typing import List, Optional
 
 # import numpy as np
 import pandas as pd
 
+<<<<<<< HEAD
 # from itertools import combinations
 
 
 # from ..sensitive.detection import detect_names_df
 >>>>>>> add method to compute distances between all possible groups given sensitive attributes
+=======
+from ..bias.metrics import stat_distance
+from ..sensitive.detection import detect_names_df
+>>>>>>> integrate stat_distance with distribution score
 
 logger = logging.getLogger(__name__)
 
@@ -60,8 +68,14 @@ class FairnessScorer:
 
         # Detect sensitive attributes
         if detect_sensitive:
+<<<<<<< HEAD
             attr_dict = detect_names_df(df, deep_search=True).items()
             sensitive_attrs = list(set([k for (k, v) in attr_dict if v is not None]).union(sensitive_attrs))
+=======
+            sensitive_attrs = [k for (k, v) in detect_names_df(df).items() if v is not None]
+
+        print(sensitive_attrs)
+>>>>>>> integrate stat_distance with distribution score
 
         if len(sensitive_attrs) == 0:
             logger.warning("No sensitive attributes detected. Fairness score will always be 0.")
@@ -203,6 +217,7 @@ class FairnessScorer:
         if not p_value:
             df_dist.drop(columns=["P-Value"], inplace=True)
 
+<<<<<<< HEAD
         return df_dist
 =======
 
@@ -304,3 +319,91 @@ def calculate_distance(
 
     return pd.DataFrame(dist).sort_values("Distance")
 >>>>>>> add method to compute distances between all possible groups given sensitive attributes
+=======
+    def distribution_score(
+        self,
+        mode: str = "auto",
+        alpha: float = 0.05,
+        min_dist: Optional[float] = None,
+        min_count: Optional[int] = 50,
+        weighted: bool = True,
+        max_comb: Optional[int] = 3,
+        condense_output: bool = True,
+    ) -> pd.DataFrame:
+        """Returns the biases and fairness score by analyzing the distribution difference between sensitive
+        variables and the target variable.
+
+        Args:
+            mode (str, optional):
+                Choose a different metric to use. Defaults to automatically chosen metric depending on
+                the distribution of the target variable.
+            alpha (float, optional):
+                Maximum p-value to accept a bias. Defaults to 0.05.
+            min_dist (Optional[float], optional):
+                If set, any bias with smaller distance than min_dist will be ignored. Defaults to None.
+            min_count (Optional[int], optional):
+                If set, any bias with less samples than min_count will be ignored. Defaults to 50.
+            weighted (bool, optional):
+                Whether to weight the average of biases on the size of each sample. Defaults to True.
+            max_comb (Optional[int], optional):
+                Max number of combinations of sensitive attributes to be considered. Defaults to 3.
+            condense_output (bool, optional):
+                Whether to return one row per group or one per group and target. Defaults to True.
+        """
+
+        df_pre = self.df
+
+        if len(self.sensitive_attrs) == 0 or len(df_pre) == 0 or len(df_pre.dropna()) == 0:
+            return 0.0, pd.DataFrame([], columns=["name", "target", "distance", "count"])
+
+        max_comb = min(max_comb, len(self.sensitive_attrs)) if max_comb else len(self.sensitive_attrs)
+
+        df_dists = []
+
+        # Try all combinations of sensitive attributes
+        for k in range(1, max_comb + 1):
+            for sensitive_attr in combinations(self.sensitive_attrs, k):
+                df_not_nan = df_pre[~(df_pre[list(sensitive_attr)] == "nan").any(axis=1)]
+                if len(df_not_nan) == 0:
+                    continue
+
+                df_dist = self.calculate_distance(list(sensitive_attr), mode=mode, alpha=alpha)
+                df_dists.append(df_dist)
+
+        return pd.concat(df_dists).sort_values("Distance")
+
+    def calculate_distance(self, sensitive_attrs: List[str], mode: str = "auto", alpha: float = 0.05) -> pd.DataFrame:
+        """Calculates the distance between the distribution of all the unique groups of values and the
+        distribution without the respective value.
+
+        Args:
+            sensitive_attrs (List[str]):
+                The list of sensitive attributes to consider.
+            mode (str, optional):
+                Choose a different metric to use. Defaults to automatically chosen metric depending on
+                the distribution of the target variable.
+            alpha (float, optional):
+                Maximum p-value to accept a bias. Defaults to 0.05.
+
+        Returns:
+            pd.DataFrame:
+                A dataframe consisting of the groups and their distances to the remaining dataset sorted
+                in ascending order.
+        """
+
+        df = self.df
+        target_attr = self.target_attr
+
+        unique = df[sensitive_attrs].drop_duplicates()
+
+        dist = []
+
+        for _, row in unique.iterrows():
+            sensitive_group = {attr: [value] for attr, value in row.to_dict().items()}
+
+            distance = stat_distance(df, target_attr, sensitive_group, mode=mode)
+
+            dist.append({"Group": ", ".join(row.to_dict().values()), "Distance": distance})
+
+        return pd.DataFrame(dist)
+>>>>>>> integrate stat_distance with distribution score
