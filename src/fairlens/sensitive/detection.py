@@ -25,6 +25,7 @@ def detect_names_df(
     category name (such as Gender, Religion etc). The option to deep search can
     be enabled in the case of dataframes, which looks at the values in the tables
     and infers sensitive categories, even when the column name is inconclusive.
+
     Args:
         df (Union[pd.DataFrame, List[str]]):
             Pandas dataframe or string list that will be analysed.
@@ -52,6 +53,7 @@ def detect_names_df(
         >>> detect_names_dict_dataframe(df)
         {"native": "Nationality", "location": "Nationality", "house": "Family Status", "religion": "Religion"}
     """
+
     if config_path:
         attr_synonym_dict, attr_value_dict = load_config(config_path)
     else:
@@ -96,6 +98,7 @@ def load_config(config_path: Union[str, pathlib.Path] = DEFAULT_CONFIG_PATH) -> 
             Returns a tuple containing the synonym and value dictionaries in a format readable by the
             main detection function.
     """
+
     with open(config_path) as json_file:
         config_dict = json.load(json_file)
 
@@ -132,6 +135,7 @@ def _detect_name(
         Optional[str]:
             The sensitive name corresponding to the input.
     """
+
     if attr_synonym_dict is None:
         attr_synonym_dict, _ = load_config()
 
@@ -187,6 +191,7 @@ def _detect_names_dict(
         >>> _detect_names_dict(["age", "gender", "legality", "risk"])
         {"age": "Age", "gender": "Gender", "legality": None, "risk": None}
     """
+
     if attr_synonym_dict is None:
         attr_synonym_dict, _ = load_config()
 

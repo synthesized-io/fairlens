@@ -23,7 +23,24 @@ Now we can use :code:`plt_group_dist` to visualize the distributions of these gr
 
   from fairlens.bias.viz import plt_group_dist
 
-  plt_group_dist(df, target_attr, group1, group2)
-
   @savefig plt_group_dist.png
+  plt_group_dist(df, target_attr, group1, group2, legend=True)
+
+  @verbatim
+  plt.show()
+
+
+Additionally, we may want to visualize the distribution of all unique values for sensitive attributes
+relative to one another. We can use :code:`plt_attr_dist` to do this.
+
+.. ipython:: python
+
+  from fairlens.bias.viz import plt_attr_dist
+
+  sensitive_attr = "Ethnicity"
+
+  @savefig plt_attr_dist.png
+  plt_attr_dist(df, target_attr, sensitive_attr, legend=True)
+
+  @verbatim
   plt.show()

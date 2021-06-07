@@ -37,23 +37,21 @@ Fairlens supports multiple distance metrics which you can use via the method :co
 Let's import this method.
 
 .. ipython:: python
-  :verbatim:
 
   from fairlens.bias.metrics import stat_distance
 
-We need to define which groups of data we want to measure the distance between.
+We need to define which groups of data we want to measure the distance between and the target attribute.
 
 .. ipython:: python
-  :verbatim:
 
   group1 = {"Ethnicity": ["African-American"]}
   group2 = {"Ethnicity": ["Caucasian"]}
+  target_attr = "RawScore"
 
 We can now make a call to :code:`stat_distance` which will automatically choose the best
 distance metric for us based on the distribution of the target attribute.
 
 .. ipython:: python
-  :verbatim:
 
   stat_distance(df, target_attr, group1, group2, mode="auto")
 
@@ -63,7 +61,6 @@ chosen :code:`KolmogorovSmirnovDistance` as the best metric since the target col
 It is possible to get a p-value back with the distance by using the :code:`p_value` flag.
 
 .. ipython:: python
-  :verbatim:
 
   stat_distance(df, target_attr, group1, group2, mode="auto", p_value=True)
 
