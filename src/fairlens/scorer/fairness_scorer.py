@@ -50,6 +50,8 @@ class FairnessScorer:
         if detect_sensitive:
             sensitive_attrs = list(set([k for (k, v) in detect(df).items() if v is not None]).union(sensitive_attrs))
 
+        print(sensitive_attrs)
+
         if len(sensitive_attrs) == 0:
             logger.warning("No sensitive attributes detected. Fairness score will always be 0.")
 
