@@ -9,7 +9,7 @@ from typing import List, Optional
 import pandas as pd
 
 from ..bias.metrics import stat_distance
-from ..sensitive.detection import detect_names_df
+from ..sensitive.detection import detect_names_df as detect
 
 logger = logging.getLogger(__name__)
 
@@ -42,16 +42,12 @@ class FairnessScorer:
         """
 
         if sensitive_attrs is None:
-            if detect_sensitive is False:
-                raise ValueError("If no 'sensitive_attr' is given, 'detect_sensitive' must be set to True.")
-
+            detect_sensitive = True
             sensitive_attrs = []
 
         # Detect sensitive attributes
         if detect_sensitive:
-            sensitive_attrs = [k for (k, v) in detect_names_df(df).items() if v is not None]
-
-        print(sensitive_attrs)
+            sensitive_attrs = list(set([k for (k, v) in detect(df).items() if v is not None]).union(sensitive_attrs))
 
         if len(sensitive_attrs) == 0:
             logger.warning("No sensitive attributes detected. Fairness score will always be 0.")
