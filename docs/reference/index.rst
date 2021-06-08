@@ -6,5 +6,5 @@ API Reference
    :hidden:
    :glob:
 
-   api-docs/bias
-   api-docs/sensitive
+   bias
+   sensitive
