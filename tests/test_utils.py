@@ -6,14 +6,20 @@ from fairlens.bias import utils
 dfc = pd.read_csv("datasets/compas.csv")
 
 
-def test_bin():
-    columns = ["A", "B", "C"]
+def test_histogram():
+    arr1 = np.arange(10)
+    arr2 = np.arange(5, 10)
+    hist1, hist2 = utils.histogram((pd.Series(arr1), pd.Series(arr2)))
+    assert (hist1 == np.bincount(arr1) / len(arr1)).all()
+    assert (hist2 == np.bincount(arr2) / len(arr2)).all()
 
-    df = pd.DataFrame(np.array([np.arange(101) * (i + 1) for i in range(3)]).T, index=range(101), columns=columns)
-    assert df.loc[:, "A"].nunique() > 4
+    arr = np.concatenate([np.arange(10)] * 10)
+    assert (utils.histogram((pd.Series(arr),))[0] == np.bincount(arr) / len(arr)).all()
 
-    A_binned = utils.bin(df["A"], 4, duplicates="drop", remove_outliers=0.1)
-    assert A_binned.nunique() == 4
+    arr = np.random.rand(1000)
+    hist, bin_edges = utils.histogram((pd.Series(arr),), ret_bins=True)
+    _hist, _bin_edges = np.histogram(arr, bins="auto")
+    assert (hist == _hist / _hist.sum()).all() and (bin_edges == _bin_edges).all()
 
 
 def test_infer_dtype():

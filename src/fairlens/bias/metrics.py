@@ -7,8 +7,9 @@ import numpy as np
 import pandas as pd
 import pyemd
 from scipy.spatial.distance import jensenshannon
-from scipy.stats import entropy, ks_2samp
+from scipy.stats import entropy, kruskal, ks_2samp, mannwhitneyu
 
+from . import p_value as pv
 from . import utils
 from .distance import CategoricalDistanceMetric, ContinuousDistanceMetric, DistanceMetric
 
@@ -42,7 +43,7 @@ def stat_distance(
     mode: str = "auto",
     p_value: bool = False,
     **kwargs,
-) -> Union[float, Tuple[float, float]]:
+) -> Union[float, Tuple[float, ...]]:
     """Computes the statistical distance between two probability distributions ie. group 1 and group 2, with respect
     to the target attribute. The distance metric can be chosen through the mode parameter. If mode is set to "auto",
     the most suitable metric depending on the target attributes' distribution is chosen.
@@ -107,12 +108,22 @@ def stat_distance(
     else:
         raise ValueError(f"Invalid mode. Valid modes include:\n{DistanceMetric.class_dict.keys()}")
 
-    d = dist_class(**kwargs)(group1, group2)
+    metric = dist_class(**kwargs)
+    d = metric(group1, group2)
 
     if d is None:
         raise ValueError("Incompatible data inside both series")
 
-    return d
+    result = [d]
+
+    if p_value:
+        p = metric.p_value(group1, group2)
+        result.append(p)
+
+    if len(result) == 1:
+        return d
+
+    return tuple(result)
 
 
 class BinomialDistance(ContinuousDistanceMetric):
@@ -128,6 +139,13 @@ class BinomialDistance(ContinuousDistanceMetric):
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
         return x.mean() - y.mean()
+
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        p_obs = x.mean()
+        p_null = y.mean()
+        n = len(x)
+
+        return pv.binominal_proportion_p_value(p_obs, p_null, n)
 
     @property
     def id(self) -> str:
@@ -162,6 +180,30 @@ class KolmogorovSmirnovDistance(ContinuousDistanceMetric):
     @property
     def id(self) -> str:
         return "ks_distance"
+
+
+class MannWhitneyU(ContinuousDistanceMetric):
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return mannwhitneyu(x, y)[0]
+
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        return mannwhitneyu(x, y)[1]
+
+    @property
+    def id(self) -> str:
+        return "mann_whitney"
+
+
+class KruskalWallis(ContinuousDistanceMetric):
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return kruskal(x, y)[0]
+
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        return kruskal(x, y)[1]
+
+    @property
+    def id(self) -> str:
+        return "kruskal"
 
 
 class EarthMoversDistanceCategorical(CategoricalDistanceMetric):

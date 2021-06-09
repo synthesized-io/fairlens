@@ -5,6 +5,7 @@ from typing import Dict, Optional, Type
 import numpy as np
 import pandas as pd
 
+from . import p_value as pv
 from . import utils
 
 
@@ -114,6 +115,9 @@ class ContinuousDistanceMetric(DistanceMetric):
 
         return x_dtype in ["int64", "float64"] and y_dtype in ["int64", "float64"]
 
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        return pv.permutation_test(x, y, type(self)().distance)
+
 
 class CategoricalDistanceMetric(DistanceMetric):
     """
@@ -147,30 +151,7 @@ class CategoricalDistanceMetric(DistanceMetric):
         return x_dtype == y_dtype
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
-        joint = pd.concat((x, y))
-        bin_edges = None
-
-        # Compute histograms of the data, bin if continuous
-        if utils.infer_distr_type(joint).is_continuous():
-            bin_edges = self.bin_edges or np.histogram_bin_edges(joint, bins="auto")
-            p, _ = np.histogram(x, bins=bin_edges)
-            q, _ = np.histogram(y, bins=bin_edges)
-
-        else:
-            space = joint.unique()
-            x_counts = x.value_counts().to_dict()
-            y_counts = y.value_counts().to_dict()
-
-            p = np.zeros(len(space))
-            q = np.zeros(len(space))
-            for i, val in enumerate(space):
-                p[i] = x_counts.get(val, 0)
-                q[i] = y_counts.get(val, 0)
-
-        # Normalize the histograms
-        with np.errstate(divide="ignore", invalid="ignore"):
-            p = pd.Series(np.nan_to_num(p / p.sum()))
-            q = pd.Series(np.nan_to_num(q / q.sum()))
+        (p, q), bin_edges = utils.histogram((x, y), bin_edges=self.bin_edges, ret_bins=True)
 
         return self.distance_pdf(p, q, bin_edges)
 
@@ -192,3 +173,7 @@ class CategoricalDistanceMetric(DistanceMetric):
                 The computed distance.
         """
         ...
+
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        ts_distribution = pv.bootstrap_binned_statistic((x, y), type(self)(self.bin_edges).distance, n_samples=1000)
+        return pv.bootstrap_pvalue(self.distance(x, y), ts_distribution)

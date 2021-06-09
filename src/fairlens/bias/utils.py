@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -24,68 +24,50 @@ class DistrType(Enum):
         return self == DistrType.Categorical
 
 
-def bin(
-    column: pd.Series,
-    n_bins: Optional[int] = None,
-    remove_outliers: Optional[float] = 0.1,
-    quantile_based: bool = False,
-    mean_bins=False,
-    **kwargs,
-) -> pd.DataFrame:
-    """Bin continous values into discrete bins.
+def histogram(
+    data: Tuple[pd.Series, ...], bin_edges: Optional[np.ndarray] = None, ret_bins: bool = False
+) -> Union[Tuple[pd.Series, ...], Tuple[Tuple[pd.Series, ...], Optional[np.ndarray]]]:
+    """Bins a tuple of series' and returns the aligned normalized histograms.
 
     Args:
-        column (pd.Series):
-            The column or series containing the data to be binned.
-        n_bins (Optional[int], optional):
-            The number of bins. Defaults to Freedman-Diaconis rule.
-        remove_outliers (Optional[float], optional):
-            Any data point outside this quantile (two-sided) will be dropped before computing bins.
-            If `None`, outliers are not removed. Defaults to 0.1.
-        quantile_based (bool, optional):
-            Whether the bin computation is quantile based. Defaults to False.
-        mean_bins (bool, optional):
-            Return the mean of the intervals instead of the intervals themselves. Defaults to False.
-        **kwargs:
-            Key word arguments for pd.cut or pd.qcut.
+        data (Tuple[pd.Series, ...]):
+            A tuple consisting of the series' to be binned.
+        bin_edges (Optional[np.ndarray], optional):
+            Bin edges to bin continuous data by. Defaults to None.
+        ret_bins (bool, optional):
+            Returns the bin edges used in the histogram. Defaults to False.
 
     Returns:
-        pd.Series:
-            The binned column.
+        Union[Tuple[np.ndarray, ...], Tuple[Tuple[np.ndarray, ...], Optional[np.ndarray]]]:
+            A tuple of np.ndarrays consisting of each histogram for the input data.
+            Additionally returns bins if ret_bins is True.
     """
 
-    column = column.copy()
-    column_clean = column.dropna()
+    joint = pd.concat(data)
 
-    n_bins = n_bins or fd_opt_bins(column)
+    # Compute histograms of the data, bin if continuous or bin_edges given
+    if infer_distr_type(joint).is_continuous() or bin_edges is not None:
+        # Compute common bin_edges if not given, and use np.histogram to form histogram
+        if bin_edges is None:
+            bin_edges = np.histogram_bin_edges(joint, bins="auto")
 
-    if remove_outliers:
-        percentiles = [remove_outliers * 100.0 / 2, 100 - remove_outliers * 100.0 / 2]
-        start, end = np.percentile(column_clean, percentiles)
+        hists = [np.histogram(series, bins=bin_edges)[0] for series in data]
 
-        if start == end:
-            start, end = min(column_clean), max(column_clean)
-
-        column_clean = column_clean[(start <= column_clean) & (column_clean <= end)]
-
-    if not quantile_based:
-        _, bins = pd.cut(column_clean, n_bins, retbins=True, **kwargs)
     else:
-        _, bins = pd.qcut(column_clean, n_bins, retbins=True, **kwargs)
+        # For categorical data, from histogram using value counts and align
+        space = joint.unique()
 
-    bins = list(bins)  # Otherwise it is np.ndarray
-    bins[0], bins[-1] = column.min(), column.max()
+        dicts = [series.value_counts() for series in data]
+        hists = [np.array([d.get(val, 0) for val in space]) for d in dicts]
 
-    # Manually construct interval index for dates as pandas can't do a quantile date interval by itself.
-    if isinstance(bins[0], pd.Timestamp):
-        bins = pd.IntervalIndex([pd.Interval(bins[n], bins[n + 1]) for n in range(len(bins) - 1)], closed="left")
+    # Normalize the histograms
+    with np.errstate(divide="ignore", invalid="ignore"):
+        ps = [pd.Series(np.nan_to_num(hist / hist.sum())) for hist in hists]
 
-    binned = pd.Series(pd.cut(column, bins=bins, include_lowest=True, **kwargs))
+    if ret_bins:
+        return tuple(ps), bin_edges
 
-    if mean_bins:
-        return binned.apply(lambda i: float(i.mid))
-
-    return binned
+    return tuple(ps)
 
 
 def infer_dtype(col: pd.Series) -> pd.Series:
