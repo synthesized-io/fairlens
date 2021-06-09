@@ -111,7 +111,16 @@ def test_dataframe_dict_numbers():
 
 def test_correlation():
     col_names = ["gender", "random", "score"]
-    data = [["male", 10, 60], ["female", 10, 80], ["male", 10, 60], ["female", 10, 80]]
+    data = [
+        ["male", 10, 60],
+        ["female", 10, 80],
+        ["male", 10, 60],
+        ["female", 10, 80],
+        ["male", 9, 59],
+        ["female", 11, 80],
+        ["male", 12, 61],
+        ["female", 10, 83],
+    ]
     df = pd.DataFrame(data, columns=col_names)
     res = {"score": [("gender", "Gender")]}
     assert dt.find_sensitive_correlations(df) == res

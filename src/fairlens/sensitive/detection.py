@@ -90,6 +90,7 @@ def find_sensitive_correlations(
     threshold: float = 0.1,
     str_distance: Callable[[Optional[str], Optional[str]], float] = None,
     corr_cutoff: float = 0.75,
+    p_cutoff: float = 0.1,
     config_path: Union[str, pathlib.Path] = None,
 ) -> Dict[str, List[Tuple[str, Optional[str]]]]:
     """Looks at the columns that are not considered to be immediately sensitive and finds if any is strongly
@@ -108,6 +109,9 @@ def find_sensitive_correlations(
         corr_cutoff (float, optional):
             The cutoff for considering a column to be correlated with a sensitive attribute, with Pearson's correlation.
             Defaults to 0.75.
+        p_cutoff (float, optional):
+            The p-value cutoff to be used when checking if a categorical column is correlated with a numeric column
+            using the Kruskal-Wallis H Test.
         config_path (Union[str, pathlib.Path], optional)
             The path of the JSON configuration file in which the dictionaries used for
             detecting sensitive attributes are defined. By default, the configuration
@@ -137,7 +141,7 @@ def find_sensitive_correlations(
         for sensitive_col in sensitive_dict.keys():
             col2 = df[sensitive_col]
 
-            if _compute_series_correlation(col1, col2, corr_cutoff):
+            if _compute_series_correlation(col1, col2, corr_cutoff, p_cutoff):
                 correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
 
         if len(correlation_list) > 0:
@@ -152,6 +156,7 @@ def find_column_correlation(
     threshold: float = 0.1,
     str_distance: Callable[[Optional[str], Optional[str]], float] = None,
     corr_cutoff: float = 0.75,
+    p_cutoff: float = 0.1,
     config_path: Union[str, pathlib.Path] = None,
 ) -> List[Tuple[str, Optional[str]]]:
     """This function takes in a series or a column name of a given dataframe and checks whether any of
@@ -174,6 +179,9 @@ def find_column_correlation(
         corr_cutoff (float, optional):
             The cutoff for considering a column to be correlated with a sensitive attribute, with Pearson's correlation.
             Defaults to 0.75.
+        p_cutoff (float, optional):
+            The p-value cutoff to be used when checking if a categorical column is correlated with a numeric column
+            using the Kruskal-Wallis H Test.
         config_path (Union[str, pathlib.Path], optional)
             The path of the JSON configuration file in which the dictionaries used for
             detecting sensitive attributes are defined. By default, the configuration
@@ -203,7 +211,7 @@ def find_column_correlation(
     for sensitive_col in sensitive_dict.keys():
         col2 = df[sensitive_col]
 
-        if _compute_series_correlation(col1, col2, corr_cutoff):
+        if _compute_series_correlation(col1, col2, corr_cutoff, p_cutoff):
             correlation_list.append((sensitive_col, sensitive_dict[sensitive_col]))
 
     return correlation_list
@@ -233,8 +241,11 @@ def change_default_config_path(config_path: Union[str, pathlib.Path]):
     DEFAULT_CONFIG_PATH = os.path.join(PROJ_DIR, config_path)
 
 
-def _compute_series_correlation(sr_a: pd.Series, sr_b: pd.Series, corr_cutoff: float = 0.75) -> bool:
+def _compute_series_correlation(
+    sr_a: pd.Series, sr_b: pd.Series, corr_cutoff: float = 0.75, p_cutoff: float = 0.1
+) -> bool:
     is_categorical = False
+    arrays = list()
 
     if sr_a.map(type).eq(str).all():
         is_categorical = True
@@ -245,13 +256,30 @@ def _compute_series_correlation(sr_a: pd.Series, sr_b: pd.Series, corr_cutoff: f
             if _cramers_v(sr_a, sr_b) > corr_cutoff:
                 return True
         else:
-            # If one column is numeric, we can use numerical encodings and Pearson's.
+            # If just one column is categorical, we can group by it and use Kruskal-Wallis H Test.
             sr_b = sr_b.astype("category").cat.codes
+            groups = sr_a.groupby(sr_b)
+            for category in sr_b.unique():
+                arrays.append(groups.get_group(category))
     else:
-        # If one column is numeric, we can use numerical encodings and Pearson's.
+        # If just one column is categorical, we can group by it and use Kruskal-Wallis H Test.
         if is_categorical:
             sr_a = sr_a.astype("category").cat.codes
+            groups = sr_b.groupby(sr_a)
+            for category in sr_a.unique():
+                arrays.append(groups.get_group(category))
 
+    # If Kruskal-Wallis has been used, we need to check the p-value instead.
+    if arrays:
+        args = [group.array for group in arrays]
+        try:
+            _, p_val = ss.kruskal(*args, nan_policy="omit")
+        except ValueError:
+            return False
+        if p_val < p_cutoff:
+            return True
+
+    # If both columns are numeric, we use standard Pearson correlation.
     if abs(sr_a.corr(sr_b)) > corr_cutoff:
         return True
 
