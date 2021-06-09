@@ -8,6 +8,7 @@ from typing import List, Optional
 # import numpy as np
 import pandas as pd
 
+from ..bias import utils
 from ..bias.metrics import stat_distance
 from ..sensitive.detection import detect_names_df as detect
 
@@ -106,7 +107,7 @@ class FairnessScorer:
                 df_dist = self.calculate_distance(list(sensitive_attr), mode=mode, alpha=alpha)
                 df_dists.append(df_dist)
 
-        return pd.concat(df_dists).sort_values("Distance")
+        return pd.concat(df_dists, ignore_index=True)
 
     def calculate_distance(self, sensitive_attrs: List[str], mode: str = "auto", alpha: float = 0.05) -> pd.DataFrame:
         """Calculates the distance between the distribution of all the unique groups of values and the
@@ -137,8 +138,14 @@ class FairnessScorer:
         for _, row in unique.iterrows():
             sensitive_group = {attr: [value] for attr, value in row.to_dict().items()}
 
-            distance = stat_distance(df, target_attr, sensitive_group, mode=mode)
+            pred = utils.get_predicates_mult(df, [sensitive_group])[0]
 
-            dist.append({"Group": ", ".join(row.to_dict().values()), "Distance": distance})
+            distance = stat_distance(df, target_attr, df[pred][target_attr], df[~pred][target_attr], mode=mode)
+
+            dist.append({
+                "Group": ", ".join(row.to_dict().values()),
+                "Distance": distance,
+                "Proportion": len(df[pred]) / len(df)
+            })
 
         return pd.DataFrame(dist)
