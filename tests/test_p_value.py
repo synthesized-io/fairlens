@@ -1,7 +1,8 @@
 import pandas as pd
 
 from fairlens.bias import p_value as pv
-from fairlens.bias.metrics import stat_distance
+
+# from fairlens.bias.metrics import stat_distance
 
 epsilon = 1e-5
 df = pd.read_csv("datasets/compas.csv")
