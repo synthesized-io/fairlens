@@ -236,11 +236,6 @@ def load_config(config_path: Union[str, pathlib.Path] = DEFAULT_CONFIG_PATH) -> 
     return config_dict["synonyms"], config_dict["values"]
 
 
-def change_default_config_path(config_path: Union[str, pathlib.Path]):
-    global DEFAULT_CONFIG_PATH
-    DEFAULT_CONFIG_PATH = os.path.join(PROJ_DIR, config_path)
-
-
 def _compute_series_correlation(
     sr_a: pd.Series, sr_b: pd.Series, corr_cutoff: float = 0.75, p_cutoff: float = 0.1
 ) -> bool:
