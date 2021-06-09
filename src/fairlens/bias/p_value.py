@@ -7,7 +7,7 @@ from scipy.stats.morestats import binom_test
 
 def binominal_proportion_p_value(p_obs: float, p_null: float, n: int, alternative: str = "two-sided") -> float:
     """Calculate an exact p-value for an observed binomial proportion of a sample.
-    
+
     Args:
         p_obs (float):
             Observed proportion of successes.
@@ -99,7 +99,7 @@ def bootstrap_binned_statistic(
     data: Tuple[pd.Series, ...], statistic: Callable[[pd.Series, pd.Series], float], n_samples: int = 1000
 ) -> np.ndarray:
     """Compute the samples of a binned statistic estimate using the bootstrap method.
-    
+
     Args:
         data (Tuple[pd.Series, ...]):
             Data on which to compute the statistic in a tuple.
@@ -168,8 +168,8 @@ def permutation_test(
 
     for i in range(n_perm):
         perm = np.random.permutation(pooled_data)
-        x_sample = perm[:len(x)]
-        y_sample = perm[len(x):]
+        x_sample = perm[: len(x)]
+        y_sample = perm[len(x) :]
         t_null[i] = t(x_sample, y_sample)
 
     if alternative == "two-sided":
