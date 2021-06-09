@@ -19,7 +19,6 @@ def find_sensitive_correlations(
     """Looks at the columns that are not considered to be immediately sensitive and finds if any is strongly
     correlated with a sensitive column, specifying both the sensitive column name and the sensitive category
     it is a part of.
-
     Args:
         df (pd.DataFrame):
             Pandas dataframe that will be analyzed.
@@ -87,7 +86,6 @@ def find_column_correlation(
     or the column corresponding to the given name.
     If matches are found, a list containing the correlated
     column names and its associated sensitive category, respectively, is returned.
-
     Args:
         col (Union[str, pd.Series]):
             Pandas series or dataframe column name that will be analyzed.
@@ -143,32 +141,28 @@ def find_column_correlation(
 def _compute_series_correlation(
     sr_a: pd.Series, sr_b: pd.Series, corr_cutoff: float = 0.75, p_cutoff: float = 0.1
 ) -> bool:
-    is_categorical = False
+    a_categorical = sr_a.map(type).eq(str).all()
+    b_categorical = sr_b.map(type).eq(str).all()
     arrays = list()
 
-    if sr_a.map(type).eq(str).all():
-        is_categorical = True
-
-    if sr_b.map(type).eq(str).all():
-        if is_categorical:
-            # If both columns are categorical, we use Cramer's V.
-            if _cramers_v(sr_a, sr_b) > corr_cutoff:
-                return True
-        else:
-            # If just one column is categorical, we can group by it and use Kruskal-Wallis H Test.
-            sr_b = sr_b.astype("category").cat.codes
-            groups = sr_a.groupby(sr_b)
-            for category in sr_b.unique():
-                arrays.append(groups.get_group(category))
-    else:
+    if a_categorical and b_categorical:
+        # If both columns are categorical, we use Cramer's V.
+        if _cramers_v(sr_a, sr_b) > corr_cutoff:
+            return True
+    elif not a_categorical and b_categorical:
         # If just one column is categorical, we can group by it and use Kruskal-Wallis H Test.
-        if is_categorical:
-            sr_a = sr_a.astype("category").cat.codes
-            groups = sr_b.groupby(sr_a)
-            for category in sr_a.unique():
-                arrays.append(groups.get_group(category))
+        sr_b = sr_b.astype("category").cat.codes
+        groups = sr_a.groupby(sr_b)
+        for category in sr_b.unique():
+            arrays.append(groups.get_group(category))
+    elif a_categorical and not b_categorical:
+        # If just one column is categorical, we can group by it and use Kruskal-Wallis H Test.
+        sr_a = sr_a.astype("category").cat.codes
+        groups = sr_b.groupby(sr_a)
+        for category in sr_a.unique():
+            arrays.append(groups.get_group(category))
 
-    # If Kruskal-Wallis has been used, we need to check the p-value instead.
+    # If we have a categorical-continuous association, we use Kruskal-Wallis and check the p-value instead.
     if arrays:
         args = [group.array for group in arrays]
         try:
@@ -178,17 +172,14 @@ def _compute_series_correlation(
         if p_val < p_cutoff:
             return True
 
-    # If both columns are numeric, we use standard Pearson correlation.
-    if abs(sr_a.corr(sr_b)) > corr_cutoff:
-        return True
-
-    return False
+    # If both columns are numeric, we use standard Pearson correlation and the correlation cutoff.
+    return abs(sr_a.corr(sr_b)) > corr_cutoff
 
 
 def _cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
     confusion_matrix = pd.crosstab(sr_a, sr_b)
     chi2 = ss.chi2_contingency(confusion_matrix)[0]
-    n = confusion_matrix.sum().sum()
+    n = len(sr_a)
     phi2 = chi2 / n
     r, k = confusion_matrix.shape
     phi2corr = max(0, phi2 - ((k - 1) * (r - 1)) / (n - 1))
