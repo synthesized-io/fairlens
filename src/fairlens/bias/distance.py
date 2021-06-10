@@ -109,6 +109,18 @@ class ContinuousDistanceMetric(DistanceMetric):
     Subclasses must implement a distance method.
     """
 
+    def __init__(self, p_value_test="permutation"):
+        """Initialize continuous distance metric.
+
+        Args:
+            p_value_test (str, optional):
+                Choose which method of resampling will be used to compute the p-value. Overidden by metrics
+                such as Kolmogrov Smirnov Distance.
+                Defaults to "permutation".
+        """
+
+        self.p_value_test = p_value_test
+
     def check_input(self, x: pd.Series, y: pd.Series) -> bool:
         x_dtype = utils.infer_dtype(x).dtype
         y_dtype = utils.infer_dtype(y).dtype
@@ -116,7 +128,14 @@ class ContinuousDistanceMetric(DistanceMetric):
         return x_dtype in ["int64", "float64"] and y_dtype in ["int64", "float64"]
 
     def p_value(self, x: pd.Series, y: pd.Series) -> float:
-        return pv.permutation_test(x, y, type(self)().distance)
+        if self.p_value_test == "permutation":
+            ts_distribution = pv.permutation_statistic(x, y, self.distance, n_perm=100)
+        elif self.p_value_test == "bootstrap":
+            ts_distribution = pv.bootstrap_statistic(x, y, self.distance, n_samples=1000)
+        else:
+            raise ValueError('p_value_test must be one of ["permutation", "bootstrap"]')
+
+        return pv.resampling_pvalue(self.distance(x, y), ts_distribution)
 
 
 class CategoricalDistanceMetric(DistanceMetric):
@@ -175,5 +194,15 @@ class CategoricalDistanceMetric(DistanceMetric):
         ...
 
     def p_value(self, x: pd.Series, y: pd.Series) -> float:
-        ts_distribution = pv.bootstrap_binned_statistic((x, y), type(self)(self.bin_edges).distance, n_samples=1000)
-        return pv.bootstrap_pvalue(self.distance(x, y), ts_distribution)
+        (h_x, h_y), bin_edges = utils.histogram((x, y), bin_edges=self.bin_edges, normalize=False, ret_bins=True)
+
+        def distance_call(h_x, h_y):
+            with np.errstate(divide="ignore", invalid="ignore"):
+                p = pd.Series(np.nan_to_num(h_x / h_x.sum()))
+                q = pd.Series(np.nan_to_num(h_y / h_y.sum()))
+
+            return self.distance_pdf(p, q, bin_edges)
+
+        ts_distribution = pv.bootstrap_binned_statistic(h_x, h_y, distance_call, n_samples=1000)
+
+        return pv.resampling_pvalue(distance_call(h_x, h_y), ts_distribution)

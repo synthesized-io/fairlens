@@ -7,8 +7,10 @@ from fairlens.bias.metrics import EarthMoversDistanceCategorical as EMDC
 from fairlens.bias.metrics import HellingerDistance
 from fairlens.bias.metrics import JensenShannonDivergence as JS
 from fairlens.bias.metrics import KolmogorovSmirnovDistance as KS
+from fairlens.bias.metrics import KruskalWallis as KW
 from fairlens.bias.metrics import KullbackLeiblerDivergence as KL
-from fairlens.bias.metrics import LNorm, stat_distance
+from fairlens.bias.metrics import MeanDistance as Mean
+from fairlens.bias.metrics import Norm, stat_distance
 
 df = pd.read_csv("datasets/compas.csv")
 pred1 = df["Ethnicity"] == "Caucasian"
@@ -45,6 +47,13 @@ def test_auto_binning():
     assert stat_distance(df, target_attr, group1, group2, mode="emd") == res
 
 
+def test_mean_distance():
+    assert Mean()(pd.Series(np.arange(100)), pd.Series(np.arange(10))) == 45
+
+    assert Mean()(group1, group1) == 0
+    assert Mean()(group1, group3) > Mean()(group1, group2)
+
+
 def test_binomial_distance():
     assert BinomialDistance()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
     assert BinomialDistance()(pd.Series([1, 1]), pd.Series([0, 0])) == 1
@@ -64,6 +73,22 @@ def test_emd():
     assert EMD()(group1, group3) > EMD()(group1, group2)
 
 
+def test_ks_distance():
+    assert KS()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
+    assert KS()(pd.Series([1, 1, 1]), pd.Series([0, 0, 0])) == 1
+    assert KS()(pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 0, 0])) == 0.5
+
+    assert KS()(group1, group1) == 0
+    assert KS()(group1, group3) > KS()(group1, group2)
+
+
+def test_kruskal_wallis():
+    assert KW()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
+
+    assert KW()(group1, group1) == 0
+    assert KW()(group1, group3) > KS()(group1, group2)
+
+
 def test_emd_categorical():
     assert EMDC()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
     assert EMDC()(pd.Series([1]), pd.Series([0, 1])) == 0.5
@@ -77,15 +102,6 @@ def test_emd_categorical():
 
     assert EMDC(bin_edges=[0, 1])(group1, group2) == 0
     assert EMDC()(group1, group2) == EMD()(group1, group2)
-
-
-def test_ks_distance():
-    assert KS()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
-    assert KS()(pd.Series([1, 1, 1]), pd.Series([0, 0, 0])) == 1
-    assert KS()(pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 0, 0])) == 0.5
-
-    assert KS()(group1, group1) == 0
-    assert KS()(group1, group3) > KS()(group1, group2)
 
 
 def test_kl_divergence():
@@ -103,12 +119,12 @@ def test_js_divergence():
 
 
 def test_norm():
-    assert LNorm()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
-    assert LNorm(ord=1)(pd.Series([1]), pd.Series([0])) == 2
-    assert LNorm(ord=1)(pd.Series(np.arange(5)), pd.Series(np.arange(5, 10))) == 2
+    assert Norm()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
+    assert Norm(ord=1)(pd.Series([1]), pd.Series([0])) == 2
+    assert Norm(ord=1)(pd.Series(np.arange(5)), pd.Series(np.arange(5, 10))) == 2
 
-    assert LNorm()(group1, group1) == 0
-    assert LNorm()(group1, group3) > LNorm()(group1, group2)
+    assert Norm()(group1, group1) == 0
+    assert Norm()(group1, group3) > Norm()(group1, group2)
 
 
 def test_hellinger():

@@ -25,15 +25,17 @@ class DistrType(Enum):
 
 
 def histogram(
-    data: Tuple[pd.Series, ...], bin_edges: Optional[np.ndarray] = None, ret_bins: bool = False
+    data: Tuple[pd.Series, ...], bin_edges: Optional[np.ndarray] = None, normalize: bool = True, ret_bins: bool = False
 ) -> Union[Tuple[pd.Series, ...], Tuple[Tuple[pd.Series, ...], Optional[np.ndarray]]]:
-    """Bins a tuple of series' and returns the aligned normalized histograms.
+    """Bins a tuple of series' and returns the aligned histograms.
 
     Args:
         data (Tuple[pd.Series, ...]):
             A tuple consisting of the series' to be binned.
         bin_edges (Optional[np.ndarray], optional):
             Bin edges to bin continuous data by. Defaults to None.
+        normalize (bool, optional):
+            Normalize the histograms, turning them into pdfs. Defaults to True.
         ret_bins (bool, optional):
             Returns the bin edges used in the histogram. Defaults to False.
 
@@ -61,8 +63,11 @@ def histogram(
         hists = [np.array([d.get(val, 0) for val in space]) for d in dicts]
 
     # Normalize the histograms
-    with np.errstate(divide="ignore", invalid="ignore"):
-        ps = [pd.Series(np.nan_to_num(hist / hist.sum())) for hist in hists]
+    if normalize:
+        with np.errstate(divide="ignore", invalid="ignore"):
+            hists = [np.nan_to_num(hist / hist.sum()) for hist in hists]
+
+    ps = [pd.Series(hist) for hist in hists]
 
     if ret_bins:
         return tuple(ps), bin_edges

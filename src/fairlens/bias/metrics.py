@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 import pyemd
 from scipy.spatial.distance import jensenshannon
-from scipy.stats import entropy, kruskal, ks_2samp, mannwhitneyu
+from scipy.stats import entropy, kruskal, ks_2samp
 
 from . import p_value as pv
 from . import utils
@@ -88,6 +88,9 @@ def stat_distance(
 
     # Parse group arguments into pandas series'
     if isinstance(group1, dict) and (isinstance(group2, dict) or group2 is None):
+        if target_attr not in df.columns:
+            raise ValueError(f'"{target_attr}" is not a valid column name.')
+
         if group2 is None:
             pred1 = utils.get_predicates_mult(df, [group1])[0]
             pred2 = ~pred1
@@ -102,7 +105,12 @@ def stat_distance(
 
     # Choose the distance metric
     if mode == "auto":
-        dist_class = auto_distance(df[target_attr])
+        if target_attr in df.columns:
+            col = df[target_attr]
+        else:
+            col = pd.concat((group1, group2))
+
+        dist_class = auto_distance(col)
     elif mode in DistanceMetric.class_dict:
         dist_class = DistanceMetric.class_dict[mode]
     else:
@@ -124,6 +132,19 @@ def stat_distance(
         return d
 
     return tuple(result)
+
+
+class MeanDistance(ContinuousDistanceMetric):
+    """
+    The difference between the means of the two distributions.
+    """
+
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return abs(x.mean() - y.mean())
+
+    @property
+    def id(self) -> str:
+        return "mean"
 
 
 class BinomialDistance(ContinuousDistanceMetric):
@@ -180,18 +201,6 @@ class KolmogorovSmirnovDistance(ContinuousDistanceMetric):
     @property
     def id(self) -> str:
         return "ks_distance"
-
-
-class MannWhitneyU(ContinuousDistanceMetric):
-    def distance(self, x: pd.Series, y: pd.Series) -> float:
-        return mannwhitneyu(x, y)[0]
-
-    def p_value(self, x: pd.Series, y: pd.Series) -> float:
-        return mannwhitneyu(x, y)[1]
-
-    @property
-    def id(self) -> str:
-        return "mann_whitney"
 
 
 class KruskalWallis(ContinuousDistanceMetric):
@@ -259,7 +268,7 @@ class JensenShannonDivergence(CategoricalDistanceMetric):
         return "js_divergence"
 
 
-class LNorm(CategoricalDistanceMetric):
+class Norm(CategoricalDistanceMetric):
     """
     LP Norm between two probability distributions.
     """
