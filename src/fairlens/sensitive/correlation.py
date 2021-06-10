@@ -51,7 +51,7 @@ def find_sensitive_correlations(
         df, threshold=threshold, str_distance=str_distance, deep_search=True, config_path=config_path
     )
 
-    non_sensitive_cols = list(set(df.columns) - set(sensitive_dict.keys()))
+    non_sensitive_cols = df.columns.difference(sensitive_dict)
 
     correlation_dict = dict()
 
