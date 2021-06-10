@@ -18,6 +18,7 @@ def detect_names_df(
     threshold: float = 0.1,
     str_distance: Callable[[Optional[str], Optional[str]], float] = None,
     deep_search: bool = False,
+    n_samples: int = 20,
     config_path: Union[str, pathlib.Path] = None,
 ) -> Dict[str, Optional[str]]:
     """Detects the sensitive columns in a dataframe or string list and creates a
@@ -36,6 +37,11 @@ def detect_names_df(
         deep_search (bool, optional):
             The boolean flag that enables deep search when set to true. Deep search
             also makes use of the content of the column to check if it is sensitive.
+        n_samples (int, optional):
+            The number of values to be sampled from series of large datasets when using
+            the deep search algorithm. A low sample number will greatly improve speed and
+            still produce accurate results, assuming that the underlying dictionaries are
+            comprehensive.
         config_path (Union[str, pathlib.Path], optional)
             The path of the JSON configuration file in which the dictionaries used for
             detecting sensitive attributes are defined. By default, the configuration
@@ -73,7 +79,13 @@ def detect_names_df(
 
     if deep_search:
         for col in cols:
-            group_name = _deep_search(df[col], threshold, str_distance, attr_value_dict)
+            # If the series are larger than the provided n_samples, we take a sample to increase speed.
+            if df[col].size > n_samples:
+                column = df[col].sample(n=n_samples)
+            else:
+                column = df[col]
+
+            group_name = _deep_search(column, threshold, str_distance, attr_value_dict)
 
             if group_name is not None:
                 sensitive_dict[col] = group_name
