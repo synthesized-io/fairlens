@@ -1,10 +1,12 @@
 import numpy as np
 import pandas as pd
 
-from fairlens.bias import p_value as pv
-from fairlens.bias.metrics import stat_distance
-
-# from fairlens.bias.metrics import stat_distance
+from fairlens.bias.metrics import MeanDistance, stat_distance
+from fairlens.bias.p_value import binominal_proportion_p_value as bin_prop
+from fairlens.bias.p_value import bootstrap_binned_statistic as bootstrap_binned
+from fairlens.bias.p_value import bootstrap_statistic as bootstrap
+from fairlens.bias.p_value import permutation_statistic as perm_stat
+from fairlens.bias.p_value import resampling_pvalue
 
 epsilon = 1e-5
 df = pd.read_csv("datasets/compas.csv")
@@ -14,23 +16,36 @@ group2 = {"Ethnicity": ["African-American"]}
 
 
 def test_binomial():
-    assert abs(pv.binominal_proportion_p_value(0.2, 0.1, 10) - (1 - (0.9 ** 10 + 0.9 ** 9))) < epsilon
+    assert abs(bin_prop(0.2, 0.1, 10) - (1 - (0.9 ** 10 + 0.9 ** 9))) < epsilon
     assert stat_distance(df, "", pd.Series([1, 1]), pd.Series([0, 0]), p_value=True)[1] == 0
     assert stat_distance(df, "", pd.Series([1, 0]), pd.Series([1, 0]), p_value=True)[1] == 1
     assert stat_distance(df, "", pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 1, 0]), p_value=True)[1] == 0.625
 
 
-def test_bootstrapping():
-    pass
+def test_bootstrap():
+    assert bootstrap(pd.Series(range(2)), pd.Series(range(2, 4)), MeanDistance().distance, 1000).max() == 3
+
+
+def test_bootstrap_binned():
+    def distance(h_x, h_y):
+        return np.linalg.norm(h_x - h_y, ord=1)
+
+    assert bootstrap_binned(pd.Series([1, 3, 0]), pd.Series([1, 4, 3]), distance, 1000).max() == 12
 
 
 def test_permutation():
-    assert stat_distance(df, "", pd.Series(np.ones(100)), pd.Series(np.zeros(100)), mode="emd", p_value=True)[1] == 0
-    assert stat_distance(df, "", pd.Series([1, 0]), pd.Series([1, 0]), mode="emd", p_value=True)[1] == 1
-
-    print(stat_distance(df, target_attr, group1, group2, mode="emd", p_value=True))
-    assert stat_distance(df, target_attr, group1, group2, mode="emd", p_value=True)[1] == 0
+    assert perm_stat(pd.Series(range(5)), pd.Series(range(5, 10)), MeanDistance().distance, 1000).max() == 5
 
 
-def test_ks_distance():
-    pass
+def test_resampled_pvalue():
+    assert resampling_pvalue(12, pd.Series([13, 11]), "two-sided") == 0.5
+    assert resampling_pvalue(12, pd.Series([13, 11]), "greater") == 0.5
+    assert resampling_pvalue(12, pd.Series([13, 11]), "less") == 0.5
+
+    assert resampling_pvalue(12, pd.Series([15, 14, 13, 11]), "two-sided") == 0.75
+    assert resampling_pvalue(12, pd.Series([15, 14, 13, 11]), "greater") == 0.75
+    assert resampling_pvalue(12, pd.Series([15, 14, 13, 11]), "less") == 0.25
+
+    assert resampling_pvalue(0, pd.Series([-2, -1, 0, 1]), "two-sided") == 1
+    assert resampling_pvalue(0, pd.Series([-2, -1, 0, 1]), "greater") == 0.5
+    assert resampling_pvalue(0, pd.Series([-2, -1, 0, 1]), "less") == 0.5
