@@ -5,9 +5,10 @@ FairLens allows users to make use of a wide range of statistical distance metric
 between the distributions of two potentially sensitive sub-groups of data. Additionally there are several metrics
 used to measure correlations between columns.
 
+  fairlens.bias.metrics.BinomialDistance
+  fairlens.bias.metrics.EarthMoversDistance
+  fairlens.bias.metrics.KolmogorovSmirnovDistance
 
-Statistical Distances
-^^^^^^^^^^^^^^^^^^^^^
 
 Fairlens supports multiple distance metrics which you can use via the method :code:`stat_distance`.
 Let's import this method and load in the compas dataset.
