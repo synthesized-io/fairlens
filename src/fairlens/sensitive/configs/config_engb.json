@@ -1,14 +1,14 @@
 {
     "synonyms":
         {
-            "Age": ["age", "DOB", "birth", "youth", "elder", "senior"],
+            "Age": ["age", "DOB", "birth", "youth", "elder", "senior", "date of birth"],
             "Gender": ["gender", "sex"],
-            "Ethnicity": ["race", "color", "ethnic", "breed", "culture"],
-            "Religion": ["religion", "creed", "cult", "doctrine"],
-            "Nationality": ["nation", "geography", "location", "native", "country", "region"],
-            "Family Status": ["family status", "family", "house", "marital", "children", "partner", "pregnant"],
+            "Ethnicity": ["race", "color", "ethnic", "breed", "culture", "ethnicity"],
+            "Religion": ["religion", "creed", "cult", "doctrine", "faith"],
+            "Nationality": ["nationality", "nation", "geography", "location", "language", "native", "country", "region"],
+            "Family Status": ["family status", "family", "house", "marital", "children", "partner", "pregnant", "marital status"],
             "Disability": ["disability", "impairment"],
-            "Sexual Orientation": ["sexual orientation", "sexual", "orientation", "attracted"]
+            "Sexual Orientation": ["sexual orientation", "sexual preference", "sexual", "orientation", "attracted"]
         },
     "values":
         {
