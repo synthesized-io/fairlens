@@ -98,7 +98,7 @@ def stat_distance(
 
     if not isinstance(group1, pd.Series) or not isinstance(group2, pd.Series):
         raise TypeError("group1, group2 must be pd.Series or dictionaries")
-    
+
     if target_attr in df.columns:
         column = df[target_attr]
     else:
