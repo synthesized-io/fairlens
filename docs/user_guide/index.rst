@@ -6,9 +6,10 @@ User Guide
   :hidden:
   :glob:
 
-  bias
-  viz
+  metrics
   sensitive
+  viz
+  scorer
 
 Getting Started
 ^^^^^^^^^^^^^^^

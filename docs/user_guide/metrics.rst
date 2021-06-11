@@ -1,44 +1,31 @@
 Measuring bias and fairness
 ===========================
 
-Fairlens allows users to make use of a wide range of statistical distance metrics to measure the difference
-between the distributions of two potentially sensitive sub-groups of data. In addition users can use the
-:code:`FairnessScorer` to automatically assess the fairness of columns in a dataset with respect to a target column.
-
-
-Fairness Scorer
-^^^^^^^^^^^^^^^
-
-Let's test out the fairlens scorer on the compas dataset.
-
-First we will import the required packages and load the compas dataset.
-
-.. ipython:: python
-
-  import pandas as pd
-
-  df = pd.read_csv("../datasets/compas.csv")
-  df.head()
-
-.. ipython:: python
-  :verbatim:
-
-  sensitive_attrs = ["Ethnicity", "Sex"]
-  target_attr = "RawScore"
-
-  fscorer = FairnessScorer(df, target_attr, sensitive_attrs)
-  fscorer.distribution_score()
+FairLens allows users to make use of a wide range of statistical distance metrics to measure the difference
+between the distributions of two potentially sensitive sub-groups of data. Additionally there are several metrics
+used to measure correlations between columns.
 
 
 Statistical Distances
 ^^^^^^^^^^^^^^^^^^^^^
 
+.. autosummary::
+
+  fairlens.bias.metrics.BinomialDistance
+  fairlens.bias.metrics.EarthMoversDistance
+  fairlens.bias.metrics.KolmogorovSmirnovDistance
+
+
 Fairlens supports multiple distance metrics which you can use via the method :code:`stat_distance`.
-Let's import this method.
+Let's import this method and load in the compas dataset.
 
 .. ipython:: python
 
+  import pandas as pd
   from fairlens.bias.metrics import stat_distance
+
+  df = pd.read_csv("../datasets/compas.csv")
+  df
 
 We need to define which groups of data we want to measure the distance between and the target attribute.
 
@@ -94,3 +81,9 @@ The distance metrics inside :code:`fairlens.bias.metrics` are also available for
 
   ord = 1
   LNorm(ord=ord)(x, y)
+
+
+Correlations
+^^^^^^^^^^^^
+
+TBD

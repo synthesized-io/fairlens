@@ -138,15 +138,15 @@ This is picked up by the function, specifying both the insensitive and sensitive
 protected category of the sensitive one:
 
 .. ipython:: python
-    :verbatim:
 
-    dt.find_sensitive_correlations(df)
+    from fairlens.sensitive.correlation import find_sensitive_correlations
+
+    find_sensitive_correlations(df)
 
 In this example, the two scores are both correlated with sensitive columns, the first one with gender and
 the second with nationality:
 
 .. ipython:: python
-    :verbatim:
 
     col_names = ["gender", "nationality", "random", "corr1", "corr2"]
     data = [
@@ -157,4 +157,4 @@ the second with nationality:
     ]
     df = pd.DataFrame(data, columns=col_names)
 
-    dt.find_sensitive_correlations(df)
+    find_sensitive_correlations(df)

@@ -142,10 +142,12 @@ class FairnessScorer:
 
             distance = stat_distance(df, target_attr, df[pred][target_attr], df[~pred][target_attr], mode=mode)
 
-            dist.append({
-                "Group": ", ".join(row.to_dict().values()),
-                "Distance": distance,
-                "Proportion": len(df[pred]) / len(df)
-            })
+            dist.append(
+                {
+                    "Group": ", ".join(row.to_dict().values()),
+                    "Distance": distance,
+                    "Proportion": len(df[pred]) / len(df),
+                }
+            )
 
         return pd.DataFrame(dist)
