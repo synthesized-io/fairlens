@@ -18,6 +18,7 @@ def detect_names_df(
     threshold: float = 0.1,
     str_distance: Callable[[Optional[str], Optional[str]], float] = None,
     deep_search: bool = False,
+    n_samples: int = 20,
     config_path: Union[str, pathlib.Path] = None,
 ) -> Dict[str, Optional[str]]:
     """Detects the sensitive columns in a dataframe or string list and creates a
@@ -36,6 +37,11 @@ def detect_names_df(
         deep_search (bool, optional):
             The boolean flag that enables deep search when set to true. Deep search
             also makes use of the content of the column to check if it is sensitive.
+        n_samples (int, optional):
+            The number of values to be sampled from series of large datasets when using
+            the deep search algorithm. A low sample number will greatly improve speed and
+            still produce accurate results, assuming that the underlying dictionaries are
+            comprehensive.
         config_path (Union[str, pathlib.Path], optional)
             The path of the JSON configuration file in which the dictionaries used for
             detecting sensitive attributes are defined. By default, the configuration
@@ -59,30 +65,35 @@ def detect_names_df(
     else:
         attr_synonym_dict, attr_value_dict = load_config()
 
+    str_distance = str_distance or _ro_distance
+
     if isinstance(df, list):
         cols = df
+        return _detect_names_dict(
+            cols, threshold=threshold, str_distance=str_distance, attr_synonym_dict=attr_synonym_dict
+        )
     else:
         cols = df.columns
 
     sensitive_dict = _detect_names_dict(cols, threshold, str_distance, attr_synonym_dict)
 
-    if isinstance(df, list):
-        return sensitive_dict
-
-    str_distance = str_distance or _ro_distance
-    sensitive_cols = list(sensitive_dict.keys())
-
     if deep_search:
-        non_sensitive_cols = list(set(cols) - set(sensitive_cols))
 
-        for non_sensitive_col in non_sensitive_cols:
-            group_name = _deep_search(df[non_sensitive_col], threshold, str_distance, attr_value_dict)
+        for col in cols:
+            # Series containing only the unique values of the analyzed column.
+            uniques = pd.Series(df[col].unique())
+            # If the series are larger than the provided n_samples, we take a sample to increase speed.
+            if uniques.size > n_samples:
+                column = uniques.sample(n=n_samples)
+            else:
+                column = uniques
+
+            group_name = _deep_search(column, threshold, str_distance, attr_value_dict)
 
             if group_name is not None:
-                sensitive_dict[non_sensitive_col] = group_name
-        return sensitive_dict
-    else:
-        return sensitive_dict
+                sensitive_dict[col] = group_name
+
+    return sensitive_dict
 
 
 def load_config(config_path: Union[str, pathlib.Path] = DEFAULT_CONFIG_PATH) -> Tuple[Any, Any]:
@@ -108,6 +119,9 @@ def load_config(config_path: Union[str, pathlib.Path] = DEFAULT_CONFIG_PATH) -> 
 def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
     """Computes a distance between the input strings using the Ratcliff-Obershelp algorithm."""
     if s1 is None or s2 is None:
+        return 1
+
+    if not isinstance(s1, str) or not isinstance(s2, str):
         return 1
 
     return 1 - SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
@@ -151,8 +165,9 @@ def _detect_name(
 
     # Check startswith / endswith
     for group_name, attrs in attr_synonym_dict.items():
+        separator = " ,.-:"
         for attr in attrs:
-            if name.startswith(attr) or name.endswith(attr):
+            if name.startswith(attr.lower() + "|".join(separator)) or name.endswith("|".join(separator) + attr.lower()):
                 return group_name
 
     # Check distance < threshold
@@ -230,7 +245,6 @@ def _deep_search(
         # Skip sensitive groups that do not have defined possible values.
         if not values:
             continue
-        pattern = "|".join(values)
         if s.isin(values).mean() > 0.2:
             return group_name
 

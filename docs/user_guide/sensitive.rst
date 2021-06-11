@@ -58,6 +58,32 @@ detection algorithm. By default, Ratcliff-Obershelp algorithm is used, but any f
 :code:`Callable[[Optional[str], Optional[str]], float]` can be used. The detection threshold can
 also be changed to modify the strictness of the fuzzy matching.
 
+Let us try applying the detection functionality in a more practical scenario, using the COMPAS
+dataset:
+
+.. ipython:: python
+
+    df = pd.read_csv("../datasets/compas.csv")
+    df.head()
+
+    # Apply shallow detection algorithm.
+    dt.detect_names_df(df)
+
+As we can see, the sensitive categories from the dataframe have been picked out by the shallow search.
+Let's now see what happens when we deep search, but just to make the task a bit more difficult, let's rename
+the sensitive columns to have random names.
+
+.. ipython:: python
+
+    df_deep = pd.read_csv("../datasets/compas.csv")
+    df_deep = df_deep.rename(columns={"Ethnicity": "A", "Language": "Random", "MaritalStatus": "B", "Sex": "C"})
+
+    # Apply deep detection algorithm.
+    dt.detect_names_df(df, deep_search=True)
+
+The same sensitive columns have been picked, but based solely on their content, as the column names themselves have
+become non-sugestive.
+
 Custom Configurations
 ^^^^^^^^^^^^^^^^^^^^^
 
