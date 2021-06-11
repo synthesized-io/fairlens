@@ -75,8 +75,9 @@ def detect_names_df(
     else:
         cols = df.columns
 
+    sensitive_dict = _detect_names_dict(cols, threshold, str_distance, attr_synonym_dict)
+
     if deep_search:
-        sensitive_dict = _detect_names_dict(cols, threshold, str_distance, attr_synonym_dict)
         for col in cols:
             # If the series are larger than the provided n_samples, we take a sample to increase speed.
             if df[col].size > n_samples:
@@ -88,8 +89,6 @@ def detect_names_df(
 
             if group_name is not None:
                 sensitive_dict[col] = group_name
-    else:
-        sensitive_dict = _detect_names_dict(cols, threshold, str_distance, attr_synonym_dict)
 
     return sensitive_dict
 
