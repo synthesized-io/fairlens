@@ -72,10 +72,8 @@ def detect_names_df(
         return _detect_names_dict(
             cols, threshold=threshold, str_distance=str_distance, attr_synonym_dict=attr_synonym_dict
         )
-
-    cols = df.columns
-
-    sensitive_dict: Dict[str, Optional[str]] = dict()
+    else:
+        cols = df.columns
 
     if deep_search:
         sensitive_dict = _detect_names_dict(cols, threshold, str_distance, attr_synonym_dict)
