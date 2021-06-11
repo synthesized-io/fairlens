@@ -124,14 +124,16 @@ def test_compas_detect_shallow():
 
 
 def test_compas_detect_deep():
+    dfc_deep = pd.read_csv("datasets/compas.csv")
+    dfc_deep = dfc_deep.rename(columns={"Ethnicity": "A", "Language": "Random", "MaritalStatus": "B", "Sex": "C"})
     res = {
         "DateOfBirth": "Age",
-        "Ethnicity": "Ethnicity",
-        "Language": "Nationality",
-        "MaritalStatus": "Family Status",
-        "Sex": "Gender",
+        "A": "Ethnicity",
+        "Random": "Nationality",
+        "B": "Family Status",
+        "C": "Gender",
     }
-    assert dt.detect_names_df(dfc, deep_search=True) == res
+    assert dt.detect_names_df(dfc_deep, deep_search=True) == res
 
 
 def test_correlation():
