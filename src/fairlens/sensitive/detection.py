@@ -78,12 +78,15 @@ def detect_names_df(
     sensitive_dict = _detect_names_dict(cols, threshold, str_distance, attr_synonym_dict)
 
     if deep_search:
+
         for col in cols:
+            # Series containing only the unique values of the analyzed column.
+            uniques = pd.Series(df[col].unique())
             # If the series are larger than the provided n_samples, we take a sample to increase speed.
-            if df[col].size > n_samples:
-                column = df[col].sample(n=n_samples)
+            if uniques.size > n_samples:
+                column = uniques.sample(n=n_samples)
             else:
-                column = df[col]
+                column = uniques
 
             group_name = _deep_search(column, threshold, str_distance, attr_value_dict)
 
@@ -162,9 +165,9 @@ def _detect_name(
 
     # Check startswith / endswith
     for group_name, attrs in attr_synonym_dict.items():
-        separator = "|".join(" ,.-:")
+        separator = " ,.-:"
         for attr in attrs:
-            if name.startswith(attr.lower() + separator) or name.endswith(separator + attr.lower()):
+            if name.startswith(attr.lower() + "|".join(separator)) or name.endswith("|".join(separator) + attr.lower()):
                 return group_name
 
     # Check distance < threshold
