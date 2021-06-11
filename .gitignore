@@ -4,8 +4,10 @@ __pycache__
 pip-wheel-metadata/
 build/
 dist/
+*.swp
 
 docs/_build/
+docs/savefig
 
 .env/
 
