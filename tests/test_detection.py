@@ -297,9 +297,3 @@ def test_double_config_deep():
     res2 = {"B": "Birds", "F1": "Fish"}
     assert dt.detect_names_df(df, deep_search=True, config_path=ENGB_CONFIG_PATH) == res1
     assert dt.detect_names_df(df, deep_search=True, config_path=MOCK_CONFIG_PATH) == res2
-
-
-if __name__ == "__main__":
-    dfc = pd.read_csv("datasets/compas.csv")
-    res = dt.detect_names_df(dfc, deep_search=True)
-    print(res)
