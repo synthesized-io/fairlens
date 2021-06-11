@@ -32,9 +32,8 @@ def test_stat_distance():
     assert stat_distance(df, target_attr, group1, target, mode="emd") == res
     assert stat_distance(df, target_attr, x, xy, mode="emd") == res
 
-    res = stat_distance(df, target_attr, x, mode="emd")
+    res = stat_distance(df, target_attr, x, y, mode="emd")
     assert stat_distance(df, target_attr, group1, group4, mode="emd") == res
-    assert stat_distance(df, target_attr, x, y, mode="emd") == res
 
 
 def test_stat_distance_auto():

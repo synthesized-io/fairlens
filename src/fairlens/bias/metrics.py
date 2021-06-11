@@ -39,7 +39,7 @@ def stat_distance(
     df: pd.DataFrame,
     target_attr: str,
     group1: Union[Dict[str, List[str]], pd.Series],
-    group2: Union[Optional[Dict[str, List[str]]], pd.Series] = None,
+    group2: Union[Dict[str, List[str]], pd.Series],
     mode: str = "auto",
     p_value: bool = False,
     **kwargs,
@@ -87,30 +87,26 @@ def stat_distance(
     """
 
     # Parse group arguments into pandas series'
-    if isinstance(group1, dict) and (isinstance(group2, dict) or group2 is None):
+    if isinstance(group1, dict) and isinstance(group2, dict):
         if target_attr not in df.columns:
             raise ValueError(f'"{target_attr}" is not a valid column name.')
 
-        if group2 is None:
-            pred1 = utils.get_predicates_mult(df, [group1])[0]
-            pred2 = ~pred1
-        else:
-            pred1, pred2 = tuple(utils.get_predicates_mult(df, [group1, group2]))
+        pred1, pred2 = tuple(utils.get_predicates_mult(df, [group1, group2]))
 
         group1 = df[pred1][target_attr]
         group2 = df[pred2][target_attr]
 
     if not isinstance(group1, pd.Series) or not isinstance(group2, pd.Series):
         raise TypeError("group1, group2 must be pd.Series or dictionaries")
+    
+    if target_attr in df.columns:
+        column = df[target_attr]
+    else:
+        column = pd.concat((group1, group2))
 
     # Choose the distance metric
     if mode == "auto":
-        if target_attr in df.columns:
-            col = df[target_attr]
-        else:
-            col = pd.concat((group1, group2))
-
-        dist_class = auto_distance(col)
+        dist_class = auto_distance(column)
     elif mode in DistanceMetric.class_dict:
         dist_class = DistanceMetric.class_dict[mode]
     else:
