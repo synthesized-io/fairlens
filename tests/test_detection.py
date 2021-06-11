@@ -111,7 +111,7 @@ def test_dataframe_dict_numbers():
     res = {}
     assert dt.detect_names_df(df, deep_search=True) == res
 
-    
+
 def test_compas_detect_shallow():
     res = {
         "DateOfBirth": "Age",
@@ -133,7 +133,7 @@ def test_compas_detect_deep():
     }
     assert dt.detect_names_df(dfc, deep_search=True) == res
 
- 
+
 def test_correlation():
     col_names = ["gender", "random", "score"]
     data = [
