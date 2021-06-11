@@ -78,6 +78,7 @@ def detect_names_df(
     sensitive_dict: Dict[str, Optional[str]] = dict()
 
     if deep_search:
+        sensitive_dict = _detect_names_dict(cols, threshold, str_distance, attr_synonym_dict)
         for col in cols:
             # If the series are larger than the provided n_samples, we take a sample to increase speed.
             if df[col].size > n_samples:
@@ -118,6 +119,9 @@ def load_config(config_path: Union[str, pathlib.Path] = DEFAULT_CONFIG_PATH) -> 
 def _ro_distance(s1: Optional[str], s2: Optional[str]) -> float:
     """Computes a distance between the input strings using the Ratcliff-Obershelp algorithm."""
     if s1 is None or s2 is None:
+        return 1
+
+    if not isinstance(s1, str) or not isinstance(s2, str):
         return 1
 
     return 1 - SequenceMatcher(None, s1.lower(), s2.lower()).ratio()
@@ -161,8 +165,9 @@ def _detect_name(
 
     # Check startswith / endswith
     for group_name, attrs in attr_synonym_dict.items():
+        separator = "|".join(" ,.-:")
         for attr in attrs:
-            if name.startswith(attr) or name.endswith(attr):
+            if name.startswith(attr.lower() + separator) or name.endswith(separator + attr.lower()):
                 return group_name
 
     # Check distance < threshold
@@ -240,7 +245,6 @@ def _deep_search(
         # Skip sensitive groups that do not have defined possible values.
         if not values:
             continue
-        pattern = "|".join(values)
         if s.isin(values).mean() > 0.2:
             return group_name
 

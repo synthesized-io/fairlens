@@ -8,12 +8,14 @@ TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 MOCK_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_mock.json")
 ENGB_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_engb.json")
 
+dfc = pd.read_csv("datasets/compas.csv")
+
 
 def test_detect_name():
     assert dt._detect_name("Creed") == "Religion"
     assert dt._detect_name("date birth of", threshold=0.1) is None
     assert dt._detect_name("date birth of", threshold=0.5) == "Age"
-    assert dt._detect_name("Sexual Preference") == "Gender"
+    assert dt._detect_name("Sexual Preference") == "Sexual Orientation"
 
 
 def test_detect_names():
@@ -109,6 +111,28 @@ def test_dataframe_dict_numbers():
     assert dt.detect_names_df(df, deep_search=True) == res
 
 
+def test_compas_detect_shallow():
+    res = {
+        "DateOfBirth": "Age",
+        "Ethnicity": "Ethnicity",
+        "Language": "Nationality",
+        "MaritalStatus": "Family Status",
+        "Sex": "Gender",
+    }
+    assert dt.detect_names_df(dfc) == res
+
+
+def test_compas_detect_deep():
+    res = {
+        "DateOfBirth": "Age",
+        "Ethnicity": "Ethnicity",
+        "Language": "Nationality",
+        "MaritalStatus": "Family Status",
+        "Sex": "Gender",
+    }
+    assert dt.detect_names_df(dfc, deep_search=True) == res
+
+
 def test_default_config():
     col_names = [
         "gender",
@@ -171,3 +195,9 @@ def test_double_config_deep():
     res2 = {"B": "Birds", "F1": "Fish"}
     assert dt.detect_names_df(df, deep_search=True, config_path=ENGB_CONFIG_PATH) == res1
     assert dt.detect_names_df(df, deep_search=True, config_path=MOCK_CONFIG_PATH) == res2
+
+
+if __name__ == "__main__":
+    dfc = pd.read_csv("datasets/compas.csv")
+    res = dt.detect_names_df(dfc, deep_search=True)
+    print(res)
