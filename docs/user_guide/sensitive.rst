@@ -64,15 +64,25 @@ dataset:
 .. ipython:: python
 
     df = pd.read_csv("../datasets/compas.csv")
+    df.head()
 
+    # Apply shallow detection algorithm.
     dt.detect_names_df(df)
 
-As we can see, some sensitive categories from the dataframe have been picked out by the shallow search.
-Let's see now if by enabling deep search we are able to detect more attributes:
+As we can see, the sensitive categories from the dataframe have been picked out by the shallow search.
+Let's now see what happens when we deep search, but just to make the task a bit more difficult, let's rename
+the sensitive columns to have random names.
 
 .. ipython:: python
 
+    df_deep = pd.read_csv("../datasets/compas.csv")
+    df_deep = df_deep.rename(columns={"Ethnicity": "A", "Language": "Random", "MaritalStatus": "B", "Sex": "C"})
+
+    # Apply deep detection algorithm.
     dt.detect_names_df(df, deep_search=True)
+
+The same sensitive columns have been picked, but based solely on their content, as the column names themselves have
+become non-sugestive.
 
 Custom Configurations
 ^^^^^^^^^^^^^^^^^^^^^
