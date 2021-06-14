@@ -23,6 +23,7 @@ def test_binomial():
 
 
 def test_bootstrap():
+    assert bootstrap(pd.Series([1]), pd.Series([0]), MeanDistance().distance, 100).min() == 1
     assert bootstrap(pd.Series(range(2)), pd.Series(range(2, 4)), MeanDistance().distance, 1000).max() == 3
 
 
@@ -30,10 +31,12 @@ def test_bootstrap_binned():
     def distance(h_x, h_y):
         return np.linalg.norm(h_x - h_y, ord=1)
 
-    assert bootstrap_binned(pd.Series([1, 3, 0]), pd.Series([1, 4, 3]), distance, 1000).max() == 12
+    assert bootstrap_binned(pd.Series([1, 3, 0]), pd.Series([1, 4, 3]), distance, 10000).max() == 12
 
 
 def test_permutation():
+    assert perm_stat(pd.Series([1]), pd.Series([0]), MeanDistance().distance, 100).min() == 1
+    assert perm_stat(pd.Series([1, 1]), pd.Series([0, 0]), MeanDistance().distance, 1000).min() == 0
     assert perm_stat(pd.Series(range(5)), pd.Series(range(5, 10)), MeanDistance().distance, 1000).max() == 5
 
 
