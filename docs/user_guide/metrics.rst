@@ -9,13 +9,6 @@ used to measure correlations between columns.
 Statistical Distances
 ^^^^^^^^^^^^^^^^^^^^^
 
-.. autosummary::
-
-  fairlens.bias.metrics.BinomialDistance
-  fairlens.bias.metrics.EarthMoversDistance
-  fairlens.bias.metrics.KolmogorovSmirnovDistance
-
-
 Fairlens supports multiple distance metrics which you can use via the method :code:`stat_distance`.
 Let's import this method and load in the compas dataset.
 
