@@ -10,7 +10,7 @@ import pandas as pd
 
 from ..bias import utils
 from ..bias.metrics import stat_distance
-from ..sensitive.detection import detect_names_df as detect
+from ..sensitive.detection import detect_names_df
 
 logger = logging.getLogger(__name__)
 
@@ -48,7 +48,8 @@ class FairnessScorer:
 
         # Detect sensitive attributes
         if detect_sensitive:
-            sensitive_attrs = list(set([k for (k, v) in detect(df).items() if v is not None]).union(sensitive_attrs))
+            attr_dict = detect_names_df(df, deep_search=True).items()
+            sensitive_attrs = list(set([k for (k, v) in attr_dict if v is not None]).union(sensitive_attrs))
 
         if len(sensitive_attrs) == 0:
             logger.warning("No sensitive attributes detected. Fairness score will always be 0.")
@@ -61,11 +62,11 @@ class FairnessScorer:
         self,
         mode: str = "auto",
         alpha: float = 0.05,
+        max_comb: Optional[int] = None,
         min_dist: Optional[float] = None,
-        min_count: Optional[int] = 50,
+        min_prop: Optional[float] = None,
+        min_count: Optional[int] = None,
         weighted: bool = True,
-        max_comb: Optional[int] = 3,
-        condense_output: bool = True,
     ) -> pd.DataFrame:
         """Returns the biases and fairness score by analyzing the distribution difference between sensitive
         variables and the target variable.
@@ -76,16 +77,16 @@ class FairnessScorer:
                 the distribution of the target variable.
             alpha (float, optional):
                 Maximum p-value to accept a bias. Defaults to 0.05.
+            max_comb (Optional[int], optional):
+                Max number of combinations of sensitive attributes to be considered. Defaults to None.
             min_dist (Optional[float], optional):
                 If set, any bias with smaller distance than min_dist will be ignored. Defaults to None.
+            min_prop (Optional[int], optional):
+                If set, biases with less samples of less proportion than min_prop will be ignored. Defaults to None.
             min_count (Optional[int], optional):
-                If set, any bias with less samples than min_count will be ignored. Defaults to 50.
+                If set, biases with less samples than min_count will be ignored. Defaults to None.
             weighted (bool, optional):
                 Whether to weight the average of biases on the size of each sample. Defaults to True.
-            max_comb (Optional[int], optional):
-                Max number of combinations of sensitive attributes to be considered. Defaults to 3.
-            condense_output (bool, optional):
-                Whether to return one row per group or one per group and target. Defaults to True.
         """
 
         df_pre = self.df
@@ -107,7 +108,15 @@ class FairnessScorer:
                 df_dist = self.calculate_distance(list(sensitive_attr), mode=mode, alpha=alpha)
                 df_dists.append(df_dist)
 
-        return pd.concat(df_dists, ignore_index=True)
+        df_dist = pd.concat(df_dists, ignore_index=True)
+
+        if min_dist is not None:
+            df_dist = df_dist[df_dist["Distance"] > min_dist]
+
+        if min_count is not None:
+            df_dist = df_dist[df_dist["Counts"] > min_count]
+
+        return df_dist
 
     def calculate_distance(self, sensitive_attrs: List[str], mode: str = "auto", alpha: float = 0.05) -> pd.DataFrame:
         """Calculates the distance between the distribution of all the unique groups of values and the
@@ -147,6 +156,7 @@ class FairnessScorer:
                     "Group": ", ".join(row.to_dict().values()),
                     "Distance": distance,
                     "Proportion": len(df[pred]) / len(df),
+                    "Counts": len(df[pred]),
                 }
             )
 
