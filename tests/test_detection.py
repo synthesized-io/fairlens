@@ -9,12 +9,14 @@ TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 MOCK_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_mock.json")
 ENGB_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_engb.json")
 
+dfc = pd.read_csv("datasets/compas.csv")
+
 
 def test_detect_name():
     assert dt._detect_name("Creed") == "Religion"
     assert dt._detect_name("date birth of", threshold=0.1) is None
     assert dt._detect_name("date birth of", threshold=0.5) == "Age"
-    assert dt._detect_name("Sexual Preference") == "Gender"
+    assert dt._detect_name("Sexual Preference") == "Sexual Orientation"
 
 
 def test_detect_names():
@@ -108,6 +110,30 @@ def test_dataframe_dict_numbers():
     df = pd.DataFrame(data, columns=col_names)
     res = {}
     assert dt.detect_names_df(df, deep_search=True) == res
+
+
+def test_compas_detect_shallow():
+    res = {
+        "DateOfBirth": "Age",
+        "Ethnicity": "Ethnicity",
+        "Language": "Nationality",
+        "MaritalStatus": "Family Status",
+        "Sex": "Gender",
+    }
+    assert dt.detect_names_df(dfc) == res
+
+
+def test_compas_detect_deep():
+    dfc_deep = pd.read_csv("datasets/compas.csv")
+    dfc_deep = dfc_deep.rename(columns={"Ethnicity": "A", "Language": "Random", "MaritalStatus": "B", "Sex": "C"})
+    res = {
+        "DateOfBirth": "Age",
+        "A": "Ethnicity",
+        "Random": "Nationality",
+        "B": "Family Status",
+        "C": "Gender",
+    }
+    assert dt.detect_names_df(dfc_deep, deep_search=True) == res
 
 
 def test_correlation():
