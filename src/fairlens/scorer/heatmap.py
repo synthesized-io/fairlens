@@ -1,10 +1,12 @@
 from typing import Callable
 
-import matplotlib as plt
+import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import scipy.stats as ss
 import seaborn as sns
+
+from ..bias import utils
 
 
 def two_column_heatmap(
@@ -30,29 +32,28 @@ def compute_correlation_matrix(
     cat_num_metric: Callable[[pd.Series, pd.Series], float] = None,
     cat_cat_metric: Callable[[pd.Series, pd.Series], float] = None,
 ) -> pd.DataFrame:
-    num_num_metric = num_num_metric or _pearson
-    cat_num_metric = cat_num_metric or _kruskal_wallis
-    cat_cat_metric = cat_cat_metric or _cramers_v
+    nn_metric = num_num_metric or _pearson
+    cn_metric = cat_num_metric or _kruskal_wallis
+    cc_metric = cat_cat_metric or _cramers_v
 
-    series_list = list()
-    for sr_a in df.columns:
-        coeffs = list()
-        a_categorical = df[sr_a].map(type).eq(str).all()
-        for sr_b in df.columns:
-            if sr_a == sr_b:
-                coeffs.append(1.0)
-                continue
-            b_categorical = df[sr_b].map(type).eq(str).all()
-            if a_categorical and b_categorical:
-                coeffs.append(cat_cat_metric(df[sr_a], df[sr_b]))
-            elif a_categorical and not b_categorical:
-                coeffs.append(cat_num_metric(df[sr_a], df[sr_b]))
-            elif not a_categorical and b_categorical:
-                coeffs.append(cat_num_metric(df[sr_a], df[sr_b]))
-            else:
-                coeffs.append(num_num_metric(df[sr_a], df[sr_b]))
-        series_list.append(pd.Series(coeffs, index=df.columns, name=sr_a))
-    return pd.concat(series_list, axis=1, keys=[series.name for series in series_list])
+    def corr_wrapper(a: np.ndarray, b: np.ndarray):
+        sr_a = pd.Series(a)
+        sr_b = pd.Series(b)
+        a_type = utils.infer_distr_type(sr_a)
+        b_type = utils.infer_distr_type(sr_b)
+
+        if a_type.is_continuous() and b_type.is_continuous():
+            return nn_metric(sr_a, sr_b)
+
+        elif a_type.is_continuous():
+            return cn_metric(sr_b, sr_a)
+
+        elif b_type.is_continuous():
+            return cn_metric(sr_a, sr_b)
+
+        return cc_metric(sr_a, sr_b)
+
+    return df.corr(method=corr_wrapper)
 
 
 def _cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
@@ -64,18 +65,15 @@ def _cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
     phi2corr = max(0, phi2 - ((k - 1) * (r - 1)) / (n - 1))
     rcorr = r - ((r - 1) ** 2) / (n - 1)
     kcorr = k - ((k - 1) ** 2) / (n - 1)
-    return np.sqrt(phi2corr / min((kcorr - 1), (rcorr - 1)))
+    return np.nan_to_num(np.sqrt(phi2corr / np.minimum(kcorr - 1, rcorr - 1)))
 
 
 def _pearson(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    if not np.issubdtype(sr_a.dtype, np.number) or not np.issubdtype(sr_b.dtype, np.number):
-        return 0
     return abs(sr_a.corr(sr_b))
 
 
 def _kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    if not sr_a.map(type).eq(str).all() and not sr_b.str.isnumeric().all():
-        return 0
+    # TODO: replace with distance metric.
 
     sr_a = sr_a.astype("category").cat.codes
     groups = sr_b.groupby(sr_a)
