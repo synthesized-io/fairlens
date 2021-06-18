@@ -10,9 +10,7 @@ MOCK_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/con
 ENGB_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_engb.json")
 
 df_adult = pd.read_csv("datasets/adult.csv")
-df_arr = pd.read_csv("datasets/arrhythmia.csv")
 df_compas = pd.read_csv("datasets/compas.csv")
-df_drug = pd.read_csv("datasets/drug_consumption.csv")
 df_german = pd.read_csv("datasets/german_credit_data.csv")
 
 
@@ -122,22 +120,10 @@ def test_adult_detect_shallow():
 
 
 def test_adult_detect_deep():
-    df_adult_deep = pd.read_csv("datasets/adult.csv")
+    df_adult_deep = df_adult.copy()
     df_adult_deep = df_adult_deep.rename(columns={"marital-status": "A", "race": "B", "sex": "C"})
     res = {"age": "Age", "A": "Family Status", "B": "Ethnicity", "C": "Gender", "relationship": "Family Status"}
     assert dt.detect_names_df(df_adult_deep, deep_search=True) == res
-
-
-def test_arr_detect_shallow():
-    res = {"age": "Age", "sex": "Gender"}
-    assert dt.detect_names_df(df_arr) == res
-
-
-def test_arr_detect_deep():
-    df_arr_deep = pd.read_csv("datasets/arrhythmia.csv")
-    df_arr_deep = df_arr_deep.rename(columns={"sex": "Random"})
-    res = {"age": "Age", "Random": "Gender"}
-    assert dt.detect_names_df(df_arr_deep, deep_search=True) == res
 
 
 def test_compas_detect_shallow():
@@ -152,7 +138,7 @@ def test_compas_detect_shallow():
 
 
 def test_compas_detect_deep():
-    df_compas_deep = pd.read_csv("datasets/compas.csv")
+    df_compas_deep = df_compas.copy()
     df_compas_deep = df_compas_deep.rename(
         columns={"Ethnicity": "A", "Language": "Random", "MaritalStatus": "B", "Sex": "C"}
     )
@@ -166,25 +152,13 @@ def test_compas_detect_deep():
     assert dt.detect_names_df(df_compas_deep, deep_search=True) == res
 
 
-def test_drug_detect_shallow():
-    res = {"Age": "Age", "Gender": "Gender", "Country": "Nationality", "Ethnicity": "Ethnicity"}
-    assert dt.detect_names_df(df_drug) == res
-
-
-def test_drug_detect_deep():
-    df_drug_deep = pd.read_csv("datasets/drug_consumption.csv")
-    df_drug_deep = df_drug_deep.rename(columns={"Gender": "AB", "Country": "PQ", "Ethnicity": "XY"})
-    res = {"Age": "Age", "AB": "Gender", "PQ": "Nationality", "XY": "Ethnicity"}
-    assert dt.detect_names_df(df_drug_deep, deep_search=True) == res
-
-
 def test_german_detect_shallow():
     res = {"Age": "Age", "Sex": "Gender"}
     assert dt.detect_names_df(df_german) == res
 
 
 def test_german_detect_deep():
-    df_german_deep = pd.read_csv("datasets/german_credit_data.csv")
+    df_german_deep = df_german.copy()
     df_german_deep = df_german_deep.rename(columns={"Sex": "ABCD"})
     res = {"Age": "Age", "ABCD": "Gender"}
     assert dt.detect_names_df(df_german_deep, deep_search=True) == res
@@ -353,10 +327,3 @@ def test_double_config_deep():
     res2 = {"B": "Birds", "F1": "Fish"}
     assert dt.detect_names_df(df, deep_search=True, config_path=ENGB_CONFIG_PATH) == res1
     assert dt.detect_names_df(df, deep_search=True, config_path=MOCK_CONFIG_PATH) == res2
-
-
-if __name__ == "__main__":
-    print(dt.detect_names_df(df_adult, deep_search=True))
-    print(dt.detect_names_df(df_arr, deep_search=True))
-    print(dt.detect_names_df(df_german, deep_search=True))
-    print(dt.detect_names_df(df_drug, deep_search=True))
