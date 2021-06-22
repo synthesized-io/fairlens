@@ -1,11 +1,7 @@
 import logging
 from itertools import combinations
-
-# from math import factorial
-# from typing import Any, Dict, List, Optional, Sized, Tuple, Union
 from typing import List, Optional
 
-# import numpy as np
 import pandas as pd
 
 from ..bias import utils
