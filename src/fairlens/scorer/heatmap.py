@@ -1,5 +1,6 @@
 from typing import Callable
 
+import dcor as dcor
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
@@ -86,3 +87,17 @@ def _kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
         return 1
 
     return 1 - p_val
+
+
+def _distance_nn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
+    return dcor.distance_correlation(sr_a, sr_b)
+
+
+def _distance_cn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
+    sr_a = sr_a.astype("category").cat.codes
+    groups = sr_b.groupby(sr_a)
+    arrays = [groups.get_group(category) for category in sr_a.unique()]
+
+    args = [group.array for group in arrays]
+
+    return dcor.distance_correlation(*args)
