@@ -243,6 +243,7 @@ def plt_attr_dist(df: pd.DataFrame, target_attr: str, attr: str, separate: bool 
 
     else:
         plt_group_dist_mult(df, target_attr, groups, **kwargs)
+        plt.title(attr)
         plt.legend(legend)
 
 
