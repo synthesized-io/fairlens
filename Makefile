@@ -34,4 +34,4 @@ $(VENV_ACTIVATE): requirements.txt requirements-dev.txt
 	touch $(VENV_ACTIVATE)
 
 docs:
-	cd docs; make clean; make html
+	cd docs; make clean; rm -rf reference/_autosummary; make html

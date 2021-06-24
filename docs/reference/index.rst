@@ -2,9 +2,11 @@
 API Reference
 =============
 
-.. toctree::
-   :hidden:
-   :glob:
+.. autosummary::
+   :toctree: _autosummary
+   :template: module.rst
+   :recursive:
 
-   bias
-   sensitive
+   fairlens.bias
+   fairlens.scorer
+   fairlens.sensitive
