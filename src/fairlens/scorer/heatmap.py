@@ -7,7 +7,7 @@ import pandas as pd
 import scipy.stats as ss
 import seaborn as sns
 
-from ..bias import utils
+from fairlens.bias import utils
 
 
 def two_column_heatmap(
@@ -90,6 +90,11 @@ def _kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
 
 
 def _distance_nn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
+    if sr_a.size < sr_b.size:
+        sr_a = sr_a.append(pd.Series(sr_a.mean()).repeat(sr_b.size - sr_a.size), ignore_index=True)
+    elif sr_a.size > sr_b.size:
+        sr_b = sr_b.append(pd.Series(sr_b.mean()).repeat(sr_a.size - sr_b.size), ignore_index=True)
+
     return dcor.distance_correlation(sr_a, sr_b)
 
 
@@ -98,6 +103,24 @@ def _distance_cn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
     groups = sr_b.groupby(sr_a)
     arrays = [groups.get_group(category) for category in sr_a.unique()]
 
-    args = [group.array for group in arrays]
+    total = 0.0
+    n = len(arrays)
 
-    return dcor.distance_correlation(*args)
+    for i in range(0, n):
+        for j in range(i + 1, n):
+            sr_i = arrays[i]
+            sr_j = arrays[j]
+
+            # Handle groups with a different number of elements.
+            if sr_i.size < sr_j.size:
+                sr_i = sr_i.append(pd.Series(sr_i.mean()).repeat(sr_j.size - sr_i.size), ignore_index=True)
+            elif sr_i.size > sr_j.size:
+                sr_j = sr_j.append(pd.Series(sr_j.mean()).repeat(sr_i.size - sr_j.size), ignore_index=True)
+            total += dcor.distance_correlation(sr_i, sr_j)
+
+    total /= n * (n - 1) / 2
+
+    if total is None:
+        return 1.0
+
+    return total
