@@ -28,4 +28,4 @@ def test_cn_unequal_series_corr():
     sr_a = pd.Series(["A", "B", "A", "A", "B", "B", "C", "C", "C", "D", "D", "D", "E", "E", "F", "F", "F", "F"])
     sr_b = pd.Series([100, 200, 99, 101, 201, 199, 299, 300, 301, 500, 501, 505, 10, 12, 1001, 1050])
 
-    assert hmp._distance_cn_correlation(sr_a, sr_b) > 0.8
+    assert hmp._distance_cn_correlation(sr_a, sr_b) > 0.75
