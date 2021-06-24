@@ -113,9 +113,9 @@ def _distance_cn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
 
             # Handle groups with a different number of elements.
             if sr_i.size < sr_j.size:
-                sr_i = sr_i.append(pd.Series(sr_i.mean()).repeat(sr_j.size - sr_i.size), ignore_index=True)
+                sr_i = sr_i.append(sr_i.sample(sr_j.size - sr_i.size), ignore_index=True)
             elif sr_i.size > sr_j.size:
-                sr_j = sr_j.append(pd.Series(sr_j.mean()).repeat(sr_i.size - sr_j.size), ignore_index=True)
+                sr_j = sr_j.append(sr_j.sample(sr_i.size - sr_j.size), ignore_index=True)
             total += dcor.distance_correlation(sr_i, sr_j)
 
     total /= n * (n - 1) / 2
