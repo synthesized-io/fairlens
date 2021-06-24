@@ -1,9 +1,12 @@
-from typing import Any, Dict, List
+from math import ceil
+from typing import Any, Dict, List, Optional, Sequence
 
 import matplotlib.pyplot as plt
 import pandas as pd
+from matplotlib.figure import Figure
 
 from . import utils
+from .metrics import auto_distance, stat_distance
 
 
 def plt_group_dist(
@@ -17,9 +20,10 @@ def plt_group_dist(
     title: bool = False,
     legend: bool = False,
     fade: bool = True,
-    **kwargs
+    show_metric: bool = False,
+    **kwargs,
 ):
-    """Plot the pdf of the 2 groups with respect to the target attribute.
+    """Plot the distribution of the 2 groups with respect to the target attribute.
 
     Args:
         df (pd.DataFrame):
@@ -42,6 +46,8 @@ def plt_group_dist(
             Adds a legend to the plot. Defaults to False.
         fade (bool, optional):
             Adds a fade to the histograms. Set false if alpha passed as kwarg. Defaults to True.
+        show_metric (bool, optional):
+            Show suitable metric if True. Defaults to False.
         **kwargs:
             Additional keyword arguments passed to plt.hist
 
@@ -55,27 +61,31 @@ def plt_group_dist(
         df, target_attr, [group1, group2], normalize, show_hist, show_curve, title, legend, fade, **kwargs
     )
 
+    if show_metric:
+        metric = auto_distance(df[target_attr])
+        plt.xlabel(f"{metric.get_id()}: {stat_distance(df, target_attr, group1, group2, mode=metric.get_id()): .3g}")
+
 
 def plt_group_dist_mult(
     df: pd.DataFrame,
     target_attr: str,
-    groups: List[Dict[str, List[Any]]],
+    groups: Sequence[Dict[str, List[Any]]],
     normalize: bool = True,
     show_hist: bool = False,
     show_curve: bool = True,
     title: bool = False,
     legend: bool = False,
     fade: bool = False,
-    **kwargs
+    **kwargs,
 ):
-    """Plot the pdf of the groups with respect to the target attribute.
+    """Plot the distribution of the groups with respect to the target attribute.
 
     Args:
         df (pd.DataFrame):
             The input dataframe.
         target_attr (str):
             The target attribute.
-        groups (List[Dict[str, List[Any]]]):
+        groups (Sequence[Dict[str, List[Any]]]):
             Groups of interest.
         normalize (bool, optional):
             Converts the distribution into a pdf if True. If not the y-axis indicates the raw counts. Defaults to True.
@@ -136,6 +146,62 @@ def plt_group_dist_mult(
         plt.legend([",".join([",".join(vals) for vals in group.values()]) for group in groups])
 
 
+def plt_series_dist_mult(
+    groups: Sequence[pd.Series],
+    normalize: bool = True,
+    show_hist: bool = False,
+    show_curve: bool = True,
+    fade: bool = False,
+    **kwargs,
+):
+    """Plot the distribution of the series'.
+
+    Args:
+        groups (Sequence[pd.Series]):
+            Series' of interest.
+        normalize (bool, optional):
+            Converts the distribution into a pdf if True. If not the y-axis indicates the raw counts. Defaults to True.
+        show_hist (bool, optional):
+            Shows the histogram if True. Defaults to False.
+        show_curve (bool, optional):
+            Shows the KDE curve if True. `normalize` must be True for this to work. Defaults to True.
+        fade (bool, optional):
+            Adds a fade to the histograms. Set false if alpha passed as kwarg. Defaults to False.
+        **kwargs:
+            Additional keyword arguments passed to plt.hist()
+
+    Examples:
+        >>> df = pd.read_csv("datasets/compas.csv")
+        >>> plt_series_dist_mult([df["RawScore"], df[df["Ethnicity"] == "African-American"]["RawScore"]])
+        >>> plt.show()
+    """
+
+    joint = pd.concat(groups)
+    distr_type = utils.infer_distr_type(joint)
+
+    if normalize:
+        kwargs["density"] = True
+
+    if fade:
+        kwargs["alpha"] = 0.5
+
+    bins = None
+    if distr_type.is_continuous() or str(joint.dtype) in ["float64", "int64"]:
+        bins = utils.fd_opt_bins(joint)
+
+    # Plot the histograms
+    if show_hist:
+        for series in groups:
+            series.plot.hist(bins=bins, **kwargs)
+
+    plt.gca().set_prop_cycle(None)
+
+    # Plot the curves
+    if normalize and show_curve:
+        for series in groups:
+            series.plot.kde()
+
+
 def plt_attr_dist(df: pd.DataFrame, target_attr: str, attr: str, separate: bool = False, **kwargs):
     """Plot the pdf of the all values in the column `attr` with respect to the target attribute.
 
@@ -178,3 +244,43 @@ def plt_attr_dist(df: pd.DataFrame, target_attr: str, attr: str, separate: bool 
     else:
         plt_group_dist_mult(df, target_attr, groups, **kwargs)
         plt.legend(legend)
+
+
+def plt_attr_dist_mult(
+    df: pd.DataFrame,
+    target_attr: str,
+    attrs: Sequence[str],
+    figure: Optional[Figure] = None,
+    max_width: int = 3,
+    **kwargs,
+):
+    """[summary]
+
+    Args:
+        df (pd.DataFrame):
+            The input dataframe.
+        target_attr (str):
+            The target attribute.
+        attr (Sequence[str]):
+            The attributes whose value distributions are to be plotted.
+        figure (Optional[Figure], optional):
+            A matplotlib figure to plot on. Defaults to matplotlib.pyplot.figure().
+        max_width (int, optional):
+            The maximum amount of figures in a row. Defaults to 4.
+        **kwargs:
+            Additional keywords passed down to plt_attr_dist()
+
+    Examples:
+        >>> df = pd.read_csv("datasets/compas.csv")
+        >>> plt_all_attr_dist(df, "RawScore", ['Sex', 'MaritalStatus', 'Ethnicity', 'Language', 'DateOfBirth'])
+        >>> plt.show()
+    """
+
+    n = len(attrs)
+    fig = figure or plt.figure(figsize=(20, 5))
+    r = ceil(n / max_width)
+    c = min(n, max_width)
+
+    for i, attr in enumerate(attrs):
+        fig.add_subplot(r, c, i + 1)
+        plt_attr_dist(df, target_attr, attr, **kwargs)
