@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Sequence
 
 import numpy as np
 import pandas as pd
@@ -172,7 +172,7 @@ def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: i
         return DistrType.Categorical
 
 
-def get_predicates_mult(df: pd.DataFrame, groups: List[Dict[str, List[str]]]) -> List[pd.Series]:
+def get_predicates_mult(df: pd.DataFrame, groups: Sequence[Dict[str, List[str]]]) -> List[pd.Series]:
     """Similar to get_predicates but works on multiple groups.
 
     Args:
