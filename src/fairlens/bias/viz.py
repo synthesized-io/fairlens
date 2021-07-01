@@ -14,11 +14,12 @@ def plt_group_dist(
     target_attr: str,
     group1: Dict[str, List[Any]],
     group2: Dict[str, List[Any]],
+    distr_type: Optional[str] = None,
     normalize: bool = True,
     show_hist: bool = True,
     show_curve: bool = True,
     title: bool = False,
-    legend: bool = False,
+    legend: bool = True,
     fade: bool = True,
     show_metric: bool = False,
     **kwargs,
@@ -34,6 +35,10 @@ def plt_group_dist(
             The first group of interest.
         group2 (Dict[str, List[Any]]):
             The second group of interest.
+        distr_type (Optional[str]):
+            The type of distribution of the target attribute. Can be "categorical" or "continuous".
+            If None the type of distribution is inferred based on the data in the column.
+            Defaults to None.
         normalize (bool, optional):
             Converts the distribution into a pdf if True. If not the y-axis indicates the raw counts. Defaults to True.
         show_hist (bool, optional):
@@ -58,24 +63,27 @@ def plt_group_dist(
     """
 
     plt_group_dist_mult(
-        df, target_attr, [group1, group2], normalize, show_hist, show_curve, title, legend, fade, **kwargs
+        df, target_attr, [group1, group2], distr_type, normalize, show_hist, show_curve, title, legend, fade, **kwargs
     )
 
     if show_metric:
         metric = auto_distance(df[target_attr])
-        plt.xlabel(f"{metric.get_id()}: {stat_distance(df, target_attr, group1, group2, mode=metric.get_id()): .3g}")
+        mode = metric.get_id()
+        distance, p_value = stat_distance(df, target_attr, group1, group2, mode=mode, p_value=True)
+        plt.xlabel(f"{mode}={distance: .3g}, p-value={p_value: .3g}")
 
 
 def plt_group_dist_mult(
     df: pd.DataFrame,
     target_attr: str,
     groups: Sequence[Dict[str, List[Any]]],
-    normalize: bool = True,
-    show_hist: bool = False,
-    show_curve: bool = True,
+    distr_type: Optional[str] = None,
+    normalize: bool = False,
+    show_hist: bool = True,
+    show_curve: bool = False,
     title: bool = False,
     legend: bool = False,
-    fade: bool = False,
+    fade: bool = True,
     **kwargs,
 ):
     """Plot the distribution of the groups with respect to the target attribute.
@@ -87,6 +95,10 @@ def plt_group_dist_mult(
             The target attribute.
         groups (Sequence[Dict[str, List[Any]]]):
             Groups of interest.
+        distr_type (Optional[str]):
+            The type of distribution of the target attribute. Can be "categorical" or "continuous".
+            If None the type of distribution is inferred based on the data in the column.
+            Defaults to None.
         normalize (bool, optional):
             Converts the distribution into a pdf if True. If not the y-axis indicates the raw counts. Defaults to True.
         show_hist (bool, optional):
@@ -111,7 +123,8 @@ def plt_group_dist_mult(
         >>> plt.show()
     """
 
-    distr_type = utils.infer_distr_type(df[target_attr])
+    inferred_distr_type = utils.infer_distr_type(df[target_attr])
+    is_continuous = distr_type == "continuous" if distr_type is not None else inferred_distr_type.is_continuous()
 
     preds = utils.get_predicates_mult(df, groups)
 
@@ -122,12 +135,18 @@ def plt_group_dist_mult(
         kwargs["alpha"] = 0.5
 
     bins = None
-    if distr_type.is_continuous() or str(df[target_attr].dtype) in ["float64", "int64"]:
-        bins = utils.fd_opt_bins(df[target_attr])
+    if is_continuous:
+        if "bins" in kwargs:
+            bins = kwargs["bins"]
+        else:
+            _, bins = utils.histogram((df[target_attr],), ret_bins=True, distr_type=distr_type)
 
     # Plot the histograms
     if show_hist:
         for pred in preds:
+            import seaborn
+
+            seaborn.kdeplot
             df[pred][target_attr].plot.hist(bins=bins, **kwargs)
 
     plt.gca().set_prop_cycle(None)
@@ -148,17 +167,22 @@ def plt_group_dist_mult(
 
 def plt_series_dist_mult(
     groups: Sequence[pd.Series],
+    distr_type: Optional[str] = None,
     normalize: bool = True,
     show_hist: bool = False,
     show_curve: bool = True,
-    fade: bool = False,
+    fade: bool = True,
     **kwargs,
 ):
     """Plot the distribution of the series'.
 
     Args:
         groups (Sequence[pd.Series]):
-            Series' of interest.
+            Series' of interest. The dtype of all series' must be the same.
+        distr_type (Optional[str]):
+            The type of distribution of the target attribute. Can be "categorical" or "continuous".
+            If None the type of distribution is inferred based on the data in the column.
+            Defaults to None.
         normalize (bool, optional):
             Converts the distribution into a pdf if True. If not the y-axis indicates the raw counts. Defaults to True.
         show_hist (bool, optional):
@@ -177,7 +201,8 @@ def plt_series_dist_mult(
     """
 
     joint = pd.concat(groups)
-    distr_type = utils.infer_distr_type(joint)
+    inferred_distr_type = utils.infer_distr_type(joint)
+    is_continuous = distr_type == "continuous" if distr_type is not None else inferred_distr_type.is_continuous()
 
     if normalize:
         kwargs["density"] = True
@@ -186,7 +211,7 @@ def plt_series_dist_mult(
         kwargs["alpha"] = 0.5
 
     bins = None
-    if distr_type.is_continuous() or str(joint.dtype) in ["float64", "int64"]:
+    if is_continuous:
         bins = utils.fd_opt_bins(joint)
 
     # Plot the histograms
@@ -202,8 +227,16 @@ def plt_series_dist_mult(
             series.plot.kde()
 
 
-def plt_attr_dist(df: pd.DataFrame, target_attr: str, attr: str, separate: bool = False, **kwargs):
-    """Plot the pdf of the all values in the column `attr` with respect to the target attribute.
+def plt_attr_dist(
+    df: pd.DataFrame,
+    target_attr: str,
+    attr: str,
+    separate: bool = False,
+    figure: Optional[Figure] = None,
+    max_width: int = 3,
+    **kwargs,
+):
+    """Plot the pdf of the target attribute with respect to all the unique values in the column `attr`.
 
     Args:
         df (pd.DataFrame):
@@ -214,8 +247,13 @@ def plt_attr_dist(df: pd.DataFrame, target_attr: str, attr: str, separate: bool 
             The attribute whose values' distributions are to be plotted.
         separate (bool):
             Separate into multiple plots (subplot). Defaults to False.
+        figure (Optional[Figure], optional):
+            A matplotlib figure to plot on if `separate` is True. Defaults to matplotlib.pyplot.figure().
+        max_width (int, optional):
+            The maximum amount of figures in a row if `separate` is True. Defaults to 3.
+
         **kwargs:
-            Additional keyword arguments passed to plt_group_dist_mult()
+            Additional keyword arguments passed to plt_group_dist_mult().
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
@@ -223,23 +261,25 @@ def plt_attr_dist(df: pd.DataFrame, target_attr: str, attr: str, separate: bool 
         >>> plt.show()
     """
 
-    if "fade" not in kwargs and "alpha" not in kwargs:
-        kwargs["fade"] = True
-
-    if "normalize" not in kwargs:
-        kwargs["normalize"] = False
-
-    if "show_hist" not in kwargs and not kwargs["normalize"]:
-        kwargs["show_hist"] = True
+    unique = df[attr].dropna().value_counts().keys()
+    groups = [{attr: unique}]
 
     legend = ["All"]
-    groups = [{attr: df[attr].unique()}]
-    for val in df[attr].unique():
+    for val in unique:
         groups.append({attr: [val]})
         legend.append(str(val))
 
     if separate:
-        raise NotImplementedError()
+        max_width = 3
+        n = len(groups)
+        fig = figure or plt.figure(figsize=(20, 10))
+        r = ceil(n / max_width)
+        c = min(n, 3)
+
+        for i, (group, title) in enumerate(zip(groups, legend)):
+            fig.add_subplot(r, c, i + 1)
+            plt_group_dist_mult(df, target_attr, [group], **kwargs)
+            plt.title(title)
 
     else:
         plt_group_dist_mult(df, target_attr, groups, **kwargs)
@@ -255,21 +295,21 @@ def plt_attr_dist_mult(
     max_width: int = 3,
     **kwargs,
 ):
-    """[summary]
+    """Plot the pdf of the all values for each of the  the column `attr` with respect to the target attribute.
 
     Args:
         df (pd.DataFrame):
             The input dataframe.
         target_attr (str):
             The target attribute.
-        attr (Sequence[str]):
+        attrs (Sequence[str]):
             The attributes whose value distributions are to be plotted.
         figure (Optional[Figure], optional):
             A matplotlib figure to plot on. Defaults to matplotlib.pyplot.figure().
         max_width (int, optional):
-            The maximum amount of figures in a row. Defaults to 4.
+            The maximum amount of figures in a row. Defaults to 3.
         **kwargs:
-            Additional keywords passed down to plt_attr_dist()
+            Additional keywords passed down to plt_group_dist_mult().
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
@@ -278,7 +318,7 @@ def plt_attr_dist_mult(
     """
 
     n = len(attrs)
-    fig = figure or plt.figure(figsize=(20, 5))
+    fig = figure or plt.figure(figsize=(20, 10))
     r = ceil(n / max_width)
     c = min(n, max_width)
 

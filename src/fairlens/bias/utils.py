@@ -1,5 +1,5 @@
 from enum import Enum
-from typing import Dict, List, Optional, Sequence
+from typing import Dict, List, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -25,19 +25,27 @@ class DistrType(Enum):
 
 
 def histogram(
-    data: Tuple[pd.Series, ...], bin_edges: Optional[np.ndarray] = None, normalize: bool = True, ret_bins: bool = False
+    data: Tuple[pd.Series, ...],
+    bin_edges: Optional[np.ndarray] = None,
+    normalize: bool = True,
+    ret_bins: bool = False,
+    distr_type: Optional[str] = None,
 ) -> Union[Tuple[pd.Series, ...], Tuple[Tuple[pd.Series, ...], Optional[np.ndarray]]]:
-    """Bins a tuple of series' and returns the aligned histograms.
+    """Bins a tuple of series'= and returns the aligned histograms.
 
     Args:
         data (Tuple[pd.Series, ...]):
-            A tuple consisting of the series' to be binned.
+            A tuple consisting of the series' to be binned. All series' must have the same dtype.
         bin_edges (Optional[np.ndarray], optional):
             Bin edges to bin continuous data by. Defaults to None.
         normalize (bool, optional):
             Normalize the histograms, turning them into pdfs. Defaults to True.
         ret_bins (bool, optional):
             Returns the bin edges used in the histogram. Defaults to False.
+        distr_type (Optional[str]):
+            The type of distribution of the target attribute. Can be "categorical" or "continuous".
+            If None the type of distribution is inferred based on the data in the column.
+            Defaults to None.
 
     Returns:
         Union[Tuple[np.ndarray, ...], Tuple[Tuple[np.ndarray, ...], Optional[np.ndarray]]]:
@@ -46,26 +54,26 @@ def histogram(
     """
 
     joint = pd.concat(data)
+    is_continuous = distr_type == "continuous" if distr_type is not None else infer_distr_type(joint).is_continuous()
 
-    # Compute histograms of the data, bin if continuous or bin_edges given
-    if infer_distr_type(joint).is_continuous() or bin_edges is not None:
-        # Compute common bin_edges if not given, and use np.histogram to form histogram
+    # Compute histograms of the data, bin if continuous
+    if is_continuous:
+        # Compute shared bin_edges if not given, and use np.histogram to form histograms
         if bin_edges is None:
             bin_edges = np.histogram_bin_edges(joint, bins="auto")
 
         hists = [np.histogram(series, bins=bin_edges)[0] for series in data]
 
+        if normalize:
+            with np.errstate(divide="ignore", invalid="ignore"):
+                hists = [np.nan_to_num(hist / hist.sum()) for hist in hists]
+
     else:
-        # For categorical data, from histogram using value counts and align
+        # For categorical data, form histogram using value counts and align
         space = joint.unique()
 
-        dicts = [series.value_counts() for series in data]
+        dicts = [series.value_counts(normalize=normalize) for series in data]
         hists = [np.array([d.get(val, 0) for val in space]) for d in dicts]
-
-    # Normalize the histograms
-    if normalize:
-        with np.errstate(divide="ignore", invalid="ignore"):
-            hists = [np.nan_to_num(hist / hist.sum()) for hist in hists]
 
     ps = [pd.Series(hist) for hist in hists]
 
