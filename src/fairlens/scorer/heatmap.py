@@ -58,15 +58,36 @@ def compute_correlation_matrix(
 
 
 def _cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    confusion_matrix = pd.crosstab(sr_a, sr_b)
-    chi2 = ss.chi2_contingency(confusion_matrix)[0]
-    n = len(sr_a)
-    phi2 = chi2 / n
-    r, k = confusion_matrix.shape
-    phi2corr = max(0, phi2 - ((k - 1) * (r - 1)) / (n - 1))
-    rcorr = r - ((r - 1) ** 2) / (n - 1)
-    kcorr = k - ((k - 1) ** 2) / (n - 1)
-    return np.nan_to_num(np.sqrt(phi2corr / np.minimum(kcorr - 1, rcorr - 1)))
+    """Metric that calculates the corrected Cramer's V statistic for categorical-categorical
+    correlations, used in heatmap generation.
+
+    Args:
+        sr_a (pd.Series): First categorical series to analyze.
+        sr_b (pd.Series): Second categorical series to analyze.
+
+    Returns:
+        float: Value of the statistic.
+    """
+    if len(sr_a.value_counts()) == 1:
+        return 0
+    if len(sr_b.value_counts()) == 1:
+        return 0
+    else:
+        confusion_matrix = pd.crosstab(sr_a, sr_b)
+
+        if confusion_matrix.shape[0] == 2:
+            correct = False
+        else:
+            correct = True
+
+        chi2 = ss.chi2_contingency(confusion_matrix, correction=correct)[0]
+        n = confusion_matrix.sum()
+        phi2 = chi2 / n
+        r, k = confusion_matrix.shape
+        phi2corr = max(0, phi2 - ((k - 1) * (r - 1)) / (n - 1))
+        rcorr = r - ((r - 1) ** 2) / (n - 1)
+        kcorr = k - ((k - 1) ** 2) / (n - 1)
+        return np.sqrt(phi2corr / min((kcorr - 1), (rcorr - 1)))
 
 
 def _pearson(sr_a: pd.Series, sr_b: pd.Series) -> float:
