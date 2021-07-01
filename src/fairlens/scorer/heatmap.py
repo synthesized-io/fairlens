@@ -16,6 +16,22 @@ def two_column_heatmap(
     cat_num_metric: Callable[[pd.Series, pd.Series], float] = None,
     cat_cat_metric: Callable[[pd.Series, pd.Series], float] = None,
 ):
+    """This function creates a correlation heatmap out of a dataframe, using user provided or default correlation
+    metrics for all possible types of pairs of series (i.e. numerical-numerical, categorical-numerical,
+    categorical-categorical).
+
+    Args:
+        df (pd.DataFrame):
+            The dataframe used for computing correlations and producing a heatmap.
+        num_num_metric (Callable[[pd.Series, pd.Series], float], optional):
+            The correlation metric used for numerical-numerical series pairs. Defaults to Pearson's correlation
+            coefficient.
+        cat_num_metric (Callable[[pd.Series, pd.Series], float], optional):
+            The correlation metric used for categorical-numerical series pairs. Defaults to Kruskal-Wallis' H Test.
+        cat_cat_metric (Callable[[pd.Series, pd.Series], float], optional):
+            The correlation metric used for categorical-categorical series pairs. Defaults to corrected Cramer's V
+            statistic.
+    """
     num_num_metric = num_num_metric or _pearson
     cat_num_metric = cat_num_metric or _kruskal_wallis
     cat_cat_metric = cat_cat_metric or _cramers_v
@@ -33,6 +49,25 @@ def compute_correlation_matrix(
     cat_num_metric: Callable[[pd.Series, pd.Series], float] = None,
     cat_cat_metric: Callable[[pd.Series, pd.Series], float] = None,
 ) -> pd.DataFrame:
+    """This function creates a correlation matrix out of a dataframe, using a correlation metric for each
+    possible type of pair of series (i.e. numerical-numerical, categorical-numerical, categorical-categorical).
+
+    Args:
+        df (pd.DataFrame):
+            The dataframe that will be analyzed to produce correlation coefficients.
+        num_num_metric (Callable[[pd.Series, pd.Series], float], optional):
+            The correlation metric used for numerical-numerical series pairs. Defaults to Pearson's correlation
+            coefficient.
+        cat_num_metric (Callable[[pd.Series, pd.Series], float], optional):
+            The correlation metric used for categorical-numerical series pairs. Defaults to Kruskal-Wallis' H Test.
+        cat_cat_metric (Callable[[pd.Series, pd.Series], float], optional):
+            The correlation metric used for categorical-categorical series pairs. Defaults to corrected Cramer's V
+            statistic.
+
+    Returns:
+        pd.DataFrame:
+            The correlation matrix to be used in heatmap generation.
+    """
     nn_metric = num_num_metric or _pearson
     cn_metric = cat_num_metric or _kruskal_wallis
     cc_metric = cat_cat_metric or _cramers_v
@@ -91,11 +126,31 @@ def _cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
 
 
 def _pearson(sr_a: pd.Series, sr_b: pd.Series) -> float:
+    """Metric that calculates Pearson's correlation coefficent for numerical-numerical
+    pairs of series, used in heatmap generation.
+
+    Args:
+        sr_a (pd.Series): First numerical series to analyze.
+        sr_b (pd.Series): Second numerical series to analyze.
+
+    Returns:
+        float: Value of the coefficient.
+    """
     return abs(sr_a.corr(sr_b))
 
 
 def _kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    # TODO: replace with distance metric.
+    """Metric that uses the Kruskal-Wallis H Test to obtain a p-value indicating the possibility
+    that a categorical and numerical series are not correlated, used in heatmap generation.
+
+    Args:
+        sr_a (pd.Series): The categorical series to analyze, used for grouping the numerical one.
+        sr_b (pd.Series): The numerical series to analyze.
+
+    Returns:
+        float: The correlation coefficient, calculating by subtracting the p-value from 1, as the
+        p-value is the probability that the two columns are not correlated.
+    """
 
     sr_a = sr_a.astype("category").cat.codes
     groups = sr_b.groupby(sr_a)
@@ -105,12 +160,22 @@ def _kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
     try:
         _, p_val = ss.kruskal(*args, nan_policy="omit")
     except ValueError:
-        return 1
+        return 0
 
     return 1 - p_val
 
 
 def _distance_nn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
+    """Metric that uses non-linear correlation distance to obtain a correlation coefficient for
+    numerical-numerical column pairs.
+
+    Args:
+        sr_a (pd.Series): First numerical series to analyze.
+        sr_b (pd.Series): Second numerical series to analyze.
+
+    Returns:
+        float: The correlation coefficient.
+    """
     if sr_a.size < sr_b.size:
         sr_a = sr_a.append(pd.Series(sr_a.mean()).repeat(sr_b.size - sr_a.size), ignore_index=True)
     elif sr_a.size > sr_b.size:
@@ -120,6 +185,16 @@ def _distance_nn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
 
 
 def _distance_cn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
+    """Metric that uses non-linear correlation distance to obtain a correlation coefficient for
+    categorical-numerical column pairs.
+
+    Args:
+        sr_a (pd.Series): The categorical series to analyze, used for grouping the numerical one.
+        sr_b (pd.Series): The numerical series to analyze.
+
+    Returns:
+        float: The correlation coefficient.
+    """
     sr_a = sr_a.astype("category").cat.codes
     groups = sr_b.groupby(sr_a)
     arrays = [groups.get_group(category) for category in sr_a.unique()]
@@ -142,6 +217,6 @@ def _distance_cn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
     total /= n * (n - 1) / 2
 
     if total is None:
-        return 1.0
+        return 0.0
 
     return total
