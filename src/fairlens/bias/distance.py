@@ -109,7 +109,7 @@ class ContinuousDistanceMetric(DistanceMetric):
     Subclasses must implement a distance method.
     """
 
-    def __init__(self, p_value_test="permutation"):
+    def __init__(self, p_value_test="bootstrap"):
         """Initialize continuous distance metric.
 
         Args:
@@ -170,7 +170,7 @@ class CategoricalDistanceMetric(DistanceMetric):
         return x_dtype == y_dtype
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
-        (p, q), bin_edges = utils.histogram((x, y), bin_edges=self.bin_edges, ret_bins=True)
+        (p, q), bin_edges = utils.zipped_hist((x, y), bin_edges=self.bin_edges, ret_bins=True)
 
         return self.distance_pdf(p, q, bin_edges)
 
@@ -194,7 +194,7 @@ class CategoricalDistanceMetric(DistanceMetric):
         ...
 
     def p_value(self, x: pd.Series, y: pd.Series) -> float:
-        (h_x, h_y), bin_edges = utils.histogram((x, y), bin_edges=self.bin_edges, normalize=False, ret_bins=True)
+        (h_x, h_y), bin_edges = utils.zipped_hist((x, y), bin_edges=self.bin_edges, normalize=False, ret_bins=True)
 
         def distance_call(h_x, h_y):
             with np.errstate(divide="ignore", invalid="ignore"):
@@ -203,6 +203,6 @@ class CategoricalDistanceMetric(DistanceMetric):
 
             return self.distance_pdf(p, q, bin_edges)
 
-        ts_distribution = pv.bootstrap_binned_statistic(h_x, h_y, distance_call, n_samples=1000)
+        ts_distribution = pv.bootstrap_binned_statistic(h_x, h_y, distance_call, n_samples=100)
 
         return pv.resampling_pvalue(distance_call(h_x, h_y), ts_distribution)

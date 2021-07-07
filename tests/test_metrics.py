@@ -85,7 +85,6 @@ def test_kruskal_wallis():
     assert KW()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
 
     assert KW()(group1, group1) == 0
-    assert KW()(group1, group3) > KS()(group1, group2)
 
 
 def test_emd_categorical():
