@@ -30,9 +30,3 @@ Let's test this out the on the compas dataset.
 
   fscorer = FairnessScorer(df, target_attr, sensitive_attrs)
   fscorer.distribution_score()
-
-
-Correlation Heatmaps
-^^^^^^^^^^^^^^^^^^^^
-
-TBD
