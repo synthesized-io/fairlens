@@ -21,6 +21,7 @@ group2 = df[pred2][target_attr]
 group3 = group2.sort_values()[len(group2) // 2 :]
 group4 = df[~pred1][target_attr]
 target = df[target_attr]
+epsilon = 1e-6
 
 
 def test_stat_distance():
@@ -29,21 +30,21 @@ def test_stat_distance():
     xy = {"Ethnicity": list(df["Ethnicity"].unique())}
 
     res = EMD()(group1, target)
-    assert stat_distance(df, target_attr, group1, target, mode="emd") == res
-    assert stat_distance(df, target_attr, x, xy, mode="emd") == res
+    assert stat_distance(df, target_attr, group1, target, mode="emd")[0] == res
+    assert stat_distance(df, target_attr, x, xy, mode="emd")[0] == res
 
-    res = stat_distance(df, target_attr, x, y, mode="emd")
-    assert stat_distance(df, target_attr, group1, group4, mode="emd") == res
+    res = stat_distance(df, target_attr, x, y, mode="emd")[0]
+    assert stat_distance(df, target_attr, group1, group4, mode="emd")[0] == res
 
 
 def test_stat_distance_auto():
-    res = stat_distance(df, target_attr, group1, group2, mode="auto")
-    assert stat_distance(df, target_attr, group1, group2, mode="ks_distance") == res
+    res = stat_distance(df, target_attr, group1, group2, mode="auto")[0]
+    assert stat_distance(df, target_attr, group1, group2, mode="ks_distance")[0] == res
 
 
 def test_auto_binning():
-    res = stat_distance(df, target_attr, group1, group2, mode="emd_categorical")
-    assert stat_distance(df, target_attr, group1, group2, mode="emd") == res
+    res = stat_distance(df, target_attr, group1, group2, mode="emd_categorical")[0]
+    assert stat_distance(df, target_attr, group1, group2, mode="emd")[0] == res
 
 
 def test_mean_distance():
@@ -84,7 +85,7 @@ def test_ks_distance():
 def test_kruskal_wallis():
     assert KW()(pd.Series([1, 0]), pd.Series([1, 0])) == 0
 
-    assert KW()(group1, group1) == 0
+    assert abs(KW()(group1, group1)) < 1e-6
 
 
 def test_emd_categorical():

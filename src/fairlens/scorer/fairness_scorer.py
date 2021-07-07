@@ -1,6 +1,6 @@
 import logging
 from itertools import combinations
-from typing import List, Optional
+from typing import Optional, Sequence, Tuple
 
 import pandas as pd
 
@@ -12,13 +12,13 @@ logger = logging.getLogger(__name__)
 
 
 class FairnessScorer:
-    """This class analyzes a given DataFrame, looks for biases and quantifies its fairness."""
+    """This class analyzes a given DataFrame, looks for biases and quantifies fairness."""
 
     def __init__(
         self,
         df: pd.DataFrame,
         target_attr: str,
-        sensitive_attrs: Optional[List[str]] = None,
+        sensitive_attrs: Optional[Sequence[str]] = None,
         detect_sensitive: bool = False,
         detect_hidden: bool = False,
     ):
@@ -29,7 +29,7 @@ class FairnessScorer:
                 Input DataFrame to be scored.
             target_attr (str):
                 The target attribute name.
-            sensitive_attrs (Optional[List[str]], optional):
+            sensitive_attrs (Optional[Sequence[str]], optional):
                 The sensitive attribute names. Defaults to None.
             detect_sensitive (bool, optional):
                 Whether to try to detect sensitive attributes from the column names. Defaults to False.
@@ -57,75 +57,95 @@ class FairnessScorer:
     def distribution_score(
         self,
         mode: str = "auto",
-        alpha: float = 0.05,
-        max_comb: Optional[int] = None,
+        alpha: Optional[float] = None,
+        min_prop: Optional[float] = 0.1,
+        max_prop_thresh: Optional[float] = 0.95,
         min_dist: Optional[float] = None,
-        min_prop: Optional[float] = None,
         min_count: Optional[int] = None,
-        weighted: bool = True,
-    ) -> pd.DataFrame:
-        """Returns the biases and fairness score by analyzing the distribution difference between sensitive
-        variables and the target variable.
+        max_comb: Optional[int] = None,
+    ) -> Tuple[float, pd.DataFrame]:
+        """Returns an overall bias score and dataframe consisting of the biased sub-groups by analyzing the
+        difference in distribution between sensitive-subgroups and the data.
 
         Args:
             mode (str, optional):
                 Choose a different metric to use. Defaults to automatically chosen metric depending on
                 the distribution of the target variable.
-            alpha (float, optional):
-                Maximum p-value to accept a bias. Defaults to 0.05.
+            alpha (Optional[float], optional):
+                Maximum p-value to accept a bias. Includes all sub-groups by default. Defaults to None.
+            min_prop (Optional[int], optional):
+                If set, sub-groups with sample sizes representing a smaller proportion of the data than
+                min_prop will be ignored. Defaults to 0.1.
+            max_prop_thresh (Optional[int], optional):
+                If set, sensitive attributes with a single subgroup representing a larger proportion of the data
+                than max_prop_thresh will be ignored. Defaults to 0.95.
+            min_count (Optional[int], optional):
+                If set, sub-groups with less samples than min_count will be ignored. Defaults to None.
+            min_dist (Optional[float], optional):
+                If set, sub-groups with a smaller distance score than min_dist will be ignored.
+                Defaults to None.
             max_comb (Optional[int], optional):
                 Max number of combinations of sensitive attributes to be considered. Defaults to None.
-            min_dist (Optional[float], optional):
-                If set, any bias with smaller distance than min_dist will be ignored. Defaults to None.
-            min_prop (Optional[int], optional):
-                If set, biases with less samples of less proportion than min_prop will be ignored. Defaults to None.
-            min_count (Optional[int], optional):
-                If set, biases with less samples than min_count will be ignored. Defaults to None.
-            weighted (bool, optional):
-                Whether to weight the average of biases on the size of each sample. Defaults to True.
         """
 
-        df_pre = self.df
+        df = self.df
+        sensitive_attrs = list(self.sensitive_attrs)
 
-        if len(self.sensitive_attrs) == 0 or len(df_pre) == 0 or len(df_pre.dropna()) == 0:
-            return 0.0, pd.DataFrame([], columns=["name", "target", "distance", "count"])
+        # Remove sensitive attributes that are too concentrated (could be improved)
+        for attr in sensitive_attrs:
+            counts = df[attr].value_counts()
+            group = counts.idxmax()
+            if (counts[group] / len(df)) > max_prop_thresh:
+                sensitive_attrs.remove(attr)
 
-        max_comb = min(max_comb, len(self.sensitive_attrs)) if max_comb else len(self.sensitive_attrs)
+        if len(sensitive_attrs) == 0 or len(df) == 0 or len(df.dropna()) == 0:
+            return 0.0, pd.DataFrame([], columns=["Group", "Distance", "Proportion", "Counts"])
 
+        max_comb = min(max_comb, len(sensitive_attrs)) if max_comb else len(sensitive_attrs)
         df_dists = []
 
         # Try all combinations of sensitive attributes
         for k in range(1, max_comb + 1):
-            for sensitive_attr in combinations(self.sensitive_attrs, k):
-                df_not_nan = df_pre[~(df_pre[list(sensitive_attr)] == "nan").any(axis=1)]
+            for sensitive_attr in combinations(sensitive_attrs, k):
+                df_not_nan = df[~(df[list(sensitive_attr)] == "nan").any(axis=1)]
                 if len(df_not_nan) == 0:
                     continue
 
-                df_dist = self.calculate_distance(list(sensitive_attr), mode=mode, alpha=alpha)
+                df_dist = self.calculate_distance(list(sensitive_attr), mode=mode, p_value=(alpha is not None))
                 df_dists.append(df_dist)
 
         df_dist = pd.concat(df_dists, ignore_index=True)
 
-        if min_dist is not None:
-            df_dist = df_dist[df_dist["Distance"] > min_dist]
+        if alpha is not None:
+            df_dist = df_dist[df_dist["P-Value"] < (1 - alpha)]
+
+        if min_prop is not None:
+            df_dist = df_dist[df_dist["Counts"] > (min_prop * len(df))]
 
         if min_count is not None:
             df_dist = df_dist[df_dist["Counts"] > min_count]
 
-        return df_dist
+        if min_dist is not None:
+            df_dist = df_dist[df_dist["Distance"] > min_dist]
 
-    def calculate_distance(self, sensitive_attrs: List[str], mode: str = "auto", alpha: float = 0.05) -> pd.DataFrame:
+        score = (df_dist["Distance"] * df_dist["Counts"]).sum() / df_dist["Counts"].sum()
+
+        return score, df_dist.reset_index(drop=True)
+
+    def calculate_distance(
+        self, sensitive_attrs: Sequence[str], mode: str = "auto", p_value: bool = False
+    ) -> pd.DataFrame:
         """Calculates the distance between the distribution of all the unique groups of values and the
         distribution without the respective value.
 
         Args:
-            sensitive_attrs (List[str]):
+            sensitive_attrs (Sequence[str]):
                 The list of sensitive attributes to consider.
             mode (str, optional):
                 Choose a different metric to use. Defaults to automatically chosen metric depending on
                 the distribution of the target variable.
-            alpha (float, optional):
-                Maximum p-value to accept a bias. Defaults to 0.05.
+            p_value (bool, optional):
+                Whether or not to compute a p-value. Defaults to False.
 
         Returns:
             pd.DataFrame:
@@ -145,7 +165,12 @@ class FairnessScorer:
 
             pred = utils.get_predicates_mult(df, [sensitive_group])[0]
 
-            distance = stat_distance(df, target_attr, df[pred][target_attr], df[~pred][target_attr], mode=mode)
+            group = df[pred][target_attr]
+            remaining = df[~pred][target_attr]
+
+            dist_res = stat_distance(df, target_attr, group, remaining, mode=mode, p_value=p_value)
+            distance = dist_res[0]
+            p = dist_res[1] if p_value else 0
 
             dist.append(
                 {
@@ -153,7 +178,13 @@ class FairnessScorer:
                     "Distance": distance,
                     "Proportion": len(df[pred]) / len(df),
                     "Counts": len(df[pred]),
+                    "P-Value": p,
                 }
             )
 
-        return pd.DataFrame(dist)
+        df_dist = pd.DataFrame(dist)
+
+        if not p_value:
+            df_dist.drop(columns=["P-Value"], inplace=True)
+
+        return df_dist
