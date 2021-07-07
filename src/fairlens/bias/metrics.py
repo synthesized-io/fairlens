@@ -7,8 +7,9 @@ import numpy as np
 import pandas as pd
 import pyemd
 from scipy.spatial.distance import jensenshannon
-from scipy.stats import entropy, ks_2samp
+from scipy.stats import entropy, kruskal, ks_2samp
 
+from . import p_value as pv
 from . import utils
 from .distance import CategoricalDistanceMetric, ContinuousDistanceMetric, DistanceMetric
 
@@ -38,7 +39,7 @@ def stat_distance(
     df: pd.DataFrame,
     target_attr: str,
     group1: Union[Dict[str, List[str]], pd.Series],
-    group2: Union[Optional[Dict[str, List[str]]], pd.Series] = None,
+    group2: Union[Dict[str, List[str]], pd.Series],
     mode: str = "auto",
     p_value: bool = False,
     **kwargs,
@@ -86,12 +87,11 @@ def stat_distance(
     """
 
     # Parse group arguments into pandas series'
-    if isinstance(group1, dict) and (isinstance(group2, dict) or group2 is None):
-        if group2 is None:
-            pred1 = utils.get_predicates_mult(df, [group1])[0]
-            pred2 = ~pred1
-        else:
-            pred1, pred2 = tuple(utils.get_predicates_mult(df, [group1, group2]))
+    if isinstance(group1, dict) and isinstance(group2, dict):
+        if target_attr not in df.columns:
+            raise ValueError(f'"{target_attr}" is not a valid column name.')
+
+        pred1, pred2 = tuple(utils.get_predicates_mult(df, [group1, group2]))
 
         group1 = df[pred1][target_attr]
         group2 = df[pred2][target_attr]
@@ -99,20 +99,43 @@ def stat_distance(
     if not isinstance(group1, pd.Series) or not isinstance(group2, pd.Series):
         raise TypeError("group1, group2 must be pd.Series or dictionaries")
 
+    if target_attr in df.columns:
+        column = df[target_attr]
+    else:
+        column = pd.concat((group1, group2))
+
     # Choose the distance metric
     if mode == "auto":
-        dist_class = auto_distance(df[target_attr])
+        dist_class = auto_distance(column)
     elif mode in DistanceMetric.class_dict:
         dist_class = DistanceMetric.class_dict[mode]
     else:
         raise ValueError(f"Invalid mode. Valid modes include:\n{DistanceMetric.class_dict.keys()}")
 
-    d = dist_class(**kwargs)(group1, group2)
+    metric = dist_class(**kwargs)
+    d = metric(group1, group2)
 
     if d is None:
         raise ValueError("Incompatible data inside both series")
 
+    if p_value:
+        p = metric.p_value(group1, group2)
+        return d, p
+
     return d
+
+
+class MeanDistance(ContinuousDistanceMetric):
+    """
+    The difference between the means of the two distributions.
+    """
+
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return abs(x.mean() - y.mean())
+
+    @property
+    def id(self) -> str:
+        return "mean"
 
 
 class BinomialDistance(ContinuousDistanceMetric):
@@ -128,6 +151,13 @@ class BinomialDistance(ContinuousDistanceMetric):
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
         return x.mean() - y.mean()
+
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        p_obs = x.mean()
+        p_null = y.mean()
+        n = len(x)
+
+        return pv.binominal_proportion_p_value(p_obs, p_null, n)
 
     @property
     def id(self) -> str:
@@ -162,6 +192,18 @@ class KolmogorovSmirnovDistance(ContinuousDistanceMetric):
     @property
     def id(self) -> str:
         return "ks_distance"
+
+
+class KruskalWallis(ContinuousDistanceMetric):
+    def distance(self, x: pd.Series, y: pd.Series) -> float:
+        return kruskal(x, y)[0]
+
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        return kruskal(x, y)[1]
+
+    @property
+    def id(self) -> str:
+        return "kruskal"
 
 
 class EarthMoversDistanceCategorical(CategoricalDistanceMetric):
@@ -217,7 +259,7 @@ class JensenShannonDivergence(CategoricalDistanceMetric):
         return "js_divergence"
 
 
-class LNorm(CategoricalDistanceMetric):
+class Norm(CategoricalDistanceMetric):
     """
     LP Norm between two probability distributions.
     """

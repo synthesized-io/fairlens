@@ -5,6 +5,7 @@ from typing import Dict, Optional, Type
 import numpy as np
 import pandas as pd
 
+from . import p_value as pv
 from . import utils
 
 
@@ -108,11 +109,33 @@ class ContinuousDistanceMetric(DistanceMetric):
     Subclasses must implement a distance method.
     """
 
+    def __init__(self, p_value_test="bootstrap"):
+        """Initialize continuous distance metric.
+
+        Args:
+            p_value_test (str, optional):
+                Choose which method of resampling will be used to compute the p-value. Overidden by metrics
+                such as Kolmogrov Smirnov Distance.
+                Defaults to "permutation".
+        """
+
+        self.p_value_test = p_value_test
+
     def check_input(self, x: pd.Series, y: pd.Series) -> bool:
         x_dtype = utils.infer_dtype(x).dtype
         y_dtype = utils.infer_dtype(y).dtype
 
         return x_dtype in ["int64", "float64"] and y_dtype in ["int64", "float64"]
+
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        if self.p_value_test == "permutation":
+            ts_distribution = pv.permutation_statistic(x, y, self.distance, n_perm=100)
+        elif self.p_value_test == "bootstrap":
+            ts_distribution = pv.bootstrap_statistic(x, y, self.distance, n_samples=1000)
+        else:
+            raise ValueError('p_value_test must be one of ["permutation", "bootstrap"]')
+
+        return pv.resampling_pvalue(self.distance(x, y), ts_distribution)
 
 
 class CategoricalDistanceMetric(DistanceMetric):
@@ -147,30 +170,7 @@ class CategoricalDistanceMetric(DistanceMetric):
         return x_dtype == y_dtype
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
-        joint = pd.concat((x, y))
-        bin_edges = None
-
-        # Compute histograms of the data, bin if continuous
-        if utils.infer_distr_type(joint).is_continuous():
-            bin_edges = self.bin_edges or np.histogram_bin_edges(joint, bins="auto")
-            p, _ = np.histogram(x, bins=bin_edges)
-            q, _ = np.histogram(y, bins=bin_edges)
-
-        else:
-            space = joint.unique()
-            x_counts = x.value_counts().to_dict()
-            y_counts = y.value_counts().to_dict()
-
-            p = np.zeros(len(space))
-            q = np.zeros(len(space))
-            for i, val in enumerate(space):
-                p[i] = x_counts.get(val, 0)
-                q[i] = y_counts.get(val, 0)
-
-        # Normalize the histograms
-        with np.errstate(divide="ignore", invalid="ignore"):
-            p = pd.Series(np.nan_to_num(p / p.sum()))
-            q = pd.Series(np.nan_to_num(q / q.sum()))
+        (p, q), bin_edges = utils.zipped_hist((x, y), bin_edges=self.bin_edges, ret_bins=True)
 
         return self.distance_pdf(p, q, bin_edges)
 
@@ -192,3 +192,17 @@ class CategoricalDistanceMetric(DistanceMetric):
                 The computed distance.
         """
         ...
+
+    def p_value(self, x: pd.Series, y: pd.Series) -> float:
+        (h_x, h_y), bin_edges = utils.zipped_hist((x, y), bin_edges=self.bin_edges, normalize=False, ret_bins=True)
+
+        def distance_call(h_x, h_y):
+            with np.errstate(divide="ignore", invalid="ignore"):
+                p = pd.Series(np.nan_to_num(h_x / h_x.sum()))
+                q = pd.Series(np.nan_to_num(h_y / h_y.sum()))
+
+            return self.distance_pdf(p, q, bin_edges)
+
+        ts_distribution = pv.bootstrap_binned_statistic(h_x, h_y, distance_call, n_samples=100)
+
+        return pv.resampling_pvalue(distance_call(h_x, h_y), ts_distribution)
