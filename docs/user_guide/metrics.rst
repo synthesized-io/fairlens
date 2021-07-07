@@ -74,9 +74,3 @@ The distance metrics inside :code:`fairlens.bias.metrics` are also available for
 
   ord = 1
   LNorm(ord=ord)(x, y)
-
-
-Correlations
-^^^^^^^^^^^^
-
-TBD
