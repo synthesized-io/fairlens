@@ -52,7 +52,7 @@ class FairnessScorer:
 
         self.df = df
         self.target_attr = target_attr
-        self.sensitive_attrs = sensitive_attrs
+        self.sensitive_attrs = list(sensitive_attrs)
 
     def distribution_score(
         self,
@@ -89,19 +89,17 @@ class FairnessScorer:
         """
 
         df = self.df
-        sensitive_attrs = list(self.sensitive_attrs)
 
-        # Remove sensitive attributes that are too concentrated (could be improved)
-        for attr in sensitive_attrs:
-            counts = df[attr].value_counts()
-            group = counts.idxmax()
-            if (counts[group] / len(df)) > max_prop_thresh:
-                sensitive_attrs.remove(attr)
+        # Ignore sensitive attributes that have overly concentrated values. (Room for improvement)
+        if max_prop_thresh is not None:
+            sensitive_attrs = [
+                s for s in self.sensitive_attrs if df[s].value_counts().max() < max_prop_thresh * len(df)
+            ]
 
         if len(sensitive_attrs) == 0 or len(df) == 0 or len(df.dropna()) == 0:
             return 0.0, pd.DataFrame([], columns=["Group", "Distance", "Proportion", "Counts"])
 
-        max_comb = min(max_comb, len(sensitive_attrs)) if max_comb else len(sensitive_attrs)
+        max_comb = min(max_comb, len(sensitive_attrs)) if max_comb is not None else len(sensitive_attrs)
         df_dists = []
 
         # Try all combinations of sensitive attributes
@@ -117,7 +115,7 @@ class FairnessScorer:
         df_dist = pd.concat(df_dists, ignore_index=True)
 
         if alpha is not None:
-            df_dist = df_dist[df_dist["P-Value"] < (1 - alpha)]
+            df_dist = df_dist[df_dist["P-Value"] < alpha]
 
         if min_prop is not None:
             df_dist = df_dist[df_dist["Counts"] > (min_prop * len(df))]

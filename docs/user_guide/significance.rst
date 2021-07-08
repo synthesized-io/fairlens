@@ -1,7 +1,7 @@
 Significance
 ============
 
-Usually while measuring statistical distances and correlations users may want to test the significance 
+Usually while measuring statistical distances and correlations users may want to test the significance
 of such metrics.
 
 
@@ -43,4 +43,3 @@ We can then compute a p-value by by inspecting the distribution of the test stat
   t_observed = test_statistic(group1, group2)
 
   resampling_pvalue(t_observed, t_distribution, alternative="two-sided")
-
