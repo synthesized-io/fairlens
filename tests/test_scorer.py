@@ -1,4 +1,3 @@
-import numpy as np
 import pandas as pd
 
 from fairlens.scorer.fairness_scorer import FairnessScorer
@@ -14,12 +13,21 @@ def test_fairness_scorer_runs():
     score = fscorer.distribution_score(alpha=0.95)[0]
     assert score > 0
 
+
 def test_sensitive_attr_detection():
     fscorer = FairnessScorer(dfc, "RawScore")
     assert sorted(fscorer.sensitive_attrs) == ["DateOfBirth", "Ethnicity", "Language", "MaritalStatus", "Sex"]
 
     fscorer = FairnessScorer(dfc, "RawScore", ["Arbitrary"], detect_sensitive=True)
-    assert sorted(fscorer.sensitive_attrs) == ["Arbitrary", "DateOfBirth", "Ethnicity", "Language", "MaritalStatus", "Sex"]
+    assert sorted(fscorer.sensitive_attrs) == [
+        "Arbitrary",
+        "DateOfBirth",
+        "Ethnicity",
+        "Language",
+        "MaritalStatus",
+        "Sex",
+    ]
+
 
 def test_distribution_score():
     fscorer = FairnessScorer(dfc, "RawScore", ["Ethnicity", "Sex"])

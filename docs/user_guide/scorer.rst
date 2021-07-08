@@ -1,7 +1,7 @@
 Fairness Scorer
 ===============
 
-FairLens users can use the :code:`FairnessScorer` to automatically analyze the dataset and look for inherent biases and hidden correlations.
+Users can use the :code:`FairnessScorer` to automatically analyze the dataset and look for inherent biases and hidden correlations.
 
 
 Demographic Score

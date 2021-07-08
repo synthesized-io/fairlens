@@ -1,9 +1,9 @@
 """Calculating p_values for using sampling techniques.
 
 This module provides three functions to sample and generate distributions required for estimating p_values:
-  - `binominal_proportion_p_value`
   - `permutation_statistic`
   - `bootstrap_statistic`
+  - `bootstrap_binned_statistic`
 
 The final function, `resampling_p_value` is used for then calculating the p_values.
 """
