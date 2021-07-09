@@ -10,6 +10,7 @@ User Guide
   sensitive
   viz
   scorer
+  significance
 
 Getting Started
 ^^^^^^^^^^^^^^^
