@@ -103,6 +103,7 @@ def _cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
     Returns:
         float: Value of the statistic.
     """
+
     if len(sr_a.value_counts()) == 1:
         return 0
     if len(sr_b.value_counts()) == 1:
@@ -116,7 +117,7 @@ def _cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
             correct = True
 
         chi2 = ss.chi2_contingency(confusion_matrix, correction=correct)[0]
-        n = confusion_matrix.sum()
+        n = sum(confusion_matrix.sum())
         phi2 = chi2 / n
         r, k = confusion_matrix.shape
         phi2corr = max(0, phi2 - ((k - 1) * (r - 1)) / (n - 1))
