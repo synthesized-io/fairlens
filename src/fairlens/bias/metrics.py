@@ -43,7 +43,7 @@ def stat_distance(
     mode: str = "auto",
     p_value: bool = False,
     **kwargs,
-) -> Union[float, Tuple[float, float]]:
+) -> Tuple[float, ...]:
     """Computes the statistical distance between two probability distributions ie. group 1 and group 2, with respect
     to the target attribute. The distance metric can be chosen through the mode parameter. If mode is set to "auto",
     the most suitable metric depending on the target attributes' distribution is chosen.
@@ -72,7 +72,7 @@ def stat_distance(
             Keyword arguments for the distance metric. Passed to the __init__ function of distance metrics.
 
     Returns:
-        Union[float, Tuple[float, float]]:
+        Tuple[float, ...]:
             The distance as a float, and the p-value if p_value is set to True and can be computed.
 
     Examples:
@@ -120,9 +120,9 @@ def stat_distance(
 
     if p_value:
         p = metric.p_value(group1, group2)
-        return d, p
+        return (d, p)
 
-    return d
+    return (d,)
 
 
 class MeanDistance(ContinuousDistanceMetric):
