@@ -89,7 +89,7 @@ def compute_correlation_matrix(
 
         return cc_metric(sr_a, sr_b)
 
-    return df.corr(method=corr_wrapper)
+    return df.round(2).corr(method=corr_wrapper)
 
 
 def _cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
