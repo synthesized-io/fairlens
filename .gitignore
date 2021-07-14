@@ -8,6 +8,7 @@ dist/
 
 docs/_build/
 docs/savefig
+_autosummary/
 
 .env/
 

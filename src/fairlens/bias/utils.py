@@ -4,8 +4,6 @@ from typing import Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import pandas as pd
 
-from .exceptions import InvalidAttributeError
-
 
 class DistrType(Enum):
     """Indicates the type distribution of data in a series."""
@@ -190,7 +188,7 @@ def get_predicates_mult(df: pd.DataFrame, groups: Sequence[Dict[str, List[str]]]
     attrs = set().union(*all_attrs)  # type: ignore
 
     if attrs.intersection(df.columns) != attrs:
-        raise InvalidAttributeError(attrs)
+        raise ValueError(f"Invalid attribute detected. Attributes must be in:\n{df.columns}")
 
     # Form a predicate for each group
     preds = []

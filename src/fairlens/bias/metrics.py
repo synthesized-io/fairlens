@@ -72,7 +72,7 @@ def stat_distance(
             Keyword arguments for the distance metric. Passed to the __init__ function of distance metrics.
 
     Returns:
-        Union[float, Tuple[float, float]]:
+        Tuple[float, ...]:
             The distance as a float, and the p-value if p_value is set to True and can be computed.
 
     Examples:

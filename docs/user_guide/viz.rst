@@ -10,7 +10,7 @@ First we will import the required packages, load the compas dataset, and define 
   import pandas as pd
 
   df = pd.read_csv("../datasets/compas.csv")
-  df.head()
+  df
 
   target_attr = "RawScore"
   group1 = {"Ethnicity": ["African-American"]}

@@ -1,3 +1,13 @@
+"""Calculating p_values for using sampling techniques.
+
+This module provides three functions to sample and generate distributions required for estimating p_values:
+  - `permutation_statistic`
+  - `bootstrap_statistic`
+  - `bootstrap_binned_statistic`
+
+The final function, `resampling_p_value` is used for then calculating the p_values.
+"""
+
 from typing import Callable, Optional
 
 import numpy as np
@@ -68,7 +78,7 @@ def bootstrap_statistic(
     x: pd.Series,
     y: pd.Series,
     statistic: Callable[[pd.Series, pd.Series], float],
-    n_samples: int = 1000,
+    n_samples: int = 100,
     sample_size: Optional[int] = None,
 ) -> np.ndarray:
     """Compute the samples of a statistic estimate using the bootstrap method.
