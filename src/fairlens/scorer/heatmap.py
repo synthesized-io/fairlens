@@ -36,7 +36,7 @@ def two_column_heatmap(
     cat_num_metric = cat_num_metric or _kruskal_wallis
     cat_cat_metric = cat_cat_metric or _cramers_v
 
-    corr_matrix = compute_correlation_matrix(df, num_num_metric, cat_num_metric, cat_cat_metric)
+    corr_matrix = compute_correlation_matrix(df, num_num_metric, cat_num_metric, cat_cat_metric).round(2)
 
     plt.figure(figsize=(16, 6))
     heatmap = sns.heatmap(corr_matrix, vmin=0, vmax=1, annot=True)
@@ -89,7 +89,7 @@ def compute_correlation_matrix(
 
         return cc_metric(sr_a, sr_b)
 
-    return df.round(2).corr(method=corr_wrapper)
+    return df.corr(method=corr_wrapper)
 
 
 def _cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
