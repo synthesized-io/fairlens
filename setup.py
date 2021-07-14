@@ -1,4 +1,4 @@
-from setuptools import setup
+from setuptools import find_packages, setup
 
 
 def get_version(path):
@@ -8,4 +8,9 @@ def get_version(path):
     return v["__version__"]
 
 
-setup(version=get_version("src/fairlens/version.py"))
+setup(
+    version=get_version("src/fairlens/version.py"),
+    packages=find_packages("src"),
+    package_dir={"": "src"},
+    package_data={"": ["*.json"], "fairlens": ["sensitive/configs/*.json"]},
+)
