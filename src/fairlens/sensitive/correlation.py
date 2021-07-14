@@ -166,7 +166,7 @@ def _compute_series_correlation(
 
     # If we have a categorical-continuous association, we use Kruskal-Wallis and check the p-value instead.
     if arrays:
-        args = [group.array for group in arrays]
+        args = [np.array(group.array, dtype=float) for group in arrays]
         try:
             _, p_val = ss.kruskal(*args, nan_policy="omit")
         except ValueError:
