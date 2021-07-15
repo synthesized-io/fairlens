@@ -1,13 +1,12 @@
 from typing import Callable
 
-import dcor as dcor
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import scipy.stats as ss
 import seaborn as sns
 
 from fairlens.bias import utils
+from fairlens.metrics import correlation_metrics
 
 
 def two_column_heatmap(
@@ -32,9 +31,9 @@ def two_column_heatmap(
             The correlation metric used for categorical-categorical series pairs. Defaults to corrected Cramer's V
             statistic.
     """
-    num_num_metric = num_num_metric or _pearson
-    cat_num_metric = cat_num_metric or _kruskal_wallis
-    cat_cat_metric = cat_cat_metric or _cramers_v
+    num_num_metric = num_num_metric or correlation_metrics.pearson
+    cat_num_metric = cat_num_metric or correlation_metrics.kruskal_wallis
+    cat_cat_metric = cat_cat_metric or correlation_metrics.cramers_v
 
     corr_matrix = compute_correlation_matrix(df, num_num_metric, cat_num_metric, cat_cat_metric).round(2)
 
@@ -68,9 +67,9 @@ def compute_correlation_matrix(
         pd.DataFrame:
             The correlation matrix to be used in heatmap generation.
     """
-    nn_metric = num_num_metric or _pearson
-    cn_metric = cat_num_metric or _kruskal_wallis
-    cc_metric = cat_cat_metric or _cramers_v
+    nn_metric = num_num_metric or correlation_metrics.pearson
+    cn_metric = cat_num_metric or correlation_metrics.kruskal_wallis
+    cc_metric = cat_cat_metric or correlation_metrics.cramers_v
 
     def corr_wrapper(a: np.ndarray, b: np.ndarray):
         sr_a = pd.Series(a)
@@ -90,134 +89,3 @@ def compute_correlation_matrix(
         return cc_metric(sr_a, sr_b)
 
     return df.corr(method=corr_wrapper)
-
-
-def _cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    """Metric that calculates the corrected Cramer's V statistic for categorical-categorical
-    correlations, used in heatmap generation.
-
-    Args:
-        sr_a (pd.Series): First categorical series to analyze.
-        sr_b (pd.Series): Second categorical series to analyze.
-
-    Returns:
-        float: Value of the statistic.
-    """
-
-    if len(sr_a.value_counts()) == 1:
-        return 0
-    if len(sr_b.value_counts()) == 1:
-        return 0
-    else:
-        confusion_matrix = pd.crosstab(sr_a, sr_b)
-
-        if confusion_matrix.shape[0] == 2:
-            correct = False
-        else:
-            correct = True
-
-        chi2 = ss.chi2_contingency(confusion_matrix, correction=correct)[0]
-        n = sum(confusion_matrix.sum())
-        phi2 = chi2 / n
-        r, k = confusion_matrix.shape
-        phi2corr = max(0, phi2 - ((k - 1) * (r - 1)) / (n - 1))
-        rcorr = r - ((r - 1) ** 2) / (n - 1)
-        kcorr = k - ((k - 1) ** 2) / (n - 1)
-        return np.sqrt(phi2corr / min((kcorr - 1), (rcorr - 1)))
-
-
-def _pearson(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    """Metric that calculates Pearson's correlation coefficent for numerical-numerical
-    pairs of series, used in heatmap generation.
-
-    Args:
-        sr_a (pd.Series): First numerical series to analyze.
-        sr_b (pd.Series): Second numerical series to analyze.
-
-    Returns:
-        float: Value of the coefficient.
-    """
-    return abs(sr_a.corr(sr_b))
-
-
-def _kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    """Metric that uses the Kruskal-Wallis H Test to obtain a p-value indicating the possibility
-    that a categorical and numerical series are not correlated, used in heatmap generation.
-
-    Args:
-        sr_a (pd.Series): The categorical series to analyze, used for grouping the numerical one.
-        sr_b (pd.Series): The numerical series to analyze.
-
-    Returns:
-        float: The correlation coefficient, calculating by subtracting the p-value from 1, as the
-        p-value is the probability that the two columns are not correlated.
-    """
-
-    sr_a = sr_a.astype("category").cat.codes
-    groups = sr_b.groupby(sr_a)
-    arrays = [groups.get_group(category) for category in sr_a.unique()]
-
-    args = [group.array for group in arrays]
-    try:
-        _, p_val = ss.kruskal(*args, nan_policy="omit")
-    except ValueError:
-        return 0
-
-    return 1 - p_val
-
-
-def _distance_nn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    """Metric that uses non-linear correlation distance to obtain a correlation coefficient for
-    numerical-numerical column pairs.
-
-    Args:
-        sr_a (pd.Series): First numerical series to analyze.
-        sr_b (pd.Series): Second numerical series to analyze.
-
-    Returns:
-        float: The correlation coefficient.
-    """
-    if sr_a.size < sr_b.size:
-        sr_a = sr_a.append(pd.Series(sr_a.mean()).repeat(sr_b.size - sr_a.size), ignore_index=True)
-    elif sr_a.size > sr_b.size:
-        sr_b = sr_b.append(pd.Series(sr_b.mean()).repeat(sr_a.size - sr_b.size), ignore_index=True)
-
-    return dcor.distance_correlation(sr_a, sr_b)
-
-
-def _distance_cn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    """Metric that uses non-linear correlation distance to obtain a correlation coefficient for
-    categorical-numerical column pairs.
-
-    Args:
-        sr_a (pd.Series): The categorical series to analyze, used for grouping the numerical one.
-        sr_b (pd.Series): The numerical series to analyze.
-
-    Returns:
-        float: The correlation coefficient.
-    """
-    sr_a = sr_a.astype("category").cat.codes
-    groups = sr_b.groupby(sr_a)
-    arrays = [groups.get_group(category) for category in sr_a.unique()]
-
-    total = 0.0
-    n = len(arrays)
-
-    for i in range(0, n):
-        for j in range(i + 1, n):
-            sr_i = arrays[i]
-            sr_j = arrays[j]
-
-            # Handle groups with a different number of elements.
-            if sr_i.size < sr_j.size:
-                sr_i = sr_i.append(sr_i.sample(sr_j.size - sr_i.size), ignore_index=True)
-            elif sr_i.size > sr_j.size:
-                sr_j = sr_j.append(sr_j.sample(sr_i.size - sr_j.size), ignore_index=True)
-            total += dcor.distance_correlation(sr_i, sr_j)
-
-    total /= n * (n - 1) / 2
-
-    if total is None:
-        return 0.0
-
-    return total
