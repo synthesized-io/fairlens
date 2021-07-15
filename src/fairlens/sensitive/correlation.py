@@ -5,6 +5,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as ss
 
+from fairlens.metrics import correlation_metrics as cm
 from fairlens.sensitive import detection as dt
 
 
@@ -151,7 +152,7 @@ def _compute_series_correlation(
 
     if a_categorical and b_categorical:
         # If both columns are categorical, we use Cramer's V.
-        if _cramers_v(sr_a, sr_b) > corr_cutoff:
+        if cm.cramers_v(sr_a, sr_b) > corr_cutoff:
             return True
     elif not a_categorical and b_categorical:
         # If just one column is categorical, we can group by it and use Kruskal-Wallis H Test.
@@ -175,16 +176,4 @@ def _compute_series_correlation(
             return True
 
     # If both columns are numeric, we use standard Pearson correlation and the correlation cutoff.
-    return abs(sr_a.corr(sr_b)) > corr_cutoff
-
-
-def _cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    confusion_matrix = pd.crosstab(sr_a, sr_b)
-    chi2 = ss.chi2_contingency(confusion_matrix)[0]
-    n = len(sr_a)
-    phi2 = chi2 / n
-    r, k = confusion_matrix.shape
-    phi2corr = max(0, phi2 - ((k - 1) * (r - 1)) / (n - 1))
-    rcorr = r - ((r - 1) ** 2) / (n - 1)
-    kcorr = k - ((k - 1) ** 2) / (n - 1)
-    return np.sqrt(phi2corr / min((kcorr - 1), (rcorr - 1)))
+    return cm.pearson(sr_a, sr_b) > corr_cutoff
