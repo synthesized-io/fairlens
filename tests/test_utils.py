@@ -58,11 +58,15 @@ def test_get_predicates_mult():
     assert df[preds[1]]["C"].nunique() == 0
 
     preds = utils.get_predicates_mult(
-        dfc, [{"Ethnicity": ["African-American", "African-Am"], "Sex": ["Male"]}, {"Ethnicity": ["Caucasian"]}]
+        dfc, [{"Ethnicity": ["African-American"], "Sex": ["Male"]}, {"Ethnicity": ["Caucasian"]}]
     )
     pred1, pred2 = preds[0], preds[1]
 
-    assert dfc[pred1].equals(
-        dfc[((dfc["Ethnicity"] == "African-American") | (dfc["Ethnicity"] == "African-Am")) & (dfc["Sex"] == "Male")]
-    )
+    assert dfc[pred1].equals(dfc[((dfc["Ethnicity"] == "African-American")) & (dfc["Sex"] == "Male")])
     assert dfc[pred2].equals(dfc[dfc["Ethnicity"] == "Caucasian"])
+
+    preds = utils.get_predicates_mult(dfc, [{"Sex": ["Male"]}, dfc["Ethnicity"] == "African-American"])
+    pred1, pred2 = preds[0], preds[1]
+
+    assert dfc[pred1].equals(dfc[dfc["Sex"] == "Male"])
+    assert dfc[pred2].equals(dfc[dfc["Ethnicity"] == "African-American"])

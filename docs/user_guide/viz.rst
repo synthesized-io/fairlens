@@ -17,30 +17,30 @@ First we will import the required packages, load the compas dataset, and define 
   group2 = {"Ethnicity": ["Caucasian"]}
 
 
-Now we can use :code:`plt_group_dist` to visualize the distributions of these groups.
+Now we can use :code:`distr_pair_plot` to visualize the distributions of these groups.
 
 .. ipython:: python
 
-  from fairlens.bias.viz import plt_group_dist
+  from fairlens.bias.viz import distr_pair_plot
 
-  @savefig plt_group_dist.png
-  plt_group_dist(df, target_attr, group1, group2, legend=True)
+  @savefig distr_pair_plot.png
+  distr_pair_plot(df, target_attr, group1, group2, labels=["African-American", "Caucasian"])
 
   @verbatim
   plt.show()
 
 
 Additionally, we may want to visualize the distribution of all unique values for sensitive attributes
-relative to one another. We can use :code:`plt_attr_dist` to do this.
+relative to one another. We can use :code:`attr_distr_plot` to do this.
 
 .. ipython:: python
 
-  from fairlens.bias.viz import plt_attr_dist
+  from fairlens.bias.viz import attr_distr_plot
 
   sensitive_attr = "Ethnicity"
 
-  @savefig plt_attr_dist.png
-  plt_attr_dist(df, target_attr, sensitive_attr, legend=True)
+  @savefig attr_distr_plot.png
+  attr_distr_plot(df, target_attr, sensitive_attr)
 
   @verbatim
   plt.show()
