@@ -1,208 +1,121 @@
-import inspect
-from abc import ABC, abstractmethod
-from typing import Dict, Optional, Type
+"""
+Collection of Metrics that measure the distance, or similarity, between two datasets.
+"""
+from typing import Dict, List, Tuple, Type, Union
 
-import numpy as np
 import pandas as pd
 
-from . import p_value as pv
+import fairlens.metrics.distance_metrics as dist
+
 from . import utils
 
 
-class DistanceMetric(ABC):
-    """
-    Base class for distance metrics that compare samples from two distributions.
+def auto_distance(column: pd.Series) -> Type[dist.DistanceMetric]:
+    """Return the best statistical distance metric based on the distribution of the data.
 
-    Computes the distance between the probability distributions of x and y with respect to the
-    target attribute.
+    Args:
+        column (pd.Series):
+            The input data in a pd.Series.
 
-    Subclasses must implement a distance method.
-    """
-
-    class_dict: Dict[str, Type["DistanceMetric"]] = {}
-
-    def __init__(self, **kwargs):
-        ...
-
-    def __init_subclass__(cls, **kwargs):
-        super().__init_subclass__(**kwargs)
-
-        if not inspect.isabstract(cls):
-            cls_id = cls.get_id()
-            if cls_id:
-                cls.class_dict[cls_id] = cls
-            else:
-                cls.class_dict[cls.__name__] = cls
-
-    def __call__(self, x: pd.Series, y: pd.Series) -> Optional[float]:
-        """Calculate the distance between two distributions.
-
-        Args:
-            x (pd.Series):
-                The data in the column representing the first group.
-            y (pd.Series):
-                The data in the column representing the second group.
-
-        Returns:
-            Optional[float]:
-                The computed distance.
-        """
-
-        if not self.check_input(x, y):
-            return None
-
-        return self.distance(x, y)
-
-    @abstractmethod
-    def check_input(self, x: pd.Series, y: pd.Series) -> bool:
-        """Check whether the input is valid. Returns False if x and y have different dtypes by default.
-
-        Args:
-            x (pd.Series):
-                The data in the column representing the first group.
-            y (pd.Series):
-                The data in the column representing the second group.
-
-        Returns:
-            bool:
-                Whether or not the input is valid.
-        """
-        ...
-
-    @abstractmethod
-    def distance(self, x: pd.Series, y: pd.Series) -> float:
-        """Distance between the distribution of numerical data in x and y. Derived classes must implement this.
-
-        Args:
-            x (pd.Series):
-                Numerical data in a column.
-            y (pd.Series):
-                Numerical data in a column.
-
-        Returns:
-            float:
-                The computed distance.
-        """
-        ...
-
-    def p_value(self, x: pd.Series, y: pd.Series) -> float:
-        raise NotImplementedError
-
-    @property
-    @abstractmethod
-    def id(self) -> str:
-        """
-        A string identifier for the method. Used by fairlens.metrics.stat_distance().
-        Derived classes must implement this.
-        """
-        ...
-
-    @classmethod
-    def get_id(cls) -> str:
-        return cls().id
-
-
-class ContinuousDistanceMetric(DistanceMetric):
-    """
-    Base class for distance metrics on continuous data.
-
-    Subclasses must implement a distance method.
+    Returns:
+        Type[DistanceMetric]:
+            The class of the distance metric.
     """
 
-    def __init__(self, p_value_test="bootstrap"):
-        """Initialize continuous distance metric.
+    distr_type = utils.infer_distr_type(column)
+    if distr_type.is_continuous():
+        return dist.KolmogorovSmirnovDistance
+    elif distr_type.is_binary():
+        return dist.BinomialDistance
 
-        Args:
-            p_value_test (str, optional):
-                Choose which method of resampling will be used to compute the p-value. Overidden by metrics
-                such as Kolmogrov Smirnov Distance.
-                Defaults to "permutation".
-        """
-
-        self.p_value_test = p_value_test
-
-    def check_input(self, x: pd.Series, y: pd.Series) -> bool:
-        x_dtype = utils.infer_dtype(x).dtype
-        y_dtype = utils.infer_dtype(y).dtype
-
-        return x_dtype in ["int64", "float64"] and y_dtype in ["int64", "float64"]
-
-    def p_value(self, x: pd.Series, y: pd.Series) -> float:
-        if self.p_value_test == "permutation":
-            ts_distribution = pv.permutation_statistic(x, y, self.distance, n_perm=100)
-        elif self.p_value_test == "bootstrap":
-            ts_distribution = pv.bootstrap_statistic(x, y, self.distance, n_samples=1000)
-        else:
-            raise ValueError('p_value_test must be one of ["permutation", "bootstrap"]')
-
-        return pv.resampling_pvalue(self.distance(x, y), ts_distribution)
+    return dist.EarthMoversDistanceCategorical
 
 
-class CategoricalDistanceMetric(DistanceMetric):
+def stat_distance(
+    df: pd.DataFrame,
+    target_attr: str,
+    group1: Union[Dict[str, List[str]], pd.Series],
+    group2: Union[Dict[str, List[str]], pd.Series],
+    mode: str = "auto",
+    p_value: bool = False,
+    **kwargs,
+) -> Tuple[float, ...]:
+    """Computes the statistical distance between two probability distributions ie. group 1 and group 2, with respect
+    to the target attribute. The distance metric can be chosen through the mode parameter. If mode is set to "auto",
+    the most suitable metric depending on the target attributes' distribution is chosen.
+
+    If group1 is a dictionary and group2 is None then the distance is computed between group1 and the rest of the
+    dataset.
+
+    Args:
+        df (pd.DataFrame):
+            The input datafame.
+        target_attr (str):
+            The target attribute in the dataframe.
+        group1 (Union[Dict[str, List[str]], pd.Series]):
+            The first group of interest. Can be a dictionary mapping from attribute to values
+            or the raw data in a pandas series.
+        group2 (Union[Optional[Dict[str, List[str]]], pd.Series]], optional):
+            The second group of interest. Can be a dictionary mapping from attribute to values
+            or the raw data in a pandas series. Defaults to None.
+        mode (str):
+            Which distance metric to use. Can be the names of classes from fairlens.bias.metrics, or their
+            __repr__() strings. If set to "auto", it automatically picks the best metric based on the
+            distribution of the target attribute. Defaults to "auto".
+        p_value (bool):
+            Returns the a suitable p-value for the metric if it exists. Defaults to False.
+        **kwargs:
+            Keyword arguments for the distance metric. Passed to the __init__ function of distance metrics.
+
+    Returns:
+        Tuple[float, ...]:
+            The distance as a float, and the p-value if p_value is set to True and can be computed.
+
+    Examples:
+        >>> df = pd.read_csv("datasets/compas.csv")
+        >>> group1 = {"Ethnicity": ["African-American", "African-Am"]}
+        >>> group2 = {"Ethnicity": ["Caucasian"]}
+        >>> group3 = {"Ethnicity": ["Asian"]}
+        >>> stat_distance(df, "RawScore", group1, group2, mode="auto")
+        0.1133214633580949
+        >>> stat_distance(df, "RawScore", group3, group2, mode="auto", p_value=True)
+        (0.0816143577815524, 0.02693435054772131)
     """
-    Base class for distance metrics on categorical data.
 
-    Continuous data is automatically binned to create histograms, bin edges can be provided as an argument
-    and will be used to bin continous data. If the data has been pre-binned and consists of pd.Intervals
-    for instance, the histograms will be computed using the counts of each bin, and the bin_edges, if given,
-    will be used in metrics such as EarthMoversDistanceCategorical to compute the distance space.
+    # Parse group arguments into pandas series'
+    if isinstance(group1, dict) and isinstance(group2, dict):
+        if target_attr not in df.columns:
+            raise ValueError(f'"{target_attr}" is not a valid column name.')
 
-    Subclasses must implement a distance_pdf method.
-    """
+        pred1, pred2 = tuple(utils.get_predicates_mult(df, [group1, group2]))
 
-    def __init__(self, bin_edges: Optional[np.ndarray] = None):
-        """Initialize categorical distance metric.
+        group1 = df[pred1][target_attr]
+        group2 = df[pred2][target_attr]
 
-        Args:
-            bin_edges (Optional[np.ndarray], optional):
-                A numpy array of bin edges used to bin continuous data or to indicate bins of pre-binned data
-                to metrics which take the distance space into account.
-                i.e. For bins [0-5, 5-10, 10-15, 15-20], bin_edges would be [0, 5, 10, 15, 20].
-                See numpy.histogram_bin_edges() for more information.
-        """
+    if not isinstance(group1, pd.Series) or not isinstance(group2, pd.Series):
+        raise TypeError("group1, group2 must be pd.Series or dictionaries")
 
-        self.bin_edges = bin_edges
+    if target_attr in df.columns:
+        column = df[target_attr]
+    else:
+        column = pd.concat((group1, group2))
 
-    def check_input(self, x: pd.Series, y: pd.Series) -> bool:
-        x_dtype = utils.infer_dtype(x).dtype
-        y_dtype = utils.infer_dtype(y).dtype
+    # Choose the distance metric
+    if mode == "auto":
+        dist_class = auto_distance(column)
+    elif mode in dist.DistanceMetric.class_dict:
+        dist_class = dist.DistanceMetric.class_dict[mode]
+    else:
+        raise ValueError(f"Invalid mode. Valid modes include:\n{dist.DistanceMetric.class_dict.keys()}")
 
-        return x_dtype == y_dtype
+    metric = dist_class(**kwargs)
+    d = metric(group1, group2)
 
-    def distance(self, x: pd.Series, y: pd.Series) -> float:
-        (p, q), bin_edges = utils.zipped_hist((x, y), bin_edges=self.bin_edges, ret_bins=True)
+    if d is None:
+        raise ValueError("Incompatible data inside both series")
 
-        return self.distance_pdf(p, q, bin_edges)
+    if p_value:
+        p = metric.p_value(group1, group2)
+        return (d, p)
 
-    @abstractmethod
-    def distance_pdf(self, p: pd.Series, q: pd.Series, bin_edges: Optional[np.ndarray]) -> float:
-        """Distance between 2 aligned normalized histograms. Derived classes must implement this.
-
-        Args:
-            p (pd.Series):
-                A normalized histogram.
-            q (pd.Series):
-                A normalized histogram.
-            bin_edges (Optional[np.ndarray]):
-                bin_edges for binned continuous data. Used by metrics such as Earth Mover's Distance to compute the
-                distance metric space.
-
-        Returns:
-            float:
-                The computed distance.
-        """
-        ...
-
-    def p_value(self, x: pd.Series, y: pd.Series) -> float:
-        (h_x, h_y), bin_edges = utils.zipped_hist((x, y), bin_edges=self.bin_edges, normalize=False, ret_bins=True)
-
-        def distance_call(h_x, h_y):
-            with np.errstate(divide="ignore", invalid="ignore"):
-                p = pd.Series(np.nan_to_num(h_x / h_x.sum()))
-                q = pd.Series(np.nan_to_num(h_y / h_y.sum()))
-
-            return self.distance_pdf(p, q, bin_edges)
-
-        ts_distribution = pv.bootstrap_binned_statistic(h_x, h_y, distance_call, n_samples=100)
-
-        return pv.resampling_pvalue(distance_call(h_x, h_y), ts_distribution)
+    return (d,)
