@@ -24,7 +24,7 @@ Now we can use :code:`distr_pair_plot` to visualize the distributions of these g
   from fairlens.bias.viz import distr_pair_plot
 
   @savefig distr_pair_plot.png
-  distr_pair_plot(df, target_attr, group1, group2, labels=["African-American", "Caucasian"])
+  distr_pair_plot(df, target_attr, group1, group2)
 
   @verbatim
   plt.show()
