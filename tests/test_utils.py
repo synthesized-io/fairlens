@@ -62,7 +62,7 @@ def test_get_predicates_mult():
     )
     pred1, pred2 = preds[0], preds[1]
 
-    assert dfc[pred1].equals(dfc[((dfc["Ethnicity"] == "African-American")) & (dfc["Sex"] == "Male")])
+    assert dfc[pred1].equals(dfc[(dfc["Ethnicity"] == "African-American") & (dfc["Sex"] == "Male")])
     assert dfc[pred2].equals(dfc[dfc["Ethnicity"] == "Caucasian"])
 
     preds = utils.get_predicates_mult(dfc, [{"Sex": ["Male"]}, dfc["Ethnicity"] == "African-American"])

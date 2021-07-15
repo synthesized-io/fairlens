@@ -120,7 +120,7 @@ def stat_distance(
 
     if p_value:
         p = metric.p_value(group1, group2)
-        return d, p
+        return (d, p)
 
     return (d,)
 

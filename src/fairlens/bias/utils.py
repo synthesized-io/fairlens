@@ -29,7 +29,7 @@ def zipped_hist(
     ret_bins: bool = False,
     distr_type: Optional[str] = None,
 ) -> Union[Tuple[pd.Series, ...], Tuple[Tuple[pd.Series, ...], Optional[np.ndarray]]]:
-    """Bins a tuple of series'= and returns the aligned histograms.
+    """Bins a tuple of series' and returns the aligned histograms.
 
     Args:
         data (Tuple[pd.Series, ...]):

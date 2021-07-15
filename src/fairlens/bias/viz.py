@@ -120,19 +120,17 @@ def distr_plot(
 
     preds = utils.get_predicates_mult(df, groups)
 
-    palette = itertools.cycle(sns.color_palette() if cmap is None else cmap)
+    palette = itertools.cycle(sns.color_palette("deep") if cmap is None else cmap)
 
     if "kde" in kwargs:
         show_curve = kwargs.pop("kde")
 
-    col = df[target_attr]
-    inferred_col = utils.infer_dtype(col)
+    col = utils.infer_dtype(df[target_attr])
 
     if "bins" in kwargs:
         bins = kwargs.pop("bins")
-    elif inferred_col.dtype == "datetime64[ns]":
-        bins = utils.fd_opt_bins(inferred_col)  # TODO: Look at seaborn log scaling in more detail
-        col = inferred_col
+    elif col.dtype == "datetime64[ns]":
+        bins = utils.fd_opt_bins(col)  # TODO: Look at seaborn log scaling in more detail
     else:
         _, bins = utils.zipped_hist((df[target_attr],), ret_bins=True, distr_type=distr_type)
 
@@ -185,7 +183,7 @@ def attr_distr_plot(
     """
 
     if utils.infer_distr_type(df[attr]).is_continuous():
-        # TODO: need separate plot for continous data
+        # TODO: need separate plot for continious data
         raise NotImplementedError()
 
     origin_attr = attr
@@ -199,14 +197,13 @@ def attr_distr_plot(
     unique = df[attr].dropna().value_counts().keys()
 
     labels = ["All"]
-    groups = [df[attr] == df[attr]]
+    groups = [pd.Series([True] * len(df))]
 
     for val in unique:
         labels.append(str(val))
         groups.append({attr: [val]})
 
     if separate:
-        max_width = 3
         n = len(groups)
         r = ceil(n / max_width)
         c = min(n, 3)
