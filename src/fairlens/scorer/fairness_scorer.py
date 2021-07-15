@@ -5,7 +5,7 @@ from typing import Optional, Sequence, Tuple
 import pandas as pd
 
 from ..bias import utils
-from ..bias.metrics import stat_distance
+from ..bias.distance import stat_distance
 from ..sensitive.detection import detect_names_df
 
 logger = logging.getLogger(__name__)
