@@ -1,16 +1,17 @@
 import numpy as np
 import pandas as pd
 
-from fairlens.bias.metrics import BinomialDistance
-from fairlens.bias.metrics import EarthMoversDistance as EMD
-from fairlens.bias.metrics import EarthMoversDistanceCategorical as EMDC
-from fairlens.bias.metrics import HellingerDistance
-from fairlens.bias.metrics import JensenShannonDivergence as JS
-from fairlens.bias.metrics import KolmogorovSmirnovDistance as KS
-from fairlens.bias.metrics import KruskalWallis as KW
-from fairlens.bias.metrics import KullbackLeiblerDivergence as KL
-from fairlens.bias.metrics import MeanDistance as Mean
-from fairlens.bias.metrics import Norm, stat_distance
+from fairlens.bias.distance import stat_distance
+from fairlens.metrics.distance_metrics import BinomialDistance
+from fairlens.metrics.distance_metrics import EarthMoversDistance as EMD
+from fairlens.metrics.distance_metrics import EarthMoversDistanceCategorical as EMDC
+from fairlens.metrics.distance_metrics import HellingerDistance
+from fairlens.metrics.distance_metrics import JensenShannonDivergence as JS
+from fairlens.metrics.distance_metrics import KolmogorovSmirnovDistance as KS
+from fairlens.metrics.distance_metrics import KruskalWallis as KW
+from fairlens.metrics.distance_metrics import KullbackLeiblerDivergence as KL
+from fairlens.metrics.distance_metrics import MeanDistance as Mean
+from fairlens.metrics.distance_metrics import Norm
 
 df = pd.read_csv("datasets/compas.csv")
 pred1 = df["Ethnicity"] == "Caucasian"
