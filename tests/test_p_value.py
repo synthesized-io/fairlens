@@ -6,7 +6,7 @@ from fairlens.bias.p_value import binominal_proportion_p_value as bin_prop
 from fairlens.bias.p_value import bootstrap_binned_statistic as bootstrap_binned
 from fairlens.bias.p_value import bootstrap_statistic as bootstrap
 from fairlens.bias.p_value import permutation_statistic as perm_stat
-from fairlens.bias.p_value import resampling_pvalue
+from fairlens.bias.p_value import resampling_p_value, resampling_interval
 
 epsilon = 1e-5
 df = pd.read_csv("datasets/compas.csv")
@@ -41,14 +41,19 @@ def test_permutation():
 
 
 def test_resampled_pvalue():
-    assert resampling_pvalue(12, pd.Series([13, 11]), "two-sided") == 0.5
-    assert resampling_pvalue(12, pd.Series([13, 11]), "greater") == 0.5
-    assert resampling_pvalue(12, pd.Series([13, 11]), "less") == 0.5
+    assert resampling_p_value(12, pd.Series([13, 11]), "two-sided") == 0.5
+    assert resampling_p_value(12, pd.Series([13, 11]), "greater") == 0.5
+    assert resampling_p_value(12, pd.Series([13, 11]), "less") == 0.5
 
-    assert resampling_pvalue(12, pd.Series([15, 14, 13, 11]), "two-sided") == 0.75
-    assert resampling_pvalue(12, pd.Series([15, 14, 13, 11]), "greater") == 0.75
-    assert resampling_pvalue(12, pd.Series([15, 14, 13, 11]), "less") == 0.25
+    assert resampling_p_value(12, pd.Series([15, 14, 13, 11]), "two-sided") == 0.75
+    assert resampling_p_value(12, pd.Series([15, 14, 13, 11]), "greater") == 0.75
+    assert resampling_p_value(12, pd.Series([15, 14, 13, 11]), "less") == 0.25
 
-    assert resampling_pvalue(0, pd.Series([-2, -1, 0, 1]), "two-sided") == 1
-    assert resampling_pvalue(0, pd.Series([-2, -1, 0, 1]), "greater") == 0.5
-    assert resampling_pvalue(0, pd.Series([-2, -1, 0, 1]), "less") == 0.5
+    assert resampling_p_value(0, pd.Series([-2, -1, 0, 1]), "two-sided") == 1
+    assert resampling_p_value(0, pd.Series([-2, -1, 0, 1]), "greater") == 0.5
+    assert resampling_p_value(0, pd.Series([-2, -1, 0, 1]), "less") == 0.5
+
+
+def test_resampled_interval():
+    assert resampling_interval(3, pd.Series([1, 4, 2, 3, 5]), cl=0.5).value == (2.0, 4.0)
+    assert resampling_interval(3, pd.Series([1, 4, 2, 3, 5]), cl=0.5).value == (2.0, 4.0)

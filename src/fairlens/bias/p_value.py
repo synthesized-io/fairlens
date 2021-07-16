@@ -8,11 +8,18 @@ This module provides three functions to sample and generate distributions requir
 The final function, `resampling_p_value` is used for then calculating the p_values.
 """
 
-from typing import Callable, Optional
+from typing import Callable, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from scipy.stats.morestats import binom_test
+from scipy.stats import beta, binom_test, norm
+from dataclasses import dataclass
+
+
+@dataclass
+class ConfidenceInterval():
+    value: Tuple[float, float]
+    level: float
 
 
 def binominal_proportion_p_value(p_obs: float, p_null: float, n: int, alternative: str = "two-sided") -> float:
@@ -36,6 +43,49 @@ def binominal_proportion_p_value(p_obs: float, p_null: float, n: int, alternativ
 
     k = np.ceil(p_obs * n)
     return binom_test(k, n, p_null, alternative)
+
+
+def binominal_proportion_interval(p: float, n: int, cl: float = 0.95, method: str = "clopper-pearson") -> ConfidenceInterval:
+    """Calculate an approximate confidence interval for a binomial proportion of a sample.
+
+    Args:
+        p (float):
+            Proportion of successes.
+        n (int):
+            Sample size.
+        cl (float, optional):
+            Confidence level of the interval.
+        method (str, optional):
+            Approximation method. One of "normal", "clopper-pearson", "agresti-coull".
+            Defaults to "clopper-pearson".
+
+    Returns:
+        ConfidenceInterval:
+            A ConfidenceInterval object containing the interval and confidence level.
+    """
+
+    k = n * p
+    alpha = 1 - cl
+    z = norm.ppf(1 - alpha / 2)
+
+    if method == 'normal':
+        low = p - z * np.sqrt(p * (1 - p) / n)
+        high = p + z * np.sqrt(p * (1 - p) / n)
+
+    elif method == 'clopper-pearson':
+        low = beta.ppf(alpha / 2, k, n - k + 1)
+        high = beta.ppf(1 - alpha / 2, k + 1, n - k)
+
+    elif method == 'agresti-coull':
+        n_ = n + z**2
+        p_ = 1 / n_ * (k + z**2 / 2)
+        low = p_ - z * np.sqrt(p_ * (1 - p_) / n_)
+        high = p_ + z * np.sqrt(p_ * (1 - p_) / n_)
+
+    else:
+        raise ValueError("'method' argument must be one of 'normal', 'clopper-pearson', 'agresti-coull'.")
+
+    return ConfidenceInterval((low, high), cl)
 
 
 def permutation_statistic(
@@ -150,8 +200,8 @@ def bootstrap_binned_statistic(
     return statistic_samples
 
 
-def resampling_pvalue(t_obs: float, t_distribution: pd.Series, alternative: str = "two-sided") -> float:
-    """Calculate a p-value using a resampled test statistic distribution.
+def resampling_p_value(t_obs: float, t_distribution: pd.Series, alternative: str = "two-sided") -> float:
+    """Compute a p-value using a resampled test statistic distribution.
 
     Args:
         t_obs (float):
@@ -182,3 +232,25 @@ def resampling_pvalue(t_obs: float, t_distribution: pd.Series, alternative: str 
         p = np.sum(t_distribution < t_obs) / n_samples
 
     return p
+
+
+def resampling_interval(t_obs: float, t_distribution: pd.Series, cl: float = 0.95):
+    """Compute a confidence interval using a distribution of the test statistic 
+    on resampled data.
+
+    Args:
+        t_obs (float):
+            Observed value of the test statistic.
+        t_distribution (pd.Series):
+            Samples of test statistic distribution.
+        cl (float, optional):
+            Confidence level of the interval.
+
+    Returns:
+        ConfidenceInterval:
+            A ConfidenceInterval object containing the interval and confidence level.
+    """
+
+    percentiles = 100 * (1 - cl) / 2, 100 * (1 - (1 - cl) / 2)
+    d1, d2 = np.percentile(t_distribution, percentiles)
+    return ConfidenceInterval((2 * t_obs - d2, 2 * t_obs - d1), cl)
