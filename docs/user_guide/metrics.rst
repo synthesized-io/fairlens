@@ -15,7 +15,7 @@ Let's import this method and load in the compas dataset.
 .. ipython:: python
 
   import pandas as pd
-  from fairlens.bias.metrics import stat_distance
+  from fairlens.bias.distance import stat_distance
 
   df = pd.read_csv("../datasets/compas.csv")
   df
