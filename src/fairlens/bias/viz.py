@@ -77,7 +77,7 @@ def distr_pair_plot(
 def distr_plot(
     df: pd.DataFrame,
     target_attr: str,
-    groups: Sequence[Union[Mapping[str, List[str]], pd.Series]],
+    groups: Sequence[Union[Mapping[str, List[Any]], pd.Series]],
     distr_type: Optional[str] = None,
     show_curve: bool = True,
     cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
@@ -91,7 +91,7 @@ def distr_plot(
             The input dataframe.
         target_attr (str):
             The target attribute.
-        groups (Sequence[Union[Mapping[str, List[str]], pd.Series]]):
+        groups (Sequence[Union[Mapping[str, List[Any]], pd.Series]]):
             A list of groups of interest. Each group can be a mapping / dict from attribute to value or
             a predicate itself, i.e. pandas series consisting of bools which can be used as a predicate
             to index a subgroup from the dataframe.
@@ -107,7 +107,7 @@ def distr_plot(
         labels (Optional[Sequence[str]], optional):
             A list of labels for each of the groups which will be used for the legend.
         **kwargs:
-            Additional keyword arguments passed to seaborn.histplot().
+            Additional keyword arguments passed to seaborn.histplot() or sns.barplot().
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
@@ -126,13 +126,21 @@ def distr_plot(
         show_curve = kwargs.pop("kde")
 
     col = utils.infer_dtype(df[target_attr])
+    is_continuous = (
+        distr_type == "continuous" if distr_type is not None else utils.infer_distr_type(col).is_continuous()
+    )
+    is_datetime = col.dtype == "datetime64[ns]"
 
     if "bins" in kwargs:
         bins = kwargs.pop("bins")
-    elif col.dtype == "datetime64[ns]":
+    elif is_datetime:
         bins = utils.fd_opt_bins(col)  # TODO: Look at seaborn log scaling in more detail
-    else:
+    elif is_continuous:
         _, bins = utils.zipped_hist((df[target_attr],), ret_bins=True, distr_type=distr_type)
+    elif col.dtype == "int64":
+        bins = sorted(col.unique())
+    else:
+        bins = "auto"
 
     for pred in preds:
         sns.histplot(col[pred], bins=bins, color=next(palette), kde=show_curve, **kwargs)
@@ -148,6 +156,7 @@ def attr_distr_plot(
     target_attr: str,
     attr: str,
     distr_type: Optional[str] = None,
+    attr_distr_type: Optional[str] = None,
     separate: bool = False,
     figure: Optional[Figure] = None,
     max_width: int = 3,
@@ -166,6 +175,10 @@ def attr_distr_plot(
             The type of distribution of the target attribute. Can be "categorical" or "continuous".
             If None the type of distribution is inferred based on the data in the column.
             Defaults to None.
+        attr_distr_type (Optional[str]):
+            The type of distribution of attr. Can be "categorical" or "continuous".
+            If None the type of distribution is inferred based on the data in the column.
+            Defaults to None.
         separate (bool):
             Separate into multiple plots (subplot). Defaults to False.
         figure (Optional[Figure], optional):
@@ -182,14 +195,20 @@ def attr_distr_plot(
         >>> plt.show()
     """
 
-    if utils.infer_distr_type(df[attr]).is_continuous():
-        # TODO: need separate plot for continious data
-        raise NotImplementedError()
-
     origin_attr = attr
+    binned_attr = attr + "__BINNED__"
 
     inferred_col = utils.infer_dtype(df[attr])
-    binned_attr = attr + "__BINNED__"
+
+    if attr_distr_type == "continuous" or utils.infer_distr_type(inferred_col).is_continuous():
+
+        def iv_to_str(iv: pd.Interval) -> str:
+            return "[" + "{:.2f}".format(iv.left) + ", " + "{:.2f}".format(iv.right) + "]"
+
+        n_bins = min(10, utils.fd_opt_bins(df[attr]))
+        df.loc[:, binned_attr] = utils.bin(df[attr], n_bins=n_bins).apply(iv_to_str)
+        attr = binned_attr
+
     if inferred_col.dtype == "datetime64[ns]":
         df.loc[:, binned_attr] = ((inferred_col.dt.year // 10) * 10).apply(lambda y: str(y) + "-" + str(y + 10))
         attr = binned_attr
