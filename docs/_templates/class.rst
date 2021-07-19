@@ -12,12 +12,12 @@
    .. automethod:: __init__
 
    {% if methods %}
-   .. rubric:: {{ _('Methods') }}
+      .. rubric:: {{ _('Methods') }}
 
-   .. autosummary::
-      :nosignatures:
-   {% for item in methods %}
-      ~{{ name }}.{{ item }}
-   {%- endfor %}
-   {% endif %}
+      .. autosummary::
+         :nosignatures:
+         {% for item in methods %}
+            ~{{ name }}.{{ item }}
+         {%- endfor %}
+      {% endif %}
    {% endblock %}
