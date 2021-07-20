@@ -33,10 +33,10 @@
 }
 
 h1, h2, h3 {
-	font-family: Canela;
-    font-weight: 300
+	font-family: Canela, serif;
+  font-weight: 300
 }
 
 body {
-	font-family: Gilroy;
+	font-family: Gilroy, serif;
 }
