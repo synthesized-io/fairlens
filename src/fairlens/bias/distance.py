@@ -103,10 +103,10 @@ def stat_distance(
     # Choose the distance metric
     if mode == "auto":
         dist_class = auto_distance(column)
-    elif mode in dist.DistanceMetric.class_dict:
-        dist_class = dist.DistanceMetric.class_dict[mode]
+    elif mode in dist.DistanceMetric._class_dict:
+        dist_class = dist.DistanceMetric._class_dict[mode]
     else:
-        raise ValueError(f"Invalid mode. Valid modes include:\n{dist.DistanceMetric.class_dict.keys()}")
+        raise ValueError(f"Invalid mode. Valid modes include:\n{dist.DistanceMetric._class_dict.keys()}")
 
     metric = dist_class(**kwargs)
     d = metric(group1, group2)

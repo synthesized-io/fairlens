@@ -22,20 +22,21 @@ class DistanceMetric(ABC):
     Subclasses must implement a distance method.
     """
 
-    class_dict: Dict[str, Type["DistanceMetric"]] = {}
+    _class_dict: Dict[str, Type["DistanceMetric"]] = {}
 
     def __init__(self, **kwargs):
+        """Initialize distance metric."""
         ...
 
     def __init_subclass__(cls, **kwargs):
         super().__init_subclass__(**kwargs)
 
         if not inspect.isabstract(cls):
-            cls_id = cls.get_id()
+            cls_id = cls._get_id()
             if cls_id:
-                cls.class_dict[cls_id] = cls
+                cls._class_dict[cls_id] = cls
             else:
-                cls.class_dict[cls.__name__] = cls
+                cls._class_dict[cls.__name__] = cls
 
     def __call__(self, x: pd.Series, y: pd.Series) -> Optional[float]:
         """Calculate the distance between two distributions.
@@ -89,7 +90,20 @@ class DistanceMetric(ABC):
         ...
 
     def p_value(self, x: pd.Series, y: pd.Series) -> float:
-        raise NotImplementedError
+        """Returns a p-value for the test that x and y are sampled from the same distribution.
+
+        Args:
+            x (pd.Series):
+                Numerical data in a column.
+            y (pd.Series):
+                Numerical data in a column.
+
+        Returns:
+            float:
+                The computed p-value.
+        """
+
+        raise NotImplementedError()
 
     @property
     @abstractmethod
@@ -101,7 +115,7 @@ class DistanceMetric(ABC):
         ...
 
     @classmethod
-    def get_id(cls) -> str:
+    def _get_id(cls) -> str:
         return cls().id
 
 
