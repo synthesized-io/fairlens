@@ -1,7 +1,6 @@
 from typing import Callable
 
 import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 import seaborn as sns
 
@@ -37,9 +36,8 @@ def two_column_heatmap(
 
     corr_matrix = compute_correlation_matrix(df, num_num_metric, cat_num_metric, cat_cat_metric).round(2)
 
-    plt.figure(figsize=(16, 6))
-    heatmap = sns.heatmap(corr_matrix, vmin=0, vmax=1, annot=True)
-    heatmap.set_title("Correlation Heatmap", fontdict={"fontsize": 12}, pad=12)
+    fig, ax = plt.subplots(figsize=(11, 9))
+    sns.heatmap(corr_matrix, vmin=0, vmax=1, annot=True)
 
 
 def compute_correlation_matrix(
@@ -71,21 +69,29 @@ def compute_correlation_matrix(
     cn_metric = cat_num_metric or correlation_metrics.kruskal_wallis
     cc_metric = cat_cat_metric or correlation_metrics.cramers_v
 
-    def corr_wrapper(a: np.ndarray, b: np.ndarray):
-        sr_a = pd.Series(a)
-        sr_b = pd.Series(b)
-        a_type = utils.infer_distr_type(sr_a)
-        b_type = utils.infer_distr_type(sr_b)
+    series_list = list()
+    for sr_a in df.columns:
+        coeffs = list()
+        a_type = utils.infer_distr_type(df[sr_a])
 
-        if a_type.is_continuous() and b_type.is_continuous():
-            return nn_metric(sr_a, sr_b)
+        for sr_b in df.columns:
+            if sr_a == sr_b:
+                coeffs.append(1.0)
+                continue
 
-        elif a_type.is_continuous():
-            return cn_metric(sr_b, sr_a)
+            b_type = utils.infer_distr_type(df[sr_b])
+            if a_type.is_continuous() and b_type.is_continuous():
+                coeffs.append(nn_metric(df[sr_a], df[sr_b]))
 
-        elif b_type.is_continuous():
-            return cn_metric(sr_a, sr_b)
+            elif a_type.is_continuous():
+                coeffs.append(cn_metric(df[sr_b], df[sr_a]))
 
-        return cc_metric(sr_a, sr_b)
+            elif b_type.is_continuous():
+                coeffs.append(cn_metric(df[sr_a], df[sr_b]))
 
-    return df.corr(method=corr_wrapper)
+            else:
+                coeffs.append(cc_metric(df[sr_a], df[sr_b]))
+
+        series_list.append(pd.Series(coeffs, index=df.columns, name=sr_a))
+
+    return pd.concat(series_list, axis=1, keys=[series.name for series in series_list])
