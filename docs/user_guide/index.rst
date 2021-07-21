@@ -18,6 +18,7 @@ User Guide
 
   metrics
   sensitive
+  correlations
   viz
   scorer
   significance
