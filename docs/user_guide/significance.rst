@@ -40,7 +40,7 @@ Intervals and P-Values
 ^^^^^^^^^^^^^^^^^^^^^^
 
 The distribution of the test statistic produced by resampling can be used to compute a confidence
-interval or a p-value. We can use our bootstrapped distribution from above to do so using the 
+interval or a p-value. We can use our bootstrapped distribution from above to do so using the
 following methods.
 
 .. ipython:: python

@@ -6,7 +6,7 @@ from fairlens.bias.p_value import binominal_proportion_p_value as bin_prop
 from fairlens.bias.p_value import bootstrap_binned_statistic as bootstrap_binned
 from fairlens.bias.p_value import bootstrap_statistic as bootstrap
 from fairlens.bias.p_value import permutation_statistic as perm_stat
-from fairlens.bias.p_value import resampling_p_value, resampling_interval
+from fairlens.bias.p_value import resampling_interval, resampling_p_value
 
 epsilon = 1e-5
 df = pd.read_csv("datasets/compas.csv")

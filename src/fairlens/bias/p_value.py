@@ -8,16 +8,16 @@ This module provides three functions to sample and generate distributions requir
 The final function, `resampling_p_value` is used for then calculating the p_values.
 """
 
+from dataclasses import dataclass
 from typing import Callable, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from scipy.stats import beta, binom_test, norm
-from dataclasses import dataclass
 
 
 @dataclass
-class ConfidenceInterval():
+class ConfidenceInterval:
     value: Tuple[float, float]
     level: float
 
@@ -45,7 +45,9 @@ def binominal_proportion_p_value(p_obs: float, p_null: float, n: int, alternativ
     return binom_test(k, n, p_null, alternative)
 
 
-def binominal_proportion_interval(p: float, n: int, cl: float = 0.95, method: str = "clopper-pearson") -> ConfidenceInterval:
+def binominal_proportion_interval(
+    p: float, n: int, cl: float = 0.95, method: str = "clopper-pearson"
+) -> ConfidenceInterval:
     """Calculate an approximate confidence interval for a binomial proportion of a sample.
 
     Args:
@@ -68,17 +70,17 @@ def binominal_proportion_interval(p: float, n: int, cl: float = 0.95, method: st
     alpha = 1 - cl
     z = norm.ppf(1 - alpha / 2)
 
-    if method == 'normal':
+    if method == "normal":
         low = p - z * np.sqrt(p * (1 - p) / n)
         high = p + z * np.sqrt(p * (1 - p) / n)
 
-    elif method == 'clopper-pearson':
+    elif method == "clopper-pearson":
         low = beta.ppf(alpha / 2, k, n - k + 1)
         high = beta.ppf(1 - alpha / 2, k + 1, n - k)
 
-    elif method == 'agresti-coull':
-        n_ = n + z**2
-        p_ = 1 / n_ * (k + z**2 / 2)
+    elif method == "agresti-coull":
+        n_ = n + z ** 2
+        p_ = 1 / n_ * (k + z ** 2 / 2)
         low = p_ - z * np.sqrt(p_ * (1 - p_) / n_)
         high = p_ + z * np.sqrt(p_ * (1 - p_) / n_)
 
@@ -235,7 +237,7 @@ def resampling_p_value(t_obs: float, t_distribution: pd.Series, alternative: str
 
 
 def resampling_interval(t_obs: float, t_distribution: pd.Series, cl: float = 0.95):
-    """Compute a confidence interval using a distribution of the test statistic 
+    """Compute a confidence interval using a distribution of the test statistic
     on resampled data.
 
     Args:
