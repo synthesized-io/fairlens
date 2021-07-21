@@ -21,6 +21,7 @@ Now we can use :code:`distr_pair_plot` to visualize the distributions of these g
 
 .. ipython:: python
 
+  import matplotlib.pyplot as plt
   from fairlens.bias.viz import distr_pair_plot
 
   @savefig distr_pair_plot.png
