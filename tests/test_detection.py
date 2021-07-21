@@ -196,7 +196,7 @@ def test_common_correlation():
     df = pd.DataFrame(data, columns=col_names)
     res = {
         "corr1": [("race", "Ethnicity"), ("age", "Age"), ("marital", "Family Status")],
-        "corr2": [("race", "Ethnicity"), ("age", "Age"), ("marital", "Family Status")],
+        "corr2": [("age", "Age")],
     }
     assert corr.find_sensitive_correlations(df) == res
 
