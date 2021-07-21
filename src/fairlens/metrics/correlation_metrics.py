@@ -78,6 +78,36 @@ def kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
     return 1 - p_val
 
 
+def kruskal_wallis_boolean(sr_a: pd.Series, sr_b: pd.Series, p_cutoff: float = 0.1) -> bool:
+    """Metric that uses the Kruskal-Wallis H Test to obtain a p-value that is used to determine
+    whether the possibility that the columns obtained by grouping the continuous series
+    by the categorical series come from the same distribution. Used for proxy detection.
+
+    Args:
+        sr_a (pd.Series): The categorical series to analyze, used for grouping the numerical one.
+        sr_b (pd.Series): The numerical series to analyze.
+        p_cutoff (float): The maximum admitted p-value for the distributions to be considered independent.
+
+    Returns:
+        bool: Bool value representing whether or not the two series are correlated.
+    """
+
+    sr_a = sr_a.astype("category").cat.codes
+    groups = sr_b.groupby(sr_a)
+    arrays = [groups.get_group(category) for category in sr_a.unique()]
+
+    if arrays:
+        args = [np.array(group.array, dtype=float) for group in arrays]
+        try:
+            _, p_val = ss.kruskal(*args, nan_policy="omit")
+        except ValueError:
+            return False
+        if p_val < p_cutoff:
+            return True
+
+    return False
+
+
 def distance_nn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
     """Metric that uses non-linear correlation distance to obtain a correlation coefficient for
     numerical-numerical column pairs.
