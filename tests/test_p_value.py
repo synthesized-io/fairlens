@@ -55,4 +55,5 @@ def test_resampled_pvalue():
 
 
 def test_resampled_interval():
-    assert resampling_interval(3, pd.Series([1, 4, 2, 3, 5]), cl=0.5).value == (2.0, 4.0)
+    assert resampling_interval(3, pd.Series([1, 4, 2, 3, 5]), cl=0.5) == (2.0, 4.0)
+    assert resampling_interval(50, pd.Series(np.arange(101)), cl=0.8) == (10, 90)

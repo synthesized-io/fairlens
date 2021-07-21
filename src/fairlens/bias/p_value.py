@@ -5,21 +5,15 @@ This module provides three functions to sample and generate distributions requir
   - `bootstrap_statistic`
   - `bootstrap_binned_statistic`
 
-The final function, `resampling_p_value` is used for then calculating the p_values.
+The functions, `resampling_p_value`, `resampling_interval` can be use these distributions to
+carry out p-value tests or obtain a confidence interval.
 """
 
-from dataclasses import dataclass
 from typing import Callable, Optional, Tuple
 
 import numpy as np
 import pandas as pd
 from scipy.stats import beta, binom_test, norm
-
-
-@dataclass
-class ConfidenceInterval:
-    value: Tuple[float, float]
-    level: float
 
 
 def binominal_proportion_p_value(p_obs: float, p_null: float, n: int, alternative: str = "two-sided") -> float:
@@ -47,7 +41,7 @@ def binominal_proportion_p_value(p_obs: float, p_null: float, n: int, alternativ
 
 def binominal_proportion_interval(
     p: float, n: int, cl: float = 0.95, method: str = "clopper-pearson"
-) -> ConfidenceInterval:
+) -> Tuple[float, float]:
     """Calculate an approximate confidence interval for a binomial proportion of a sample.
 
     Args:
@@ -62,8 +56,8 @@ def binominal_proportion_interval(
             Defaults to "clopper-pearson".
 
     Returns:
-        ConfidenceInterval:
-            A ConfidenceInterval object containing the interval and confidence level.
+        Tuple[float, float]:
+            A tuple containing the confidence interval.
     """
 
     k = n * p
@@ -87,7 +81,7 @@ def binominal_proportion_interval(
     else:
         raise ValueError("'method' argument must be one of 'normal', 'clopper-pearson', 'agresti-coull'.")
 
-    return ConfidenceInterval((low, high), cl)
+    return low, high
 
 
 def permutation_statistic(
@@ -249,10 +243,10 @@ def resampling_interval(t_obs: float, t_distribution: pd.Series, cl: float = 0.9
             Confidence level of the interval.
 
     Returns:
-        ConfidenceInterval:
-            A ConfidenceInterval object containing the interval and confidence level.
+        Tuple[float, float]:
+            A tuple containing the confidence interval.
     """
 
     percentiles = 100 * (1 - cl) / 2, 100 * (1 - (1 - cl) / 2)
     d1, d2 = np.percentile(t_distribution, percentiles)
-    return ConfidenceInterval((2 * t_obs - d2, 2 * t_obs - d1), cl)
+    return 2 * t_obs - d2, 2 * t_obs - d1
