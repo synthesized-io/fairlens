@@ -1,9 +1,7 @@
 import pathlib
 from typing import Callable, Dict, List, Optional, Tuple, Union
 
-import numpy as np
 import pandas as pd
-import scipy.stats as ss
 
 from fairlens.metrics import correlation_metrics as cm
 from fairlens.sensitive import detection as dt
@@ -148,7 +146,6 @@ def _compute_series_correlation(
 ) -> bool:
     a_categorical = sr_a.map(type).eq(str).all()
     b_categorical = sr_b.map(type).eq(str).all()
-    arrays = list()
 
     if a_categorical and b_categorical:
         # If both columns are categorical, we use Cramer's V.
@@ -156,24 +153,9 @@ def _compute_series_correlation(
             return True
     elif not a_categorical and b_categorical:
         # If just one column is categorical, we can group by it and use Kruskal-Wallis H Test.
-        sr_b = sr_b.astype("category").cat.codes
-        groups = sr_a.groupby(sr_b)
-        arrays = [groups.get_group(category) for category in sr_b.unique()]
+        return cm.kruskal_wallis_boolean(sr_b, sr_a, p_cutoff=p_cutoff)
     elif a_categorical and not b_categorical:
-        # If just one column is categorical, we can group by it and use Kruskal-Wallis H Test.
-        sr_a = sr_a.astype("category").cat.codes
-        groups = sr_b.groupby(sr_a)
-        arrays = [groups.get_group(category) for category in sr_a.unique()]
-
-    # If we have a categorical-continuous association, we use Kruskal-Wallis and check the p-value instead.
-    if arrays:
-        args = [np.array(group.array, dtype=float) for group in arrays]
-        try:
-            _, p_val = ss.kruskal(*args, nan_policy="omit")
-        except ValueError:
-            return False
-        if p_val < p_cutoff:
-            return True
+        return cm.kruskal_wallis_boolean(sr_a, sr_b, p_cutoff=p_cutoff)
 
     # If both columns are numeric, we use standard Pearson correlation and the correlation cutoff.
     return cm.pearson(sr_a, sr_b) > corr_cutoff
