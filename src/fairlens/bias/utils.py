@@ -1,3 +1,4 @@
+import calendar
 from enum import Enum
 from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
@@ -143,12 +144,51 @@ def bin(
     binned = pd.Series(pd.cut(column, bins=bins, include_lowest=True, **kwargs))
 
     if mean_bins:
-        binned = binned.apply(lambda i: float(i.mid))
+        binned = binned.apply(lambda i: i.mid)
 
     if ret_bins:
         return binned, bins
 
     return binned
+
+
+def quantize_date(column: pd.Series):
+    """Quantize a column of dates into bins of uniform width in years, days or months.
+
+    Args:
+        column (pd.Series):
+            The column of dates to quantize. Must be have a dtype of "datetime64[ns]".
+    """
+
+    TEN_YEAR_THRESHOLD = 15
+    TEN_MIN_THRESHOLD = 15
+    TEN_SEC_THRESHOLD = 15
+
+    if column.dtype != "datetime64[ns]":
+        raise ValueError("'quantize_date' requires the column to be a pandas datetime object")
+
+    years, months, days = column.dt.year, column.dt.month, column.dt.day
+    hours, minutes, seconds = column.dt.hour, column.dt.minute, column.dt.second
+
+    # Assuming dates don't go back beyond a 100 years.
+    if years.max() - years.min() >= TEN_YEAR_THRESHOLD:
+        return ((years // 10) * 10).apply(lambda x: str(x) + "-" + str(x + 10))
+    elif years.nunique() > 1:
+        return years
+    elif months.nunique() > 1:
+        return months.apply(lambda x: calendar.month_abbr[x])
+    elif days.nunique() > 1:
+        return days.apply(lambda x: "Day " + str(x))
+    elif hours.nunique() > 1:
+        return hours.apply(lambda x: "Hour " + str(x))
+    elif minutes.max() - minutes.min() > TEN_MIN_THRESHOLD:
+        return ((minutes // 10) * 10).apply(lambda x: str(x) + "min-" + str(x + 10) + "min")
+    elif minutes.nunique() > 1:
+        return minutes.apply(lambda x: str(x) + "m")
+    elif seconds.max() - seconds.min() > TEN_SEC_THRESHOLD:
+        return ((seconds // 10) * 10).apply(lambda x: str(x) + "s-" + str(x + 10) + "s")
+
+    return seconds
 
 
 def infer_dtype(col: pd.Series) -> pd.Series:
@@ -247,6 +287,7 @@ def get_predicates_mult(
             A list of groups of interest. Each group can be a mapping / dict from attribute to value or
             a predicate itself, i.e. pandas series consisting of bools which can be used as a predicate
             to index a subgroup from the dataframe.
+            Examples: {"Sex": ["Male"]}, df["Sex"] == "Female"
 
     Raises:
         ValueError:
@@ -258,13 +299,12 @@ def get_predicates_mult(
     """
 
     predicates = {}
-
-    rem_groups = []
+    remaining_groups = []
 
     # Separate groups for which predicates are to be computed.
     for i, group in enumerate(groups):
         if isinstance(group, dict):
-            rem_groups.append((i, group))
+            remaining_groups.append((i, group))
         else:
             if not isinstance(group, pd.Series) or group.dtype != "bool":
                 raise ValueError(
@@ -274,14 +314,14 @@ def get_predicates_mult(
             predicates[i] = group
 
     # Check all attributes are valid
-    all_attrs = [group.keys() for _, group in rem_groups]
+    all_attrs = [group.keys() for _, group in remaining_groups]
     attrs = set().union(*all_attrs)  # type: ignore
 
     if attrs.intersection(df.columns) != attrs:
         raise ValueError(f"Invalid attribute detected. Attributes must be in:\n{df.columns}")
 
     # Form a predicate for each remaining group
-    for i, group in rem_groups:
+    for i, group in remaining_groups:
         predicates[i] = df[group.keys()].isin(group).all(axis=1)
 
     return [pred for _, pred in sorted(predicates.items(), key=lambda p: p[0])]

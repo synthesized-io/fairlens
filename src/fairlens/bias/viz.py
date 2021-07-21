@@ -95,6 +95,7 @@ def distr_plot(
             A list of groups of interest. Each group can be a mapping / dict from attribute to value or
             a predicate itself, i.e. pandas series consisting of bools which can be used as a predicate
             to index a subgroup from the dataframe.
+            Examples: {"Sex": ["Male"]}, df["Sex"] == "Female"
         distr_type (Optional[str]):
             The type of distribution of the target attribute. Can be "categorical" or "continuous".
             If None the type of distribution is inferred based on the data in the column.
@@ -107,7 +108,7 @@ def distr_plot(
         labels (Optional[Sequence[str]], optional):
             A list of labels for each of the groups which will be used for the legend.
         **kwargs:
-            Additional keyword arguments passed to seaborn.histplot() or sns.barplot().
+            Additional keyword arguments passed to seaborn.histplot().
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
@@ -157,6 +158,7 @@ def attr_distr_plot(
     attr: str,
     distr_type: Optional[str] = None,
     attr_distr_type: Optional[str] = None,
+    max_bins=10,
     separate: bool = False,
     figure: Optional[Figure] = None,
     max_width: int = 3,
@@ -171,15 +173,17 @@ def attr_distr_plot(
             The target attribute.
         attr (str):
             The attribute whose values' distributions are to be plotted.
-        distr_type (Optional[str]):
+        distr_type (Optional[str], optional):
             The type of distribution of the target attribute. Can be "categorical" or "continuous".
             If None the type of distribution is inferred based on the data in the column.
             Defaults to None.
-        attr_distr_type (Optional[str]):
+        attr_distr_type (Optional[str], optional):
             The type of distribution of attr. Can be "categorical" or "continuous".
             If None the type of distribution is inferred based on the data in the column.
             Defaults to None.
-        separate (bool):
+        max_bins (int, optional):
+            The maximum amount of bins to use for continuous data. Defaults to 10.
+        separate (bool, optional):
             Separate into multiple plots (subplot). Defaults to False.
         figure (Optional[Figure], optional):
             A matplotlib figure to plot on if `separate` is True. Defaults to matplotlib.pyplot.figure().
@@ -195,32 +199,27 @@ def attr_distr_plot(
         >>> plt.show()
     """
 
-    origin_attr = attr
-    binned_attr = attr + "__BINNED__"
+    df_ = df[[attr, target_attr]].copy()
 
-    inferred_col = utils.infer_dtype(df[attr])
+    inferred_col = utils.infer_dtype(df_[attr])
 
+    # Bin continuous data
     if attr_distr_type == "continuous" or utils.infer_distr_type(inferred_col).is_continuous():
 
         def iv_to_str(iv: pd.Interval) -> str:
             return "[" + "{:.2f}".format(iv.left) + ", " + "{:.2f}".format(iv.right) + "]"
 
-        n_bins = min(10, utils.fd_opt_bins(df[attr]))
-        df.loc[:, binned_attr] = utils.bin(df[attr], n_bins=n_bins).apply(iv_to_str)
-        attr = binned_attr
+        n_bins = min(max_bins, utils.fd_opt_bins(df_[attr]))
+        df_.loc[:, attr] = utils.bin(df_[attr], n_bins=n_bins, quantile_based=True).apply(iv_to_str)
 
+    # Bin dates differently
     if inferred_col.dtype == "datetime64[ns]":
-        df.loc[:, binned_attr] = ((inferred_col.dt.year // 10) * 10).apply(lambda y: str(y) + "-" + str(y + 10))
-        attr = binned_attr
+        df_.loc[:, attr] = utils.quantize_date(inferred_col)
 
-    unique = df[attr].dropna().value_counts().keys()
+    unique_values = df_[attr].dropna().value_counts().keys()
 
-    labels = ["All"]
-    groups = [pd.Series([True] * len(df))]
-
-    for val in unique:
-        labels.append(str(val))
-        groups.append({attr: [val]})
+    labels = ["All"] + [str(val) for val in unique_values]
+    groups = [pd.Series([True] * len(df_))] + [(df_[attr] == val) for val in unique_values]
 
     if separate:
         n = len(groups)
@@ -230,15 +229,12 @@ def attr_distr_plot(
 
         for i, (group, title) in enumerate(zip(groups, labels)):
             fig.add_subplot(r, c, i + 1)
-            distr_plot(df, target_attr, [group], distr_type=distr_type, legend=False, **kwargs)
+            distr_plot(df_, target_attr, [group], distr_type=distr_type, legend=False, **kwargs)
             plt.title(title)
 
     else:
-        distr_plot(df, target_attr, groups, distr_type=distr_type, legend=False, labels=labels, **kwargs)
-        plt.title(origin_attr)
-
-    if binned_attr in df.columns:
-        df.drop(columns=[binned_attr])
+        distr_plot(df_, target_attr, groups, distr_type=distr_type, legend=False, labels=labels, **kwargs)
+        plt.title(attr)
 
 
 def mult_distr_plot(
