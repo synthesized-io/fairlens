@@ -17,15 +17,15 @@ First we will import the required packages, load the compas dataset, and define 
   group2 = {"Ethnicity": ["Caucasian"]}
 
 
-Now we can use :code:`distr_pair_plot` to visualize the distributions of these groups.
+Now we can use :code:`distr_plot` to visualize the distributions of these groups.
 
 .. ipython:: python
 
   import matplotlib.pyplot as plt
-  from fairlens.bias.viz import distr_pair_plot
+  from fairlens.bias.viz import distr_plot
 
-  @savefig distr_pair_plot.png
-  distr_pair_plot(df, target_attr, group1, group2)
+  @savefig distr_plot.png
+  distr_plot(df, target_attr, [group1, group2])
 
   @verbatim
   plt.show()

@@ -8,7 +8,6 @@ import seaborn as sns
 from matplotlib.figure import Figure
 
 from . import utils
-from .metrics import auto_distance, stat_distance
 
 sns.reset_defaults()
 sns.set_style("darkgrid")
@@ -16,70 +15,14 @@ sns.set(font="Verdana")
 sns.set_context("paper", font_scale=0.8)
 
 
-def distr_pair_plot(
-    df: pd.DataFrame,
-    target_attr: str,
-    group1: Union[Mapping[str, List[Any]], pd.Series],
-    group2: Union[Mapping[str, List[Any]], pd.Series],
-    distr_type: Optional[str] = None,
-    show_curve: bool = True,
-    show_metric: bool = True,
-    cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
-    labels: Optional[Sequence[str]] = None,
-    **kwargs,
-):
-    """Plot the distribution of the 2 groups with respect to the target attribute.
-
-    Args:
-        df (pd.DataFrame):
-            The input dataframe.
-        target_attr (str):
-            The target attribute.
-        group1 (Union[Mapping[str, List[Any]], pd.Series]):
-            First group of interest. Each group can be a mapping / dict from attribute to value or
-            a predicate itself, i.e. pandas series consisting of bools which can be used as a predicate
-            to index a subgroup from the dataframe.
-        group2 (Union[Mapping[str, List[Any]], pd.Series]):
-            Second group of interest. Each group can be a mapping / dict from attribute to value or
-            a predicate itself, i.e. pandas series consisting of bools which can be used as a predicate
-            to index a subgroup from the dataframe.
-        distr_type (Optional[str]):
-            The type of distribution of the target attribute. Can be "categorical" or "continuous".
-            If None the type of distribution is inferred based on the data in the column.
-            Defaults to None.
-        show_curve (bool, optional):
-            Shows a KDE if True. Defaults to True.
-        show_metric (bool, optional):
-            Show suitable metric if True. Defaults to False.
-        cmap (Optional[Sequence[Tuple[float, float, float]]], optional):
-            A sequence of RGB tuples used to colour the histograms. If None seaborn's default pallete
-            will be used. Defaults to None.
-        labels (Optional[Sequence[str]], optional):
-            A list of labels for each of the groups which will be used for the legend.
-        **kwargs:
-            Additional keyword arguments passed to seaborn.histplot().
-
-    Examples:
-        >>> df = pd.read_csv("datasets/compas.csv")
-        >>> distr_pair_plot(df, "RawScore", {"Ethnicity": ["African-American"]}, {"Ethnicity": ["Caucasian"]})
-        >>> plt.show()
-    """
-
-    distr_plot(df, target_attr, [group1, group2], distr_type, show_curve, cmap, **kwargs)
-
-    if show_metric:
-        metric = auto_distance(df[target_attr])
-        mode = metric.get_id()
-        distance, p_value = stat_distance(df, target_attr, group1, group2, mode=mode, p_value=True)
-        plt.xlabel(f"{mode}={distance: .3g}, p-value={p_value: .3g}")
-
-
 def distr_plot(
     df: pd.DataFrame,
     target_attr: str,
     groups: Sequence[Union[Mapping[str, List[Any]], pd.Series]],
     distr_type: Optional[str] = None,
+    show_hist: bool = True,
     show_curve: bool = True,
+    normalize: bool = False,
     cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
     labels: Optional[Sequence[str]] = None,
     **kwargs,
@@ -97,11 +40,15 @@ def distr_plot(
             to index a subgroup from the dataframe.
             Examples: {"Sex": ["Male"]}, df["Sex"] == "Female"
         distr_type (Optional[str]):
-            The type of distribution of the target attribute. Can be "categorical" or "continuous".
-            If None the type of distribution is inferred based on the data in the column.
-            Defaults to None.
+            The type of distribution of the target attribute. Can take values from
+            ["categorical", "continuous", "binary", "datetime"]. If None, the type of
+            distribution is inferred based on the data in the column. Defaults to None.
+        show_curve (bool, optional):
+            Shows the histogram if True. Defaults to True.
         show_curve (bool, optional):
             Shows a KDE if True. Defaults to True.
+        normalize (bool, optional):
+            Normalizes the counts so the sum of the bar heights is 1. Defaults to False.
         cmap (Optional[Sequence[Tuple[float, float, float]]], optional):
             A sequence of RGB tuples used to colour the histograms. If None seaborn's default pallete
             will be used. Defaults to None.
@@ -123,28 +70,44 @@ def distr_plot(
 
     palette = itertools.cycle(sns.color_palette("deep") if cmap is None else cmap)
 
+    column = utils.infer_dtype(df[target_attr])
+
+    if distr_type is None:
+        distr_type = utils.infer_distr_type(column).value
+
+    if "color" in kwargs:
+        raise ValueError("Colors cannot be passed directly as kwargs. Use the cmap argument instead")
+
     if "kde" in kwargs:
         show_curve = kwargs.pop("kde")
 
-    col = utils.infer_dtype(df[target_attr])
-    is_continuous = (
-        distr_type == "continuous" if distr_type is not None else utils.infer_distr_type(col).is_continuous()
-    )
-    is_datetime = col.dtype == "datetime64[ns]"
+    if "shrink" in kwargs:
+        shrink = kwargs.pop("shrink")
+    elif show_hist:
+        shrink = 1
+    else:
+        shrink = 0
+
+    if "stat" in kwargs:
+        stat = kwargs.pop("stat")
+    elif normalize:
+        stat = "probability"
+    else:
+        stat = "count"
 
     if "bins" in kwargs:
         bins = kwargs.pop("bins")
-    elif is_datetime:
-        bins = utils.fd_opt_bins(col)  # TODO: Look at seaborn log scaling in more detail
-    elif is_continuous:
+    elif distr_type == "datetime64[ns]":
+        bins = utils.fd_opt_bins(column)  # TODO: Look at seaborn log scaling in more detail
+    elif distr_type == "continuous":
         _, bins = utils.zipped_hist((df[target_attr],), ret_bins=True, distr_type=distr_type)
-    elif col.dtype == "int64":
-        bins = sorted(col.unique())
+    elif column.dtype == "int64":
+        bins = sorted(column.unique())
     else:
         bins = "auto"
 
     for pred in preds:
-        sns.histplot(col[pred], bins=bins, color=next(palette), kde=show_curve, **kwargs)
+        sns.histplot(column[pred], bins=bins, color=next(palette), kde=show_curve, shrink=shrink, stat=stat, **kwargs)
 
     if labels is not None:
         plt.legend(labels)
@@ -164,7 +127,7 @@ def attr_distr_plot(
     max_width: int = 3,
     **kwargs,
 ):
-    """Plot the pdf of the target attribute with respect to all the unique values in the column `attr`.
+    """Plot the distribution of the target attribute with respect to all the unique values in the column `attr`.
 
     Args:
         df (pd.DataFrame):
@@ -173,10 +136,10 @@ def attr_distr_plot(
             The target attribute.
         attr (str):
             The attribute whose values' distributions are to be plotted.
-        distr_type (Optional[str], optional):
-            The type of distribution of the target attribute. Can be "categorical" or "continuous".
-            If None the type of distribution is inferred based on the data in the column.
-            Defaults to None.
+        distr_type (Optional[str]):
+            The type of distribution of the target attribute. Can take values from
+            ["categorical", "continuous", "binary", "datetime"]. If None, the type of
+            distribution is inferred based on the data in the column. Defaults to None.
         attr_distr_type (Optional[str], optional):
             The type of distribution of attr. Can be "categorical" or "continuous".
             If None the type of distribution is inferred based on the data in the column.
@@ -189,9 +152,8 @@ def attr_distr_plot(
             A matplotlib figure to plot on if `separate` is True. Defaults to matplotlib.pyplot.figure().
         max_width (int, optional):
             The maximum amount of figures in a row if `separate` is True. Defaults to 3.
-
         **kwargs:
-            Additional keyword arguments passed to seaborn.histplot().
+            Additional keyword arguments passed to distr_plot().
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
@@ -199,23 +161,29 @@ def attr_distr_plot(
         >>> plt.show()
     """
 
+    if target_attr == attr:
+        raise ValueError("'target_attr' and 'attr' cannot be the same.")
+
     df_ = df[[attr, target_attr]].copy()
 
-    inferred_col = utils.infer_dtype(df_[attr])
+    col = utils.infer_dtype(df_[attr])
 
-    # Bin continuous data
-    if attr_distr_type == "continuous" or utils.infer_distr_type(inferred_col).is_continuous():
+    if attr_distr_type is None:
+        attr_distr_type = utils.infer_distr_type(col).value
+
+    # Bin data
+    if attr_distr_type == "continuous":
 
         def iv_to_str(iv: pd.Interval) -> str:
             return "[" + "{:.2f}".format(iv.left) + ", " + "{:.2f}".format(iv.right) + "]"
 
-        n_bins = min(max_bins, utils.fd_opt_bins(df_[attr]))
-        df_.loc[:, attr] = utils.bin(df_[attr], n_bins=n_bins, quantile_based=True).apply(iv_to_str)
+        quantiles = min(max_bins, utils.fd_opt_bins(df_[attr]))
+        df_.loc[:, attr] = pd.qcut(df_[attr], quantiles).apply(iv_to_str)
 
-    # Bin dates differently
-    if inferred_col.dtype == "datetime64[ns]":
-        df_.loc[:, attr] = utils.quantize_date(inferred_col)
+    elif attr_distr_type == "datetime":
+        df_.loc[:, attr] = utils.quantize_date(col)
 
+    # Values ordered by counts in order for overlay to work well.
     unique_values = df_[attr].dropna().value_counts().keys()
 
     labels = ["All"] + [str(val) for val in unique_values]
@@ -224,12 +192,12 @@ def attr_distr_plot(
     if separate:
         n = len(groups)
         r = ceil(n / max_width)
-        c = min(n, 3)
-        fig = figure or plt.figure(figsize=(6 * c, 5 * r))
+        c = min(n, max_width)
+        fig = figure or plt.figure(figsize=(6 * c, 4 * r))
 
         for i, (group, title) in enumerate(zip(groups, labels)):
             fig.add_subplot(r, c, i + 1)
-            distr_plot(df_, target_attr, [group], distr_type=distr_type, legend=False, **kwargs)
+            distr_plot(df_, target_attr, [group], distr_type=distr_type, **kwargs)
             plt.title(title)
 
     else:
@@ -260,7 +228,7 @@ def mult_distr_plot(
         max_width (int, optional):
             The maximum amount of figures in a row. Defaults to 3.
         **kwargs:
-            Additional keywords passed down to seaborn.histplot().
+            Additional keywords passed down to attr_distr_plot().
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")

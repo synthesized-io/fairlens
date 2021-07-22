@@ -9,9 +9,10 @@ import pandas as pd
 class DistrType(Enum):
     """Indicates the type distribution of data in a series."""
 
-    Continuous = "Continuous"
-    Binary = "Binary"
-    Categorical = "Categorical"
+    Continuous = "continuous"
+    Binary = "binary"
+    Categorical = "categorical"
+    Datetime = "datetime"
 
     def is_continuous(self):
         return self == DistrType.Continuous
@@ -21,6 +22,9 @@ class DistrType(Enum):
 
     def is_categorical(self):
         return self == DistrType.Categorical
+
+    def is_datetime(self):
+        return self == DistrType.Datetime
 
 
 def zipped_hist(
@@ -87,8 +91,7 @@ def bin(
     n_bins: Optional[int] = None,
     remove_outliers: Optional[float] = 0.1,
     quantile_based: bool = False,
-    mean_bins=False,
-    ret_bins=False,
+    bin_centers=False,
     **kwargs,
 ) -> pd.Series:
     """Bin continous values into discrete bins.
@@ -103,10 +106,8 @@ def bin(
             If `None`, outliers are not removed. Defaults to 0.1.
         quantile_based (bool, optional):
             Whether the bin computation is quantile based. Defaults to False.
-        mean_bins (bool, optional):
+        bin_centers (bool, optional):
             Return the mean of the intervals instead of the intervals themselves. Defaults to False.
-        ret_bins (bool, optional):
-            Return the bins if True. Defaults to False.
         **kwargs:
             Key word arguments for pd.cut or pd.qcut.
 
@@ -143,11 +144,8 @@ def bin(
 
     binned = pd.Series(pd.cut(column, bins=bins, include_lowest=True, **kwargs))
 
-    if mean_bins:
+    if bin_centers:
         binned = binned.apply(lambda i: i.mid)
-
-    if ret_bins:
-        return binned, bins
 
     return binned
 
@@ -265,7 +263,10 @@ def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: i
     n_rows = len(col)
     dtype = col.dtype
 
-    if n_unique > max(min_num_unique, ctl_mult * np.log(n_rows)) and dtype in ["float64", "int64"]:
+    if dtype == "datetime64[ns]":
+        return DistrType.Datetime
+
+    elif n_unique > max(min_num_unique, ctl_mult * np.log(n_rows)) and dtype in ["float64", "int64"]:
         return DistrType.Continuous
 
     elif n_unique == 2 and np.isin(unique, [0, 1]).all():

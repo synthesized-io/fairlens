@@ -1,12 +1,8 @@
 import pandas as pd
 
-from fairlens.bias.viz import attr_distr_plot, distr_pair_plot, distr_plot, mult_distr_plot
+from fairlens.bias.viz import attr_distr_plot, distr_plot, mult_distr_plot
 
 dfc = pd.read_csv("datasets/compas.csv")
-
-
-def test_distr_pair_plot():
-    distr_pair_plot(dfc, "RawScore", {"Sex": ["Male"]}, {"Sex": ["Female"]})
 
 
 def test_distr_plot():
