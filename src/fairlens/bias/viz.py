@@ -168,12 +168,10 @@ def attr_distr_plot(
 
     # Bin data
     if attr_distr_type == "continuous":
-
-        def iv_to_str(iv: pd.Interval) -> str:
-            return "[" + "{:.2f}".format(iv.left) + ", " + "{:.2f}".format(iv.right) + "]"
-
         quantiles = min(max_bins, utils.fd_opt_bins(df_[attr]))
-        df_.loc[:, attr] = pd.qcut(df_[attr], quantiles).apply(iv_to_str)
+        df_.loc[:, attr] = pd.qcut(df_[attr], quantiles).apply(
+            lambda iv: "[" + "{:.2f}".format(iv.left) + ", " + "{:.2f}".format(iv.right) + "]"
+        )
 
     elif attr_distr_type == "datetime":
         df_.loc[:, attr] = utils.quantize_date(col)
