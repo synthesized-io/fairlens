@@ -68,15 +68,13 @@ def distr_plot(
 
     preds = utils.get_predicates_mult(df, groups)
 
-    palette = itertools.cycle(sns.color_palette("deep") if cmap is None else cmap)
+    cmap = cmap or sns.color_palette("deep")
+    palette = itertools.cycle(cmap)
 
     column = utils.infer_dtype(df[target_attr])
 
     if distr_type is None:
         distr_type = utils.infer_distr_type(column).value
-
-    if "color" in kwargs:
-        raise ValueError("Colors cannot be passed directly as kwargs. Use the cmap argument instead")
 
     kde = show_curve
     if "kde" in kwargs:
@@ -92,7 +90,7 @@ def distr_plot(
 
     if "bins" in kwargs:
         bins = kwargs.pop("bins")
-    elif distr_type == "datetime64[ns]":
+    elif distr_type == "datetime":
         bins = utils.fd_opt_bins(column)  # TODO: Look at seaborn log scaling in more detail
     elif distr_type == "continuous":
         _, bins = utils.zipped_hist((df[target_attr],), ret_bins=True, distr_type=distr_type)
