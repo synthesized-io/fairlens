@@ -78,22 +78,17 @@ def distr_plot(
     if "color" in kwargs:
         raise ValueError("Colors cannot be passed directly as kwargs. Use the cmap argument instead")
 
+    kde = show_curve
     if "kde" in kwargs:
-        show_curve = kwargs.pop("kde")
+        kde = kwargs.pop("kde")
 
+    shrink = 1 if show_hist else 0
     if "shrink" in kwargs:
         shrink = kwargs.pop("shrink")
-    elif show_hist:
-        shrink = 1
-    else:
-        shrink = 0
 
+    stat = "probability" if normalize else "count"
     if "stat" in kwargs:
         stat = kwargs.pop("stat")
-    elif normalize:
-        stat = "probability"
-    else:
-        stat = "count"
 
     if "bins" in kwargs:
         bins = kwargs.pop("bins")
@@ -107,7 +102,7 @@ def distr_plot(
         bins = "auto"
 
     for pred in preds:
-        sns.histplot(column[pred], bins=bins, color=next(palette), kde=show_curve, shrink=shrink, stat=stat, **kwargs)
+        sns.histplot(column[pred], bins=bins, color=next(palette), kde=kde, shrink=shrink, stat=stat, **kwargs)
 
     if labels is not None:
         plt.legend(labels)
