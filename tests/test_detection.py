@@ -12,6 +12,7 @@ ENGB_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/con
 df_adult = pd.read_csv("datasets/adult.csv")
 df_compas = pd.read_csv("datasets/compas.csv")
 df_german = pd.read_csv("datasets/german_credit_data.csv")
+df_titanic = pd.read_csv("datasets/titanic.csv")
 
 
 def test_detect_name():
@@ -162,6 +163,18 @@ def test_german_detect_deep():
     df_german_deep = df_german_deep.rename(columns={"Sex": "ABCD"})
     res = {"Age": "Age", "ABCD": "Gender"}
     assert dt.detect_names_df(df_german_deep, deep_search=True) == res
+
+
+def test_titanic_detect_shallow():
+    res = {"Sex": "Gender", "Age": "Age"}
+    assert dt.detect_names_df(df_titanic) == res
+
+
+def test_titanic_detect_deep():
+    df_titanic_deep = df_titanic.copy()
+    df_titanic_deep = df_titanic_deep.rename(columns={"Sex": "RandomColumn"})
+    res = {"Age": "Age", "RandomColumn": "Gender"}
+    assert dt.detect_names_df(df_titanic_deep, deep_search=True) == res
 
 
 def test_correlation():
