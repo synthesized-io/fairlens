@@ -15,6 +15,9 @@ reducing the problems of their presence in datasets or machine learning models.
 Some of them involve data preprocessing, however those solutions might sometimes be problematic
 due to hidden correlations present between sensitive groups and columns that seem inoffensive.
 
+Algorithmic Fairness
+^^^^^^^^^^^^^^^^^^^^
+
 However, the great majority of solutions for ensuring fairness involve algorithmic fairness, which
 presumes the existence of a predictor or some type of machine learning model. Even more, it is a
 requirement for applying methods that address bias issues through the need of actual predictions,
