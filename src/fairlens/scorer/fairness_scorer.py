@@ -23,6 +23,7 @@ class FairnessScorer:
         detect_hidden: bool = False,
     ):
         """Fairness Scorer constructor
+
         Args:
             df (pd.DataFrame):
                 Input DataFrame to be scored.
@@ -65,6 +66,7 @@ class FairnessScorer:
     ) -> Tuple[float, pd.DataFrame]:
         """Returns an overall bias score and dataframe consisting of the biased sub-groups by analyzing the
         difference in distribution between sensitive-subgroups and the data.
+
         Args:
             mode (str, optional):
                 Choose a different metric to use. Defaults to automatically chosen metric depending on
@@ -133,6 +135,7 @@ class FairnessScorer:
     ) -> pd.DataFrame:
         """Calculates the distance between the distribution of all the unique groups of values and the
         distribution without the respective value.
+
         Args:
             sensitive_attrs (Sequence[str]):
                 The list of sensitive attributes to consider.
@@ -141,6 +144,7 @@ class FairnessScorer:
                 the distribution of the target variable.
             p_value (bool, optional):
                 Whether or not to compute a p-value. Defaults to False.
+
         Returns:
             pd.DataFrame:
                 A dataframe consisting of the groups and their distances to the remaining dataset sorted
