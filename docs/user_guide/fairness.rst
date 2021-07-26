@@ -1,14 +1,11 @@
-Overview
-========
-
-Fairlens is an open-source Python package for automatically discovering hidden biases and measuring
-fairness in datasets. The package makes use of a wide range of customisable statistical distance and
-correlation metrics that are used to quickly identify bias, produce meaningful diagrams and measure
-fairness across a configurable range of sensitive and legally protected categories such as ethnicity,
-nationality or gender.
+Fairness and Bias
+=================
 
 Literature Review
 -----------------
+
+There is a large amount of literature on fairness and bias, in the context of data science and
+machine learning, in academia.
 
 There is a large number of research papers covering bias and fairness in AI and methods of
 reducing the problems of their presence in datasets or machine learning models.

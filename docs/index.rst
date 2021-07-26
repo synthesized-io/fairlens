@@ -2,9 +2,14 @@
 FairLens
 ========
 
-FairLens is an open source Python library for automatically discovering bias and measuring fairness in data.
-The package can be used to quickly identify bias, and provides multiple metrics to measure fairness across a
-range of sensitive and legally protected characteristics such as age, race and sex.
+FairLens is a library that can be used to identify and measure various kinds of biases in structural data.
+This package is data centric i.e. most modules are intended to work purely with datasets.
+In essence, FairLens can be used to create reports on the quality of a dataset in the
+context of fairness. With legislation around the use of legally protected attributes
+becoming more stringent, this package can help identify potential red flags in datasets
+before models are trained on them. While FairLens was built with data centric fairness in mind,
+users may find some metrics useful for model centric approaches involving altered
+loss functions or regularization [1, 2].
 
 .. raw:: html
 

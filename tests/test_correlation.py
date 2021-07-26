@@ -1,7 +1,7 @@
 import pandas as pd
 
-from fairlens.sensitive import correlation as corr
 from fairlens.metrics.correlation import distance_cn_correlation, distance_nn_correlation
+from fairlens.sensitive import correlation as corr
 
 
 def test_correlation():

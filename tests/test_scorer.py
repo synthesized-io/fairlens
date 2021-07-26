@@ -16,17 +16,10 @@ def test_fairness_scorer_runs():
 
 def test_sensitive_attr_detection():
     fscorer = FairnessScorer(dfc, "RawScore")
-    assert sorted(fscorer.sensitive_attrs) == ["DateOfBirth", "Ethnicity", "Language", "MaritalStatus", "Sex"]
+    assert fscorer.sensitive_attrs == ["DateOfBirth", "Ethnicity", "Language", "MaritalStatus", "Sex"]
 
     fscorer = FairnessScorer(dfc, "RawScore", ["Arbitrary"], detect_sensitive=True)
-    assert sorted(fscorer.sensitive_attrs) == [
-        "Arbitrary",
-        "DateOfBirth",
-        "Ethnicity",
-        "Language",
-        "MaritalStatus",
-        "Sex",
-    ]
+    assert fscorer.sensitive_attrs == ["Arbitrary", "DateOfBirth", "Ethnicity", "Language", "MaritalStatus", "Sex"]
 
 
 def test_distribution_score():

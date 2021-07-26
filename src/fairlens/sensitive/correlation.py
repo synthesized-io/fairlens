@@ -1,3 +1,7 @@
+"""
+Find correlations between protected columns and non-protected columns.
+"""
+
 import pathlib
 from typing import Callable, Dict, List, Optional, Tuple, Union
 

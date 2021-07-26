@@ -1,3 +1,7 @@
+"""
+Automatically generate a fairness report for a dataset.
+"""
+
 import logging
 from itertools import combinations
 from typing import Optional, Sequence, Tuple
@@ -52,7 +56,7 @@ class FairnessScorer:
 
         self.df = df
         self.target_attr = target_attr
-        self.sensitive_attrs = list(sensitive_attrs)
+        self.sensitive_attrs = sorted(list(sensitive_attrs))
 
     def distribution_score(
         self,
