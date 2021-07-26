@@ -244,7 +244,6 @@ def mult_distr_plot(
     attrs: Sequence[str],
     figsize: Optional[Tuple[int, int]] = None,
     max_width: int = 3,
-    ax: Optional[Axes] = None,
     **kwargs,
 ) -> Figure:
     """Plot the pdf of the all values for each of the unique values in the column `attr`
@@ -261,8 +260,6 @@ def mult_distr_plot(
             The size of each figure if `separate` is True. Defaults to (6, 4).
         max_width (int, optional):
             The maximum amount of figures in a row if `separate` is True. Defaults to 3.
-        ax (Optional[matplotlib.Axes], optional):
-            An axis to plot the figure on. Defaults to plt.gca().
         **kwargs:
             Additional keywords passed down to attr_distr_plot().
 
@@ -275,9 +272,6 @@ def mult_distr_plot(
         >>> mult_distr_plot(df, "RawScore", ['Sex', 'MaritalStatus', 'Ethnicity', 'Language', 'DateOfBirth'])
         >>> plt.show()
     """
-
-    if ax is None:
-        ax = plt.gca()
 
     if figsize is None:
         figsize = 6, 4
