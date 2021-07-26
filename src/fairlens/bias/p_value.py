@@ -248,5 +248,6 @@ def resampling_interval(t_obs: float, t_distribution: pd.Series, cl: float = 0.9
     """
 
     percentiles = 100 * (1 - cl) / 2, 100 * (1 - (1 - cl) / 2)
-    d1, d2 = np.percentile(t_distribution, percentiles)
-    return 2 * t_obs - d2, 2 * t_obs - d1
+    delta = t_distribution - t_obs
+    d1, d2 = np.percentile(delta, percentiles)
+    return t_obs + d1, t_obs + d2
