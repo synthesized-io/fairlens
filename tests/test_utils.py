@@ -22,6 +22,36 @@ def test_zipped_hist():
     assert (hist == _hist / _hist.sum()).all() and (bin_edges == _bin_edges).all()
 
 
+def test_bin():
+    columns = ["A", "B", "C"]
+
+    df = pd.DataFrame(np.array([np.arange(101) * (i + 1) for i in range(3)]).T, index=range(101), columns=columns)
+    assert df.loc[:, "A"].nunique() > 4
+
+    a_binned = utils.bin(df["A"], 4, duplicates="drop", remove_outliers=0.1)
+    assert a_binned.nunique() == 4
+
+
+def test_quantize_dates():
+    col = pd.Series(pd.date_range(start="1/1/2018", periods=5))
+    assert utils.quantize_date(col).equals(pd.Series(["Day 1", "Day 2", "Day 3", "Day 4", "Day 5"]))
+
+    col = pd.Series(pd.to_datetime(["1/1/1999", "1/1/2020"]))
+    assert utils.quantize_date(col).equals(pd.Series(["1990-2000", "2020-2030"]))
+
+    col = pd.Series(pd.date_range(start="1/1/2018", periods=70))
+    assert (utils.quantize_date(col).unique() == ["Jan", "Feb", "Mar"]).all()
+
+    col = pd.Series(pd.date_range(start="1/1/2018", periods=500))
+    assert (utils.quantize_date(col).unique() == [2018, 2019]).all()
+
+    col = pd.Series(pd.date_range(start="1/1/2018", periods=2000))
+    assert (utils.quantize_date(col).unique() == [2018, 2019, 2020, 2021, 2022, 2023]).all()
+
+    col = pd.Series(pd.date_range(start="1/1/2018", periods=7000))
+    assert (utils.quantize_date(col).unique() == ["2010-2020", "2020-2030", "2030-2040"]).all()
+
+
 def test_infer_dtype():
     cols = ["A", "B", "C"]
     df = pd.DataFrame(np.array([np.arange(11) * (i + 1) for i in range(len(cols))]).T, index=range(11), columns=cols)
@@ -58,11 +88,15 @@ def test_get_predicates_mult():
     assert df[preds[1]]["C"].nunique() == 0
 
     preds = utils.get_predicates_mult(
-        dfc, [{"Ethnicity": ["African-American", "African-Am"], "Sex": ["Male"]}, {"Ethnicity": ["Caucasian"]}]
+        dfc, [{"Ethnicity": ["African-American"], "Sex": ["Male"]}, {"Ethnicity": ["Caucasian"]}]
     )
     pred1, pred2 = preds[0], preds[1]
 
-    assert dfc[pred1].equals(
-        dfc[((dfc["Ethnicity"] == "African-American") | (dfc["Ethnicity"] == "African-Am")) & (dfc["Sex"] == "Male")]
-    )
+    assert dfc[pred1].equals(dfc[(dfc["Ethnicity"] == "African-American") & (dfc["Sex"] == "Male")])
     assert dfc[pred2].equals(dfc[dfc["Ethnicity"] == "Caucasian"])
+
+    preds = utils.get_predicates_mult(dfc, [{"Sex": ["Male"]}, dfc["Ethnicity"] == "African-American"])
+    pred1, pred2 = preds[0], preds[1]
+
+    assert dfc[pred1].equals(dfc[dfc["Sex"] == "Male"])
+    assert dfc[pred2].equals(dfc[dfc["Ethnicity"] == "African-American"])
