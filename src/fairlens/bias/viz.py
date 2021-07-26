@@ -5,14 +5,25 @@ from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 import matplotlib.pyplot as plt
 import pandas as pd
 import seaborn as sns
+from matplotlib.axes import Axes
 from matplotlib.figure import Figure
 
 from . import utils
 
-sns.reset_defaults()
-sns.set_style("darkgrid")
-sns.set(font="Verdana")
-sns.set_context("paper", font_scale=0.8)
+
+def use_style():
+    """Set the default seaborn style to a predefined style that works well with the package."""
+
+    sns.reset_defaults()
+    sns.set_style("darkgrid")
+    sns.set(font="Verdana")
+    sns.set_context("paper")
+
+
+def reset_style():
+    """Restore the seaborn style to its defaults."""
+
+    sns.reset_defaults()
 
 
 def distr_plot(
@@ -25,8 +36,9 @@ def distr_plot(
     normalize: bool = False,
     cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
     labels: Optional[Sequence[str]] = None,
+    ax: Optional[Axes] = None,
     **kwargs,
-):
+) -> Axes:
     """Plot the distribution of the groups with respect to the target attribute.
 
     Args:
@@ -54,8 +66,14 @@ def distr_plot(
             will be used. Defaults to None.
         labels (Optional[Sequence[str]], optional):
             A list of labels for each of the groups which will be used for the legend.
+        ax (Optional[matplotlib.axes.Axes], optional):
+            An axis to plot the figure on. Defaults to plt.gca().
         **kwargs:
             Additional keyword arguments passed to seaborn.histplot().
+
+    Returns:
+        matplotlib.axes.Axes:
+            The matplotlib axis containing the plot.
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
@@ -65,6 +83,9 @@ def distr_plot(
         >>> distr_plot(df, "RawScore", [g1, g2, g3])
         >>> plt.show()
     """
+
+    if ax is None:
+        ax = plt.gca()
 
     preds = utils.get_predicates_mult(df, groups)
 
@@ -100,12 +121,14 @@ def distr_plot(
         bins = "auto"
 
     for pred in preds:
-        sns.histplot(column[pred], bins=bins, color=next(palette), kde=kde, shrink=shrink, stat=stat, **kwargs)
+        sns.histplot(column[pred], bins=bins, color=next(palette), kde=kde, shrink=shrink, stat=stat, ax=ax, **kwargs)
 
     if labels is not None:
         plt.legend(labels)
 
     plt.xlabel(target_attr)
+
+    return ax
 
 
 def attr_distr_plot(
@@ -116,10 +139,11 @@ def attr_distr_plot(
     attr_distr_type: Optional[str] = None,
     max_bins=10,
     separate: bool = False,
-    figure: Optional[Figure] = None,
+    figsize: Optional[Tuple[int, int]] = None,
     max_width: int = 3,
+    ax: Optional[Axes] = None,
     **kwargs,
-):
+) -> Union[Axes, Figure]:
     """Plot the distribution of the target attribute with respect to all the unique values in the column `attr`.
 
     Args:
@@ -141,12 +165,19 @@ def attr_distr_plot(
             The maximum amount of bins to use for continuous data. Defaults to 10.
         separate (bool, optional):
             Separate into multiple plots (subplot). Defaults to False.
-        figure (Optional[Figure], optional):
-            A matplotlib figure to plot on if `separate` is True. Defaults to matplotlib.pyplot.figure().
+        figsize (Optional[Tuple[int, int]], optional):
+            The size of each figure if `separate` is True. Defaults to (6, 4).
         max_width (int, optional):
             The maximum amount of figures in a row if `separate` is True. Defaults to 3.
+        ax (Optional[matplotlib.Axes], optional):
+            An axis to plot the figure on. Defaults to plt.gca().
         **kwargs:
-            Additional keyword arguments passed to distr_plot().
+            Additional keyword arguments passed to distr_plot() or sns.histplot().
+
+    Returns:
+        Union[matplotlib.axes.Axes, matplotlib.figure.Figure]:
+            The matplotlib axes containing the plot if `separate` is False, otherwise the
+            matplotlib figure containing the set of plots.
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
@@ -181,29 +212,41 @@ def attr_distr_plot(
     groups = [pd.Series([True] * len(df_))] + [(df_[attr] == val) for val in unique_values]
 
     if separate:
+        if figsize is None:
+            figsize = 6, 5
+
         n = len(groups)
         r = ceil(n / max_width)
         c = min(n, max_width)
-        fig = figure or plt.figure(figsize=(6 * c, 4 * r))
+        fig = plt.figure(figsize=(figsize[0] * c, figsize[1] * r))
+        fig.tight_layout()
+        plt.subplots_adjust(hspace=0.3)
 
         for i, (group, title) in enumerate(zip(groups, labels)):
-            fig.add_subplot(r, c, i + 1)
-            distr_plot(df_, target_attr, [group], distr_type=distr_type, **kwargs)
+            ax_ = fig.add_subplot(r, c, i + 1)
+            distr_plot(df_, target_attr, [group], distr_type=distr_type, ax=ax_, **kwargs)
             plt.title(title)
 
-    else:
-        distr_plot(df_, target_attr, groups, distr_type=distr_type, legend=False, labels=labels, **kwargs)
-        plt.title(attr)
+        return fig
+
+    if ax is None:
+        ax = plt.gca()
+
+    distr_plot(df_, target_attr, groups, distr_type=distr_type, legend=False, labels=labels, ax=ax, **kwargs)
+    plt.title(attr)
+
+    return ax
 
 
 def mult_distr_plot(
     df: pd.DataFrame,
     target_attr: str,
     attrs: Sequence[str],
-    figure: Optional[Figure] = None,
+    figsize: Optional[Tuple[int, int]] = None,
     max_width: int = 3,
+    ax: Optional[Axes] = None,
     **kwargs,
-):
+) -> Figure:
     """Plot the pdf of the all values for each of the unique values in the column `attr`
     with respect to the target attribute.
 
@@ -214,12 +257,18 @@ def mult_distr_plot(
             The target attribute.
         attrs (Sequence[str]):
             The attributes whose value distributions are to be plotted.
-        figure (Optional[Figure], optional):
-            A matplotlib figure to plot on. Defaults to matplotlib.pyplot.figure().
+        figsize (Optional[Tuple[int, int]], optional):
+            The size of each figure if `separate` is True. Defaults to (6, 4).
         max_width (int, optional):
-            The maximum amount of figures in a row. Defaults to 3.
+            The maximum amount of figures in a row if `separate` is True. Defaults to 3.
+        ax (Optional[matplotlib.Axes], optional):
+            An axis to plot the figure on. Defaults to plt.gca().
         **kwargs:
             Additional keywords passed down to attr_distr_plot().
+
+    Returns:
+        matplotlib.figure.Figure:
+            A matplotlib figure containing the plots.
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
@@ -227,11 +276,21 @@ def mult_distr_plot(
         >>> plt.show()
     """
 
+    if ax is None:
+        ax = plt.gca()
+
+    if figsize is None:
+        figsize = 6, 4
+
     n = len(attrs)
     r = ceil(n / max_width)
     c = min(n, max_width)
-    fig = figure or plt.figure(figsize=(6 * c, 4 * r))
+    fig = plt.figure(figsize=(figsize[0] * c, figsize[1] * r))
+    fig.tight_layout()
+    plt.subplots_adjust(hspace=0.3)
 
     for i, attr in enumerate(attrs):
-        ax = fig.add_subplot(r, c, i + 1)
-        attr_distr_plot(df, target_attr, attr, ax=ax, **kwargs)
+        ax_ = fig.add_subplot(r, c, i + 1)
+        attr_distr_plot(df, target_attr, attr, ax=ax_, **kwargs)
+
+    return fig
