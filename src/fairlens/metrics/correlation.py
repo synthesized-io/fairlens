@@ -99,7 +99,7 @@ def kruskal_wallis_boolean(sr_a: pd.Series, sr_b: pd.Series, p_cutoff: float = 0
             The categorical series to analyze, used for grouping the numerical one.
         sr_b (pd.Series):
             The numerical series to analyze.
-        p_cutoff (float):   
+        p_cutoff (float):
             The maximum admitted p-value for the distributions to be considered independent.
 
     Returns:

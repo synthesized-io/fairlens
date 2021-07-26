@@ -2,13 +2,13 @@
 Collection of helper methods which can be used as to interface metrics.
 """
 
-from typing import Dict, List, Tuple, Type, Union, Callable, Optional
+from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
 
+from .correlation import cramers_v, kruskal_wallis, pearson
+from .distance import BinomialDistance, DistanceMetric, EarthMoversDistanceCategorical, KolmogorovSmirnovDistance
 from ..bias import utils
-from .distance import DistanceMetric, KolmogorovSmirnovDistance, EarthMoversDistanceCategorical, BinomialDistance
-from .correlation import pearson, cramers_v, kruskal_wallis
 
 
 def auto_distance(column: pd.Series) -> Type[DistanceMetric]:
@@ -128,7 +128,7 @@ def correlation_matrix(
     cat_num_metric: Callable[[pd.Series, pd.Series], float] = kruskal_wallis,
     cat_cat_metric: Callable[[pd.Series, pd.Series], float] = cramers_v,
     columns_x: Optional[List[str]] = None,
-    columns_y: Optional[List[str]] = None
+    columns_y: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """This function creates a correlation matrix out of a dataframe, using a correlation metric for each
     possible type of pair of series (i.e. numerical-numerical, categorical-numerical, categorical-categorical).
