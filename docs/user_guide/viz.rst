@@ -8,9 +8,12 @@ First we will import the required packages, load the compas dataset, and define 
 .. ipython:: python
 
   import pandas as pd
+  from fairlens.bias.viz import use_style
+
+  use_style()
 
   df = pd.read_csv("../datasets/compas.csv")
-  df
+  df.info()
 
   target_attr = "RawScore"
   group1 = {"Ethnicity": ["African-American"]}
