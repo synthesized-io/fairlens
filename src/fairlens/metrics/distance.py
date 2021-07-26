@@ -1,3 +1,7 @@
+"""
+Collection of metrics that measure the distance, or similarity, between two distributions.
+"""
+
 import inspect
 from abc import ABC, abstractmethod
 from typing import Dict, Optional, Type, Union
@@ -8,8 +12,8 @@ import pyemd
 from scipy.spatial.distance import jensenshannon
 from scipy.stats import entropy, kruskal, ks_2samp
 
-from fairlens.bias import p_value as pv
-from fairlens.bias import utils
+from ..bias import p_value as pv
+from ..bias import utils
 
 
 class DistanceMetric(ABC):

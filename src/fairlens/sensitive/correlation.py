@@ -3,8 +3,8 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
-from fairlens.metrics import correlation_metrics as cm
-from fairlens.sensitive import detection as dt
+from ..metrics import correlation as cm
+from ..sensitive import detection as dt
 
 
 def find_sensitive_correlations(

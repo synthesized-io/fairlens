@@ -1,3 +1,7 @@
+"""
+Collection of metrics that measure the correlation between two distributions.
+"""
+
 import warnings
 
 import dcor as dcor
@@ -11,8 +15,10 @@ def cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
     correlations, used in heatmap generation.
 
     Args:
-        sr_a (pd.Series): First categorical series to analyze.
-        sr_b (pd.Series): Second categorical series to analyze.
+        sr_a (pd.Series):
+            First categorical series to analyze.
+        sr_b (pd.Series):
+            Second categorical series to analyze.
 
     Returns:
         float: Value of the statistic.
@@ -59,12 +65,15 @@ def kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
     that a categorical and numerical series are not correlated, used in heatmap generation.
 
     Args:
-        sr_a (pd.Series): The categorical series to analyze, used for grouping the numerical one.
-        sr_b (pd.Series): The numerical series to analyze.
+        sr_a (pd.Series):
+            The categorical series to analyze, used for grouping the numerical one.
+        sr_b (pd.Series):
+            The numerical series to analyze.
 
     Returns:
-        float: The correlation coefficient, calculating by subtracting the p-value from 1, as the
-        p-value is the probability that the two columns are not correlated.
+        float:
+            The correlation coefficient, calculating by subtracting the p-value from 1, as the
+            p-value is the probability that the two columns are not correlated.
     """
 
     sr_a = sr_a.astype("category").cat.codes
@@ -86,9 +95,12 @@ def kruskal_wallis_boolean(sr_a: pd.Series, sr_b: pd.Series, p_cutoff: float = 0
     by the categorical series come from the same distribution. Used for proxy detection.
 
     Args:
-        sr_a (pd.Series): The categorical series to analyze, used for grouping the numerical one.
-        sr_b (pd.Series): The numerical series to analyze.
-        p_cutoff (float): The maximum admitted p-value for the distributions to be considered independent.
+        sr_a (pd.Series):
+            The categorical series to analyze, used for grouping the numerical one.
+        sr_b (pd.Series):
+            The numerical series to analyze.
+        p_cutoff (float):   
+            The maximum admitted p-value for the distributions to be considered independent.
 
     Returns:
         bool: Bool value representing whether or not the two series are correlated.
@@ -115,11 +127,14 @@ def distance_nn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
     numerical-numerical column pairs.
 
     Args:
-        sr_a (pd.Series): First numerical series to analyze.
-        sr_b (pd.Series): Second numerical series to analyze.
+        sr_a (pd.Series):
+            First numerical series to analyze.
+        sr_b (pd.Series):
+            Second numerical series to analyze.
 
     Returns:
-        float: The correlation coefficient.
+        float:
+            The correlation coefficient.
     """
 
     warnings.filterwarnings(action="ignore", category=UserWarning)
@@ -137,11 +152,14 @@ def distance_cn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
     categorical-numerical column pairs.
 
     Args:
-        sr_a (pd.Series): The categorical series to analyze, used for grouping the numerical one.
-        sr_b (pd.Series): The numerical series to analyze.
+        sr_a (pd.Series):
+            The categorical series to analyze, used for grouping the numerical one.
+        sr_b (pd.Series):
+            The numerical series to analyze.
 
     Returns:
-        float: The correlation coefficient.
+        float:
+            The correlation coefficient.
     """
 
     sr_a = sr_a.astype("category").cat.codes

@@ -4,8 +4,8 @@ from typing import Optional, Sequence, Tuple
 
 import pandas as pd
 
-from ..bias import utils
-from ..bias.distance import stat_distance
+from . import utils
+from ..metrics.unified import stat_distance
 from ..sensitive.detection import detect_names_df
 
 logger = logging.getLogger(__name__)

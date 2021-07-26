@@ -1,17 +1,18 @@
 """
-Collection of Metrics that measure the distance, or similarity, between two datasets.
+Collection of helper methods which can be used as to interface metrics.
 """
-from typing import Dict, List, Tuple, Type, Union
+
+from typing import Dict, List, Tuple, Type, Union, Callable, Optional
 
 import pandas as pd
 
-import fairlens.metrics.distance_metrics as dist
+from ..bias import utils
+from .distance import DistanceMetric, KolmogorovSmirnovDistance, EarthMoversDistanceCategorical, BinomialDistance
+from .correlation import pearson, cramers_v, kruskal_wallis
 
-from . import utils
 
-
-def auto_distance(column: pd.Series) -> Type[dist.DistanceMetric]:
-    """Return the best statistical distance metric based on the distribution of the data.
+def auto_distance(column: pd.Series) -> Type[DistanceMetric]:
+    """Return a suitable statistical distance metric based on the distribution of the data.
 
     Args:
         column (pd.Series):
@@ -24,11 +25,11 @@ def auto_distance(column: pd.Series) -> Type[dist.DistanceMetric]:
 
     distr_type = utils.infer_distr_type(column)
     if distr_type.is_continuous():
-        return dist.KolmogorovSmirnovDistance
+        return KolmogorovSmirnovDistance
     elif distr_type.is_binary():
-        return dist.BinomialDistance
+        return BinomialDistance
 
-    return dist.EarthMoversDistanceCategorical
+    return EarthMoversDistanceCategorical
 
 
 def stat_distance(
@@ -103,10 +104,10 @@ def stat_distance(
     # Choose the distance metric
     if mode == "auto":
         dist_class = auto_distance(column)
-    elif mode in dist.DistanceMetric._class_dict:
-        dist_class = dist.DistanceMetric._class_dict[mode]
+    elif mode in DistanceMetric._class_dict:
+        dist_class = DistanceMetric._class_dict[mode]
     else:
-        raise ValueError(f"Invalid mode. Valid modes include:\n{dist.DistanceMetric._class_dict.keys()}")
+        raise ValueError(f"Invalid mode. Valid modes include:\n{DistanceMetric._class_dict.keys()}")
 
     metric = dist_class(**kwargs)
     d = metric(group1, group2)
@@ -119,3 +120,70 @@ def stat_distance(
         return (d, p)
 
     return (d,)
+
+
+def correlation_matrix(
+    df: pd.DataFrame,
+    num_num_metric: Callable[[pd.Series, pd.Series], float] = pearson,
+    cat_num_metric: Callable[[pd.Series, pd.Series], float] = kruskal_wallis,
+    cat_cat_metric: Callable[[pd.Series, pd.Series], float] = cramers_v,
+    columns_x: Optional[List[str]] = None,
+    columns_y: Optional[List[str]] = None
+) -> pd.DataFrame:
+    """This function creates a correlation matrix out of a dataframe, using a correlation metric for each
+    possible type of pair of series (i.e. numerical-numerical, categorical-numerical, categorical-categorical).
+
+    Args:
+        df (pd.DataFrame):
+            The dataframe that will be analyzed to produce correlation coefficients.
+        num_num_metric (Callable[[pd.Series, pd.Series], float], optional):
+            The correlation metric used for numerical-numerical series pairs. Defaults to Pearson's correlation
+            coefficient.
+        cat_num_metric (Callable[[pd.Series, pd.Series], float], optional):
+            The correlation metric used for categorical-numerical series pairs. Defaults to Kruskal-Wallis' H Test.
+        cat_cat_metric (Callable[[pd.Series, pd.Series], float], optional):
+            The correlation metric used for categorical-categorical series pairs. Defaults to corrected Cramer's V
+            statistic.
+
+    Returns:
+        pd.DataFrame:
+            The correlation matrix to be used in heatmap generation.
+    """
+
+    columns_x = columns_x or df.columns
+    columns_y = columns_y or df.columns
+
+    table: Dict[Tuple[str, str], float] = {}
+
+    series_list = list()
+    for col_y in columns_y:
+        coeffs = list()
+        y_type = utils.infer_distr_type(df[col_y])
+
+        for col_x in columns_x:
+            if col_y == col_x:
+                coeffs.append(1.0)
+                continue
+
+            if (col_x, col_y) in table:
+                coeffs.append(table[(col_x, col_y)])
+                continue
+
+            x_type = utils.infer_distr_type(df[col_x])
+            if y_type.is_continuous() and x_type.is_continuous():
+                coeffs.append(num_num_metric(df[col_y], df[col_x]))
+
+            elif y_type.is_continuous():
+                coeffs.append(cat_num_metric(df[col_x], df[col_y]))
+
+            elif x_type.is_continuous():
+                coeffs.append(cat_num_metric(df[col_y], df[col_x]))
+
+            else:
+                coeffs.append(cat_cat_metric(df[col_y], df[col_x]))
+
+            table[(col_y, col_x)] = coeffs[-1]
+
+        series_list.append(pd.Series(coeffs, index=columns_x, name=col_y))
+
+    return pd.concat(series_list, axis=1, keys=[series.name for series in series_list])

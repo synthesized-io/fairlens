@@ -15,7 +15,7 @@ Let's import this method and load in the compas dataset.
 .. ipython:: python
 
   import pandas as pd
-  from fairlens.bias.distance import stat_distance
+  from fairlens.metrics.unified import stat_distance
 
   df = pd.read_csv("../datasets/compas.csv")
   df
@@ -53,12 +53,12 @@ be used to pass keyword arguments such as :code:`bin_edges` to categorical dista
   _, bin_edges = np.histogram(df[target_attr], bins="auto")
   stat_distance(df, target_attr, group1, group2, mode="emd_categorical", bin_edges=bin_edges)
 
-The distance metrics inside :code:`fairlens.bias.metrics` are also available for direct usage.
+The distance metrics inside :code:`fairlens.metrics` are also available for direct usage.
 
 .. ipython:: python
   :verbatim:
 
-  from fairlens.bias.metrics import (
+  from fairlens.metrics.distance import (
       EarthMoversDistanceCategorical as EMD,
       KolmogorovSmirnovDistance as KS,
       LNorm

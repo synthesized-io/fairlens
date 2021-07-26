@@ -1,68 +1,11 @@
-Correlation
-===========
+Hidden Correlations
+===================
 
 Fairlens offers a range of correlation metrics that analyze associations between two
 numerical series, two categorical series or between categorical and numerical ones.
 These metrics are used both to generate correlation heatmaps of datasets to provide a general
 overview and to detect columns that act as proxies for the sensitive attributes of datasets,
 which pose the risk of training biased models.
-
-
-Correlation Heatmaps
-^^^^^^^^^^^^^^^^^^^^
-
-The :code:`heatmap.py` module allows users to generate a correlation heatmap of any dataset by simply
-passing the dataframe to the :code:`two_column_heatmap()` function, which will plot a heatmap from the
-matrix of the correlation coefficients computed by using the Pearson Coefficient, the Kruskal-Wallis
-Test and Cramer's V between each two of the columns (for numerical-numerical, categorical-numerical and
-categorical-categorical associations, respectively).
-
-To offer the possibility for extensibility, users are allowed to provide some or all of the correlation
-metrics themselves instead of just using the defaults.
-
-.. note::
-    The :code:`correlation_metrics.py` module from the :code:`fairlens.metrics` package provides a number
-    of correlation metrics for any type of association.
-
-    Alternatively, users can opt to implement their own metrics provided that they have two :code:`pandas.Series`
-    objects as input and return a float that will be used as the correlation coefficient in the heatmap.
-
-Let's look at an example by generating a correlation heatmap using the COMPAS dataset. First, we will load
-the data and check what columns in contains.
-
-.. ipython:: python
-
-    import pandas as pd
-
-    df = pd.read_csv("../datasets/german_credit_data.csv")
-    df
-
-Now let us generate a heatmap using the default metrics first.
-
-.. ipython:: python
-
-    import matplotlib.pyplot as plt
-
-    from fairlens.scorer.heatmap import two_column_heatmap
-
-    @savefig two_column_heatmap
-    two_column_heatmap(df)
-
-    @verbatim
-    plt.show()
-
-Let's try generating a heatmap of the same dataset, but using some non-linear metrics
-for numerical-numerical and numerical-categorical associations for added precision.
-
-.. ipython:: python
-
-    from fairlens.metrics import correlation_metrics as cm
-
-    @savefig two_column_nonlinear
-    two_column_heatmap(df, cm.distance_nn_correlation, cm.distance_cn_correlation, cm.cramers_v)
-
-    @verbatim
-    plt.show()
 
 
 Sensitive Proxy Detection
@@ -84,6 +27,8 @@ the minimum correlation coefficient needed to consider two columns to be correla
 Let's first look at how we would go about detecting correlations inside a dataframe:
 
 .. ipython:: python
+
+    import pandas as pd
 
     columns = ["gender", "random", "score"]
     data = [["male", 10, 50], ["female", 20, 80], ["male", 20, 60], ["female", 10, 90]]
@@ -115,3 +60,56 @@ the second with nationality:
     df = pd.DataFrame(data, columns=col_names)
 
     find_sensitive_correlations(df)
+
+
+Correlation Heatmaps
+^^^^^^^^^^^^^^^^^^^^
+
+The :code:`heatmap.py` module allows users to generate a correlation heatmap of any dataset by simply
+passing the dataframe to the :code:`two_column_heatmap()` function, which will plot a heatmap from the
+matrix of the correlation coefficients computed by using the Pearson Coefficient, the Kruskal-Wallis
+Test and Cramer's V between each two of the columns (for numerical-numerical, categorical-numerical and
+categorical-categorical associations, respectively).
+
+To offer the possibility for extensibility, users are allowed to provide some or all of the correlation
+metrics themselves instead of just using the defaults.
+
+.. note::
+    The :code:`fairlens.metrics` package provides a number of correlation metrics for any type of association.
+
+    Alternatively, users can opt to implement their own metrics provided that they have two :code:`pandas.Series`
+    objects as input and return a float that will be used as the correlation coefficient in the heatmap.
+
+Let's look at an example by generating a correlation heatmap using the COMPAS dataset. First, we will load
+the data and check what columns in contains.
+
+.. ipython:: python
+
+    df = pd.read_csv("../datasets/german_credit_data.csv")
+    df
+
+Now let us generate a heatmap using the default metrics first.
+
+.. ipython:: python
+
+    import matplotlib.pyplot as plt
+    from fairlens.bias.heatmap import two_column_heatmap
+
+    @verbatim
+    two_column_heatmap(df)
+
+    @verbatim
+    plt.show()
+
+Let's try generating a heatmap of the same dataset, but using some non-linear metrics
+for numerical-numerical and numerical-categorical associations for added precision.
+
+.. ipython:: python
+
+    from fairlens.metrics import correlation as cm
+
+    @verbatim
+    two_column_heatmap(df, cm.distance_nn_correlation, cm.distance_cn_correlation, cm.cramers_v)
+
+    @verbatim
+    plt.show()

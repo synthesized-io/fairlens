@@ -20,7 +20,7 @@ Let's test this out the on the compas dataset.
 .. ipython:: python
 
   import pandas as pd
-  from fairlens.scorer.fairness_scorer import FairnessScorer
+  from fairlens.bias.fairness_scorer import FairnessScorer
 
   df = pd.read_csv("../datasets/compas.csv")
   df
