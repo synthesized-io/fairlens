@@ -234,7 +234,7 @@ def infer_dtype(col: pd.Series) -> pd.Series:
 
 
 def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: int = 10) -> DistrType:
-    """Infers whether the data in a column or series is continuous, categorical or binary.
+    """Infers whether the data in a column or series is datetime, continuous, categorical or binary.
 
     Args:
         column (pd.Series):

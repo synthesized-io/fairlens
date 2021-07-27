@@ -158,7 +158,7 @@ def attr_distr_plot(
             ["categorical", "continuous", "binary", "datetime"]. If None, the type of
             distribution is inferred based on the data in the column. Defaults to None.
         attr_distr_type (Optional[str], optional):
-            The type of distribution of attr. Can be "categorical" or "continuous".
+            The type of distribution of attr. Can be "categorical", "continuous" or "datetime".
             If None the type of distribution is inferred based on the data in the column.
             Defaults to None.
         max_bins (int, optional):
