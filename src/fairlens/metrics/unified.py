@@ -153,37 +153,61 @@ def correlation_matrix(
     columns_x = columns_x or df.columns
     columns_y = columns_y or df.columns
 
-    table: Dict[Tuple[str, str], float] = {}
-
     series_list = list()
     for col_y in columns_y:
         coeffs = list()
-        y_type = utils.infer_distr_type(df[col_y])
+        # y_type = utils.infer_distr_type(df[col_y])
 
-        for col_x in columns_x:
-            if col_y == col_x:
-                coeffs.append(1.0)
-                continue
+        # for col_x in columns_x:
+        #     if col_y == col_x:
+        #         coeffs.append(1.0)
+        #         continue
 
-            if (col_x, col_y) in table:
-                coeffs.append(table[(col_x, col_y)])
-                continue
+        #     if (col_x, col_y) in table:
+        #         coeffs.append(table[(col_x, col_y)])
+        #         continue
 
-            x_type = utils.infer_distr_type(df[col_x])
-            if y_type.is_continuous() and x_type.is_continuous():
-                coeffs.append(num_num_metric(df[col_y], df[col_x]))
+        #     x_type = utils.infer_distr_type(df[col_x])
+        #     if y_type.is_continuous() and x_type.is_continuous():
+        #         coeffs.append(num_num_metric(df[col_y], df[col_x]))
 
-            elif y_type.is_continuous():
-                coeffs.append(cat_num_metric(df[col_x], df[col_y]))
+        #     elif y_type.is_continuous():
+        #         coeffs.append(cat_num_metric(df[col_x], df[col_y]))
 
-            elif x_type.is_continuous():
-                coeffs.append(cat_num_metric(df[col_y], df[col_x]))
+        #     elif x_type.is_continuous():
+        #         coeffs.append(cat_num_metric(df[col_y], df[col_x]))
 
-            else:
-                coeffs.append(cat_cat_metric(df[col_y], df[col_x]))
+        #     else:
+        #         coeffs.append(cat_cat_metric(df[col_y], df[col_x]))
 
-            table[(col_y, col_x)] = coeffs[-1]
+        #     table[(col_y, col_x)] = coeffs[-1]
+
+        coeffs = [_correlation_matrix_helper(df[col_x], df[col_y]) for col_x in columns_x]
 
         series_list.append(pd.Series(coeffs, index=columns_x, name=col_y))
 
     return pd.concat(series_list, axis=1, keys=[series.name for series in series_list])
+
+
+def _correlation_matrix_helper(
+    sr_a: pd.Series,
+    sr_b: pd.Series,
+    num_num_metric: Callable[[pd.Series, pd.Series], float] = pearson,
+    cat_num_metric: Callable[[pd.Series, pd.Series], float] = kruskal_wallis,
+    cat_cat_metric: Callable[[pd.Series, pd.Series], float] = cramers_v,
+) -> float:
+
+    a_type = utils.infer_distr_type(sr_a)
+    b_type = utils.infer_distr_type(sr_b)
+
+    if a_type.is_continuous() and b_type.is_continuous():
+        return num_num_metric(sr_a, sr_b)
+
+    elif b_type.is_continuous():
+        return cat_num_metric(sr_a, sr_b)
+
+    elif a_type.is_continuous():
+        return cat_num_metric(sr_b, sr_a)
+
+    else:
+        return cat_cat_metric(sr_a, sr_b)
