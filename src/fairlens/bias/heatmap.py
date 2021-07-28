@@ -1,4 +1,4 @@
-from typing import Callable
+from typing import Callable, List, Optional
 
 import pandas as pd
 import seaborn as sns
@@ -11,6 +11,8 @@ def two_column_heatmap(
     num_num_metric: Callable[[pd.Series, pd.Series], float] = correlation.pearson,
     cat_num_metric: Callable[[pd.Series, pd.Series], float] = correlation.kruskal_wallis,
     cat_cat_metric: Callable[[pd.Series, pd.Series], float] = correlation.cramers_v,
+    columns_x: Optional[List[str]] = None,
+    columns_y: Optional[List[str]] = None,
 ):
     """This function creates a correlation heatmap out of a dataframe, using user provided or default correlation
     metrics for all possible types of pairs of series (i.e. numerical-numerical, categorical-numerical,
@@ -29,5 +31,7 @@ def two_column_heatmap(
             statistic.
     """
 
-    corr_matrix = unified.correlation_matrix(df, num_num_metric, cat_num_metric, cat_cat_metric).round(2)
+    corr_matrix = unified.correlation_matrix(
+        df, num_num_metric, cat_num_metric, cat_cat_metric, columns_x, columns_y
+    ).round(2)
     sns.heatmap(corr_matrix, vmin=0, vmax=1, annot=True)
