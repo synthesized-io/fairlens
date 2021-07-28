@@ -2,6 +2,7 @@
 Collection of helper methods which can be used as to interface metrics.
 """
 
+import multiprocessing as mp
 from typing import Callable, Dict, List, Optional, Tuple, Type, Union
 
 import pandas as pd
@@ -153,38 +154,24 @@ def correlation_matrix(
     columns_x = columns_x or df.columns
     columns_y = columns_y or df.columns
 
-    series_list = list()
-    for col_y in columns_y:
-        coeffs = list()
-        # y_type = utils.infer_distr_type(df[col_y])
+    pool = mp.Pool(mp.cpu_count())
 
-        # for col_x in columns_x:
-        #     if col_y == col_x:
-        #         coeffs.append(1.0)
-        #         continue
+    series_list = [
+        pd.Series(
+            [
+                pool.apply(
+                    _correlation_matrix_helper,
+                    args=(df[col_x], df[col_y], num_num_metric, cat_num_metric, cat_cat_metric),
+                )
+                for col_x in columns_x
+            ],
+            index=columns_x,
+            name=col_y,
+        )
+        for col_y in columns_y
+    ]
 
-        #     if (col_x, col_y) in table:
-        #         coeffs.append(table[(col_x, col_y)])
-        #         continue
-
-        #     x_type = utils.infer_distr_type(df[col_x])
-        #     if y_type.is_continuous() and x_type.is_continuous():
-        #         coeffs.append(num_num_metric(df[col_y], df[col_x]))
-
-        #     elif y_type.is_continuous():
-        #         coeffs.append(cat_num_metric(df[col_x], df[col_y]))
-
-        #     elif x_type.is_continuous():
-        #         coeffs.append(cat_num_metric(df[col_y], df[col_x]))
-
-        #     else:
-        #         coeffs.append(cat_cat_metric(df[col_y], df[col_x]))
-
-        #     table[(col_y, col_x)] = coeffs[-1]
-
-        coeffs = [_correlation_matrix_helper(df[col_x], df[col_y]) for col_x in columns_x]
-
-        series_list.append(pd.Series(coeffs, index=columns_x, name=col_y))
+    pool.close()
 
     return pd.concat(series_list, axis=1, keys=[series.name for series in series_list])
 
