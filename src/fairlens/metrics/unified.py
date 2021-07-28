@@ -158,13 +158,10 @@ def correlation_matrix(
 
     series_list = [
         pd.Series(
-            [
-                pool.apply(
-                    _correlation_matrix_helper,
-                    args=(df[col_x], df[col_y], num_num_metric, cat_num_metric, cat_cat_metric),
-                )
-                for col_x in columns_x
-            ],
+            pool.starmap(
+                _correlation_matrix_helper,
+                [(df[col_x], df[col_y], num_num_metric, cat_num_metric, cat_cat_metric) for col_x in columns_x],
+            ),
             index=columns_x,
             name=col_y,
         )
