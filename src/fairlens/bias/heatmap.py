@@ -29,6 +29,10 @@ def two_column_heatmap(
         cat_cat_metric (Callable[[pd.Series, pd.Series], float], optional):
             The correlation metric used for categorical-categorical series pairs. Defaults to corrected Cramer's V
             statistic.
+        columns_x (Optional[List[str]]):
+            The sensitive dataframe column names that will be used in generating the correlation heatmap.
+        columns_y (Optional[List[str]]):
+            The non-sensitive dataframe column names that will be used in generating the correlation heatmap.
     """
 
     corr_matrix = unified.correlation_matrix(
