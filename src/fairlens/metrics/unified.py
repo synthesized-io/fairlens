@@ -142,8 +142,11 @@ def correlation_matrix(
             The correlation matrix to be used in heatmap generation.
     """
 
-    columns_x = columns_x or df.columns
-    columns_y = columns_y or df.columns
+    if columns_x is None:
+        columns_x = df.columns
+
+    if columns_y is None:
+        columns_y = df.columns
 
     pool = mp.Pool(mp.cpu_count())
 
@@ -175,13 +178,13 @@ def _correlation_matrix_helper(
     a_type = utils.infer_distr_type(sr_a)
     b_type = utils.infer_distr_type(sr_b)
 
-    if (a_type.is_continuous() or a_type.is_datetime()) and (b_type.is_continuous() or b_type.is_datetime()):
+    if a_type.is_continuous() and b_type.is_continuous():
         return num_num_metric(sr_a, sr_b)
 
-    elif b_type.is_continuous() or b_type.is_datetime():
+    elif b_type.is_continuous():
         return cat_num_metric(sr_a, sr_b)
 
-    elif a_type.is_continuous() or b_type.is_datetime():
+    elif a_type.is_continuous():
         return cat_num_metric(sr_b, sr_a)
 
     else:
