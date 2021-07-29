@@ -6,10 +6,14 @@ import logging
 from itertools import combinations
 from typing import Optional, Sequence, Tuple
 
+import matplotlib.pyplot as plt
 import pandas as pd
 
 from . import utils
+from .bias.heatmap import two_column_heatmap
 from .metrics.unified import stat_distance
+from .plot.distr import mult_distr_plot
+from .sensitive.correlation import find_sensitive_correlations
 from .sensitive.detection import detect_names_df
 
 logger = logging.getLogger(__name__)
@@ -187,3 +191,77 @@ class FairnessScorer:
             df_dist.drop(columns=["P-Value"], inplace=True)
 
         return df_dist
+
+    def generate_report(
+        self,
+        mode: str = "auto",
+        min_group_proportion: float = 0.15,
+        detect_proxies: bool = False,
+        full_heatmap: bool = False,
+    ):
+
+        df = self.df
+
+        attr_dict = detect_names_df(df, deep_search=True)
+        column_sensitive = list(attr_dict.keys())
+        column_category = list(attr_dict.values())
+
+        df_sensitive = pd.DataFrame(
+            list(zip(column_sensitive, column_category)), columns=["Sensitive Column", "Protected Category"]
+        )
+        print(
+            "The following sensitive columns associated with their respective protected \
+                categories have been detected in the dataset:\n"
+        )
+        print(df_sensitive)
+
+        print(
+            "Here are the distributions of the members of the sensitive columns with respect \
+                to your chosen target:\n"
+        )
+        mult_distr_plot(df, self.target_attr, column_sensitive)
+        plt.show()
+
+        print(
+            f"This is a summary of the most biased groups or combinations of groups from the \
+                sensitive columns, using mode {mode} for metrics:\n"
+        )
+        fairness_score, df_score = self.distribution_score(mode=mode)
+        print(df_score.sort_values(by=["Distance"], ascending=False))
+
+        print(
+            f"These are the most biased groups that represent at least a proportion of \
+                {min_group_proportion} of the population:\n"
+        )
+        print(df_score[df_score["Proportion"] > min_group_proportion].sort_values(by=["Distance"], ascending=False))
+
+        print(f"The overall fairness score of the dataset is: {fairness_score}")
+
+        if detect_proxies:
+            proxy_dict = find_sensitive_correlations(df)
+            proxy_col = proxy_dict.keys()
+            sensitive_col = [proxy_dict[key][0] for key in proxy_dict.keys()]
+            category_col = [proxy_dict[key][1] for key in proxy_dict.keys()]
+
+            df_proxy = pd.DataFrame(
+                list(zip(proxy_col, sensitive_col, category_col)),
+                columns=["Proxy", "Sensitive Column", "Protected Category"],
+            )
+
+            print(
+                "Below are the detected proxies for sensitive attributes using a default \
+                    correlation coefficient cutoff of 0.75.\n"
+            )
+            print(df_proxy)
+
+        # If full heatmap is set to true, the full correlation heatmap will be output. Otherwise, only the
+        # correlations of the sensitive attributes with the non-sensitive ones will be calculated.
+        if full_heatmap:
+            two_column_heatmap(df)
+            plt.show()
+        else:
+            columns_sensitive = list(attr_dict.keys())
+            columns_nonsensitive = list(set(df.columns) - set(attr_dict.keys()))
+
+            two_column_heatmap(df, columns_x=columns_sensitive, columns_y=columns_nonsensitive)
+            plt.show()
