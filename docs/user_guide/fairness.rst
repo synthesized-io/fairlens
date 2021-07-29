@@ -1,6 +1,14 @@
 Fairness and Bias
 =================
 
+This is a general guide to fairness and bias in data science. Since FairLens currently only
+supports structural data, this guide is centered around biases that can arise from the
+usage of such data.
+
+We recommend looking at `A Survey on Bias and Fairness in Machine Learning <https://dl.acm.org/doi/abs/10.1145/3457607>`_
+:sup:`[1]` for a more detailed overview.
+
+
 Literature Review
 -----------------
 
@@ -99,6 +107,10 @@ detect in training data.
 
 References
 ----------
+
+[1] Mehrabi N, Morstatter F, Saxena N, Lerman K, Galstyan A. A survey on bias and fairness in machine learning.
+ACM Computing Surveys (CSUR). 2021 Jul 13;54(6):1-35.
+
 
 [1] Kamishima, T., Akaho, S., and Sakuma, J. Fairness aware learning through regularization approach.
 In IEEE 11th International Conference on Data Mining, pp. 643–650, 2011.

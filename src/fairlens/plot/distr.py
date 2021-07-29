@@ -1,14 +1,18 @@
+"""
+Visualize distributions of data.
+"""
+
 import itertools
 from math import ceil
 from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
-from matplotlib.figure import Figure
 
-from . import utils
+from .. import utils
 
 
 def use_style():
@@ -31,8 +35,9 @@ def distr_plot(
     target_attr: str,
     groups: Sequence[Union[Mapping[str, List[Any]], pd.Series]],
     distr_type: Optional[str] = None,
-    show_hist: bool = True,
-    show_curve: bool = True,
+    show_hist: Optional[bool] = None,
+    show_curve: Optional[bool] = None,
+    shade: bool = True,
     normalize: bool = False,
     cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
     labels: Optional[Sequence[str]] = None,
@@ -55,10 +60,12 @@ def distr_plot(
             The type of distribution of the target attribute. Can take values from
             ["categorical", "continuous", "binary", "datetime"]. If None, the type of
             distribution is inferred based on the data in the column. Defaults to None.
-        show_curve (bool, optional):
-            Shows the histogram if True. Defaults to True.
-        show_curve (bool, optional):
-            Shows a KDE if True. Defaults to True.
+        show_hist (Optional[bool], optional):
+            Shows the histogram if True. Defaults to True if the data is categorical or binary.
+        show_curve (Optional[bool], optional):
+            Shows a KDE if True. Defaults to True if the data is continuous or a date.
+        shade (bool, optional):
+            Shades the curve if True. Defaults to True if the data is continuous or a datetime.
         normalize (bool, optional):
             Normalizes the counts so the sum of the bar heights is 1. Defaults to False.
         cmap (Optional[Sequence[Tuple[float, float, float]]], optional):
@@ -82,6 +89,8 @@ def distr_plot(
         >>> g3 = {"Ethnicity": ["Asian"]}}
         >>> distr_plot(df, "RawScore", [g1, g2, g3])
         >>> plt.show()
+
+        .. image:: ../../savefig/distr_plot.png
     """
 
     if ax is None:
@@ -97,11 +106,17 @@ def distr_plot(
     if distr_type is None:
         distr_type = utils.infer_distr_type(column).value
 
+    if show_hist is None:
+        show_hist = distr_type == "categorical" or distr_type == "binary"
+
+    if show_curve is None:
+        show_curve = distr_type == "continuous" or distr_type == "datetime"
+
     kde = show_curve
     if "kde" in kwargs:
         kde = kwargs.pop("kde")
 
-    shrink = 1 if show_hist else 0
+    shrink = int(show_hist)
     if "shrink" in kwargs:
         shrink = kwargs.pop("shrink")
 
@@ -115,13 +130,21 @@ def distr_plot(
         bins = utils.fd_opt_bins(column)  # TODO: Look at seaborn log scaling in more detail
     elif distr_type == "continuous":
         _, bins = utils.zipped_hist((df[target_attr],), ret_bins=True, distr_type=distr_type)
-    elif column.dtype == "int64":
-        bins = sorted(column.unique())
+    elif column.dtype in ["int64", "float64"]:
+        bins = np.arange(0, column.max() + 1.5) - 0.5
+        ax.set_xticks(bins + 0.5)
     else:
         bins = "auto"
 
     for pred in preds:
         sns.histplot(column[pred], bins=bins, color=next(palette), kde=kde, shrink=shrink, stat=stat, ax=ax, **kwargs)
+
+    if show_curve and shade and not show_hist:
+        palette = itertools.cycle(cmap)
+
+        for line in ax.lines:
+            xy = line.get_xydata()
+            ax.fill_between(xy[:, 0], xy[:, 1], color=next(palette), alpha=0.3)
 
     if labels is not None:
         plt.legend(labels)
@@ -137,13 +160,13 @@ def attr_distr_plot(
     attr: str,
     distr_type: Optional[str] = None,
     attr_distr_type: Optional[str] = None,
-    max_bins=10,
+    max_bins: int = 8,
     separate: bool = False,
     figsize: Optional[Tuple[int, int]] = None,
     max_width: int = 3,
     ax: Optional[Axes] = None,
     **kwargs,
-) -> Union[Axes, Figure]:
+) -> Union[Axes]:
     """Plot the distribution of the target attribute with respect to all the unique values in the column `attr`.
 
     Args:
@@ -162,7 +185,7 @@ def attr_distr_plot(
             If None the type of distribution is inferred based on the data in the column.
             Defaults to None.
         max_bins (int, optional):
-            The maximum amount of bins to use for continuous data. Defaults to 10.
+            The maximum amount of bins to use for continuous data. Defaults to 8.
         separate (bool, optional):
             Separate into multiple plots (subplot). Defaults to False.
         figsize (Optional[Tuple[int, int]], optional):
@@ -175,14 +198,15 @@ def attr_distr_plot(
             Additional keyword arguments passed to distr_plot() or sns.histplot().
 
     Returns:
-        Union[matplotlib.axes.Axes, matplotlib.figure.Figure]:
-            The matplotlib axes containing the plot if `separate` is False, otherwise the
-            matplotlib figure containing the set of plots.
+        Optional[matplotlib.axes.Axes]:
+            The matplotlib axes containing the plot if `separate` is False, otherwise None.
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
         >>> attr_distr_plot(df, "RawScore", "Ethnicity")
         >>> plt.show()
+
+        .. image:: ../../savefig/attr_distr_plot.png
     """
 
     if target_attr == attr:
@@ -227,7 +251,7 @@ def attr_distr_plot(
             distr_plot(df_, target_attr, [group], distr_type=distr_type, ax=ax_, **kwargs)
             plt.title(title)
 
-        return fig
+        return None
 
     if ax is None:
         ax = plt.gca()
@@ -245,7 +269,7 @@ def mult_distr_plot(
     figsize: Optional[Tuple[int, int]] = None,
     max_width: int = 3,
     **kwargs,
-) -> Figure:
+):
     """Plot the pdf of the all values for each of the unique values in the column `attr`
     with respect to the target attribute.
 
@@ -259,18 +283,16 @@ def mult_distr_plot(
         figsize (Optional[Tuple[int, int]], optional):
             The size of each figure if `separate` is True. Defaults to (6, 4).
         max_width (int, optional):
-            The maximum amount of figures in a row if `separate` is True. Defaults to 3.
+            The maximum amount of figures. Defaults to 3.
         **kwargs:
             Additional keywords passed down to attr_distr_plot().
 
-    Returns:
-        matplotlib.figure.Figure:
-            A matplotlib figure containing the plots.
-
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
-        >>> mult_distr_plot(df, "RawScore", ['Sex', 'MaritalStatus', 'Ethnicity', 'Language', 'DateOfBirth'])
+        >>> mult_distr_plot(df, "RawScore", ["Ethnicity", "Sex", "MaritalStatus", "Language", "DateOfBirth"])
         >>> plt.show()
+
+    .. image:: ../../savefig/mult_distr_plot.png
     """
 
     if figsize is None:
@@ -286,5 +308,3 @@ def mult_distr_plot(
     for i, attr in enumerate(attrs):
         ax_ = fig.add_subplot(r, c, i + 1)
         attr_distr_plot(df, target_attr, attr, ax=ax_, **kwargs)
-
-    return fig

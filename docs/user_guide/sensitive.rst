@@ -1,5 +1,5 @@
-Detecting sensitive attributes
-==============================
+Sensitive Attribute Detection
+=============================
 
 Fairlens contains tools that allow users to analyse their datasets in order to detect columns that are
 sensitive or that act as proxies for other protected attributes, based on customisable configurations in
@@ -17,6 +17,7 @@ Let us take a look at an example dataframe, based on the default configuration :
 .. ipython:: python
 
     import pandas as pd
+    import fairlens as fl
 
     columns = ["native", "location", "house", "subscription", "salary", "religion", "score"]
     df = pd.DataFrame(columns=columns)
@@ -25,9 +26,7 @@ In this scenario, we can use the function to get:
 
 .. ipython:: python
 
-    from fairlens.sensitive import detection as dt
-
-    dt.detect_names_df(df)
+    fl.sensitive.detect_names_df(df)
 
 In some cases, the names of the dataframe columns alone might not be conclusive enough to decide on
 the sensitivity. In those cases, :code:`detect_names_df()` has the option of enabling the
@@ -44,14 +43,14 @@ related and let's try using detection as in the previous example:
     ]
     df = pd.DataFrame(data, columns=columns)
 
-    dt.detect_names_df(df)
+    fl.sensitive.detect_names_df(df)
 
 As we can see, since the column names do not have a lot of meaning, shallow search will not suffice.
 However, if we turn :code:`deep_search` on:
 
 .. ipython:: python
 
-    dt.detect_names_df(df, deep_search=True)
+    fl.sensitive.detect_names_df(df, deep_search=True)
 
 It is also possible for users to implement their own string distance functions to be used by the
 detection algorithm. By default, Ratcliff-Obershelp algorithm is used, but any function with type
@@ -67,7 +66,7 @@ dataset:
     df.head()
 
     # Apply shallow detection algorithm.
-    dt.detect_names_df(df)
+    fl.sensitive.detect_names_df(df)
 
 As we can see, the sensitive categories from the dataframe have been picked out by the shallow search.
 Let's now see what happens when we deep search, but just to make the task a bit more difficult, let's rename
@@ -79,7 +78,7 @@ the sensitive columns to have random names.
     df_deep = df_deep.rename(columns={"Ethnicity": "A", "Language": "Random", "MaritalStatus": "B", "Sex": "C"})
 
     # Apply deep detection algorithm.
-    dt.detect_names_df(df, deep_search=True)
+    fl.sensitive.detect_names_df(df, deep_search=True)
 
 The same sensitive columns have been picked, but based solely on their content, as the column names themselves have
 become non-sugestive.

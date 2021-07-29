@@ -1,39 +1,58 @@
-Measuring bias and fairness
-===========================
+Statistical Distances
+=====================
 
 FairLens allows users to make use of a wide range of statistical distance metrics to measure the difference
-between the distributions of two potentially sensitive sub-groups of data. Additionally there are several metrics
-used to measure correlations between columns.
+between the distributions of a variable in two potentially sensitive sub-groups of data. These metrics
+are available for individual use in the package :code:`fairlens.metrics`, or they can be called using
+the :code:`stat_distance` wrapper function.
 
-
-Statistical Distances
-^^^^^^^^^^^^^^^^^^^^^
-
-Fairlens supports multiple distance metrics which you can use via the method :code:`stat_distance`.
 Let's import this method and load in the compas dataset.
 
 .. ipython:: python
 
   import pandas as pd
-  from fairlens.metrics.unified import stat_distance
+  import fairlens as fl
 
   df = pd.read_csv("../datasets/compas.csv")
-  df
+  df.info()
 
-We need to define which groups of data we want to measure the distance between and the target attribute.
+
+Distance metrics from :code:`fairlens.metrics` can be used by passing two columns of data
+to their :code:`__call__` method, which will return the respective metric or None if it
+cannot be computed. Different metrics take in different keyword arguments which can
+be passed to their constructor.
+
+.. ipython:: python
+
+  target_attr = "RawScore"
+  x = df[df["Ethnicity"] == "African-American"][target_attr]
+  y = df[df["Ethnicity"] == "Caucasian"][target_attr]
+
+  fl.metrics.KolmogorovSmirnovDistance()(x, y)
+
+  _, bin_edges = np.histogram(df[target_attr], bins="auto")
+  fl.metrics.EarthMoversDistance(bin_edges)(x, y)
+
+  ord = 1
+  fl.metrics.Norm(ord=ord)(x, y)
+
+The method :code:`stat_distance` provides a simplified wrapper for distance metrics
+and allows us to define which sub-groups of data we want to measure the distance between
+using a simplified dictionary notation or a predicate itself.
 
 .. ipython:: python
 
   group1 = {"Ethnicity": ["African-American"]}
-  group2 = {"Ethnicity": ["Caucasian"]}
-  target_attr = "RawScore"
+  group2 = df["Ethnicity"] == "Caucasian"
 
-We can now make a call to :code:`stat_distance` which will automatically choose the best
-distance metric for us based on the distribution of the target attribute.
+We can now make a call to :code:`stat_distance`. The parameter mode is indicative of the
+statistical distance metric, and corresponds to the :code:`id` function in the classes
+for the distance metrics. If it is set to "auto", a suitable distance metric will
+be chosen depending on the distribution of the target variable.
 
 .. ipython:: python
 
-  stat_distance(df, target_attr, group1, group2, mode="auto")
+  fl.metrics.stat_distance(df, target_attr, group1, group2, mode="auto")
 
 We can see that the distance between the groups is the same as above. :code:`stat_distance` has
 chosen :code:`KolmogorovSmirnovDistance` as the best metric since the target column is continous.
@@ -42,35 +61,12 @@ It is possible to get a p-value back with the distance by using the :code:`p_val
 
 .. ipython:: python
 
-  stat_distance(df, target_attr, group1, group2, mode="auto", p_value=True)
+  fl.metrics.stat_distance(df, target_attr, group1, group2, mode="auto", p_value=True)
 
 Additional parameters are passed to the :code:`__init__` function of the distance metric. This can
 be used to pass keyword arguments such as :code:`bin_edges` to categorical distance metrics.
 
 .. ipython:: python
-  :verbatim:
 
   _, bin_edges = np.histogram(df[target_attr], bins="auto")
-  stat_distance(df, target_attr, group1, group2, mode="emd_categorical", bin_edges=bin_edges)
-
-The distance metrics inside :code:`fairlens.metrics` are also available for direct usage.
-
-.. ipython:: python
-  :verbatim:
-
-  from fairlens.metrics.distance import (
-      EarthMoversDistanceCategorical as EMD,
-      KolmogorovSmirnovDistance as KS,
-      LNorm
-  )
-
-  x = df[df["Ethnicity"] == "African-American"][target_attr]
-  y = df[df["Ethnicity"] == "Caucasian"][target_attr]
-
-  KS()(x, y)
-
-  _, bin_edges = np.histogram(df[target_attr], bins="auto")
-  EMD(bin_edges)(x, y)
-
-  ord = 1
-  LNorm(ord=ord)(x, y)
+  fl.metrics.stat_distance(df, target_attr, group1, group2, mode="emd", bin_edges=bin_edges)

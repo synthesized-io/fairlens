@@ -8,6 +8,28 @@
 
 FairLens is an open source Python library for automatically discovering bias and measuring fairness in data. The package can be used to quickly identify bias, and provides multiple metrics to measure fairness across a range of sensitive and legally protected characteristics such as age, race and sex.
 
+
+## Installation
+
+FairLens is compatible with python versions 3.6+ and can be installed using pip
+```bash
+pip install fairlens
+```
+
+## Getting Started
+
+```python
+import pandas as pd
+import fairlens as fl
+
+# Load in the data
+df = pd.read_csv("datasets/compas.csv")
+
+fscorer = fl.FairnessScorer(df, "RawScore")
+
+fscorer.report()
+```
+
 ## Core Features
 
 Some of the main features of Fairlens are:

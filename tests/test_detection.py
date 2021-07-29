@@ -2,7 +2,7 @@ import os
 
 import pandas as pd
 
-from fairlens.sensitive import detection as dt
+from fairlens.sensitive.detection import _detect_name, detect_names_df
 
 TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 MOCK_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_mock.json")
@@ -12,28 +12,28 @@ dfc = pd.read_csv("datasets/compas.csv")
 
 
 def test_detect_name():
-    assert dt._detect_name("Creed") == "Religion"
-    assert dt._detect_name("date birth of", threshold=0.1) is None
-    assert dt._detect_name("date birth of", threshold=0.5) == "Age"
-    assert dt._detect_name("Sexual Preference") == "Sexual Orientation"
+    assert _detect_name("Creed") == "Religion"
+    assert _detect_name("date birth of", threshold=0.1) is None
+    assert _detect_name("date birth of", threshold=0.5) == "Age"
+    assert _detect_name("Sexual Preference") == "Sexual Orientation"
 
 
 def test_detect_names():
     cols = ["age", "gender", "legality", "risk"]
-    assert list(dt.detect_names_df(cols).keys()) == ["age", "gender"]
+    assert list(detect_names_df(cols).keys()) == ["age", "gender"]
 
 
 def test_detect_names_dict():
     cols = ["age", "gender", "legality", "risk"]
     res = {"age": "Age", "gender": "Gender"}
-    assert dt.detect_names_df(cols) == res
+    assert detect_names_df(cols) == res
 
 
 def test_detect_names_dataframe_simple():
     col_names = ["age", "sexual orientation", "salary", "score"]
     df = pd.DataFrame(columns=col_names)
     res = ["age", "sexual orientation"]
-    assert list(dt.detect_names_df(df).keys()) == res
+    assert list(detect_names_df(df).keys()) == res
 
 
 def test_detect_names_dataframe_dict_simple():
@@ -45,7 +45,7 @@ def test_detect_names_dataframe_dict_simple():
         "house": "Family Status",
         "religion": "Religion",
     }
-    assert dt.detect_names_df(df) == res
+    assert detect_names_df(df) == res
 
 
 def test_detect_names_dataframe_deep():
@@ -56,7 +56,7 @@ def test_detect_names_dataframe_deep():
     ]
     df = pd.DataFrame(data, columns=col_names)
     res = ["A", "B", "C", "D"]
-    assert set(dt.detect_names_df(df, deep_search=True).keys()) == set(res)
+    assert set(detect_names_df(df, deep_search=True).keys()) == set(res)
 
 
 def test_detect_names_dict_dataframe_deep():
@@ -68,7 +68,7 @@ def test_detect_names_dict_dataframe_deep():
     ]
     df = pd.DataFrame(data, columns=col_names)
     res = {"Rand": "Nationality", "A": "Ethnicity", "B": "Gender", "xyzqwe": "Religion", "D": "Disability"}
-    assert dt.detect_names_df(df, threshold=0.01, deep_search=True) == res
+    assert detect_names_df(df, threshold=0.01, deep_search=True) == res
 
 
 def test_dataframe_names_stress():
@@ -80,7 +80,7 @@ def test_dataframe_names_stress():
     ]
     df = pd.DataFrame(data, columns=col_names)
     res = ["xyz", "abc", "C", "D"]
-    assert set(dt.detect_names_df(df, deep_search=True).keys()) == set(res)
+    assert set(detect_names_df(df, deep_search=True).keys()) == set(res)
 
 
 def test_dataframe_dict_stress():
@@ -92,7 +92,7 @@ def test_dataframe_dict_stress():
     ]
     df = pd.DataFrame(data, columns=col_names)
     res = {"xyz": "Ethnicity", "abc": "Nationality", "C": "Religion", "D": "Disability"}
-    assert dt.detect_names_df(df, deep_search=True) == res
+    assert detect_names_df(df, deep_search=True) == res
 
 
 def test_dataframe_names_numbers():
@@ -100,7 +100,7 @@ def test_dataframe_names_numbers():
     data = [[1, 2, 3], [4, 5, 6], [7, 8, 9]]
     df = pd.DataFrame(data, columns=col_names)
     res = []
-    assert list(dt.detect_names_df(df, deep_search=True).keys()) == res
+    assert list(detect_names_df(df, deep_search=True).keys()) == res
 
 
 def test_dataframe_dict_numbers():
@@ -108,7 +108,7 @@ def test_dataframe_dict_numbers():
     data = [[1, 1, 2], [3, 5, 8], [13, 21, 34]]
     df = pd.DataFrame(data, columns=col_names)
     res = {}
-    assert dt.detect_names_df(df, deep_search=True) == res
+    assert detect_names_df(df, deep_search=True) == res
 
 
 def test_compas_detect_shallow():
@@ -119,7 +119,7 @@ def test_compas_detect_shallow():
         "MaritalStatus": "Family Status",
         "Sex": "Gender",
     }
-    assert dt.detect_names_df(dfc) == res
+    assert detect_names_df(dfc) == res
 
 
 def test_compas_detect_deep():
@@ -132,7 +132,7 @@ def test_compas_detect_deep():
         "B": "Family Status",
         "C": "Gender",
     }
-    assert dt.detect_names_df(dfc_deep, deep_search=True) == res
+    assert detect_names_df(dfc_deep, deep_search=True) == res
 
 
 def test_default_config():
@@ -157,7 +157,7 @@ def test_default_config():
         "ethnicity": "Ethnicity",
         "disability": "Disability",
     }
-    assert dt.detect_names_df(df) == res
+    assert detect_names_df(df) == res
 
 
 def test_change_config_shallow():
@@ -165,7 +165,7 @@ def test_change_config_shallow():
     data = [[1, "dog", None, 10, "a"], [2, None, "lizard", 12, "b"], [3, "cat", None, 10, "c"]]
     df = pd.DataFrame(data, columns=col_names)
     res = {"mammal": "Mammals", "reptile": "Reptiles"}
-    assert dt.detect_names_df(df, config_path=MOCK_CONFIG_PATH) == res
+    assert detect_names_df(df, config_path=MOCK_CONFIG_PATH) == res
 
 
 def test_change_config_deep():
@@ -173,7 +173,7 @@ def test_change_config_deep():
     data = [[1, "dog", None, 10, "a"], [2, None, "yellow chameleon", 12, "b"], [3, "cat", None, 10, "c"]]
     df = pd.DataFrame(data, columns=col_names)
     res = {"M": "Mammals", "R": "Reptiles"}
-    assert dt.detect_names_df(df, deep_search=True, config_path=MOCK_CONFIG_PATH) == res
+    assert detect_names_df(df, deep_search=True, config_path=MOCK_CONFIG_PATH) == res
 
 
 def test_double_config_shallow():
@@ -181,8 +181,8 @@ def test_double_config_shallow():
     df = pd.DataFrame(columns=col_names)
     res1 = {"gender": "Gender", "ethnicity": "Ethnicity"}
     res2 = {"mammal": "Mammals", "reptile": "Reptiles"}
-    assert dt.detect_names_df(df, config_path=ENGB_CONFIG_PATH) == res1
-    assert dt.detect_names_df(df, config_path=MOCK_CONFIG_PATH) == res2
+    assert detect_names_df(df, config_path=ENGB_CONFIG_PATH) == res1
+    assert detect_names_df(df, config_path=MOCK_CONFIG_PATH) == res2
 
 
 def test_double_config_deep():
@@ -195,5 +195,5 @@ def test_double_config_deep():
     df = pd.DataFrame(data, columns=col_names)
     res1 = {"R": "Religion", "F2": "Family Status"}
     res2 = {"B": "Birds", "F1": "Fish"}
-    assert dt.detect_names_df(df, deep_search=True, config_path=ENGB_CONFIG_PATH) == res1
-    assert dt.detect_names_df(df, deep_search=True, config_path=MOCK_CONFIG_PATH) == res2
+    assert detect_names_df(df, deep_search=True, config_path=ENGB_CONFIG_PATH) == res1
+    assert detect_names_df(df, deep_search=True, config_path=MOCK_CONFIG_PATH) == res2

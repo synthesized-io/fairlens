@@ -12,8 +12,8 @@ import pyemd
 from scipy.spatial.distance import jensenshannon
 from scipy.stats import entropy, kruskal, ks_2samp
 
+from .. import utils
 from ..bias import p_value as pv
-from ..bias import utils
 
 
 class DistanceMetric(ABC):
@@ -268,20 +268,6 @@ class BinomialDistance(ContinuousDistanceMetric):
         return "binomial"
 
 
-class EarthMoversDistance(ContinuousDistanceMetric):
-    """
-    Earth movers distance (EMD), aka Wasserstein 1-distance, for continous data.
-    The samples are binned automatically by pyemd.
-    """
-
-    def distance(self, x: pd.Series, y: pd.Series) -> float:
-        return pyemd.emd_samples(x, y)
-
-    @property
-    def id(self) -> str:
-        return "emd"
-
-
 class KolmogorovSmirnovDistance(ContinuousDistanceMetric):
     """
     Kolmogorov-Smirnov (KS) distance between two data samples.
@@ -310,7 +296,7 @@ class KruskalWallis(ContinuousDistanceMetric):
         return "kruskal"
 
 
-class EarthMoversDistanceCategorical(CategoricalDistanceMetric):
+class EarthMoversDistance(CategoricalDistanceMetric):
     """
     Earth movers distance (EMD), aka Wasserstein 1-distance, for categorical data.
 
@@ -334,7 +320,7 @@ class EarthMoversDistanceCategorical(CategoricalDistanceMetric):
 
     @property
     def id(self) -> str:
-        return "emd_categorical"
+        return "emd"
 
 
 class KullbackLeiblerDivergence(CategoricalDistanceMetric):

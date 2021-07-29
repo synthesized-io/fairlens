@@ -20,13 +20,13 @@ Let's test this out the on the compas dataset.
 .. ipython:: python
 
   import pandas as pd
-  from fairlens.bias.fairness_scorer import FairnessScorer
+  import fairlens as fl
 
   df = pd.read_csv("../datasets/compas.csv")
-  df
+  df.info()
 
   sensitive_attrs = ["Ethnicity", "Sex"]
   target_attr = "RawScore"
 
-  fscorer = FairnessScorer(df, target_attr, sensitive_attrs)
+  fscorer = fl.FairnessScorer(df, target_attr, sensitive_attrs)
   fscorer.distribution_score()

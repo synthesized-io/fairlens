@@ -263,14 +263,17 @@ def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: i
     n_rows = len(col)
     dtype = col.dtype
 
-    if dtype == "datetime64[ns]":
+    if n_unique == 2:
+        return DistrType.Binary
+
+    elif dtype == "float64":
+        return DistrType.Continuous
+
+    elif dtype == "datetime64[ns]":
         return DistrType.Datetime
 
     elif n_unique > max(min_num_unique, ctl_mult * np.log(n_rows)) and dtype in ["float64", "int64"]:
         return DistrType.Continuous
-
-    elif n_unique == 2 and np.isin(unique, [0, 1]).all():
-        return DistrType.Binary
 
     else:
         return DistrType.Categorical

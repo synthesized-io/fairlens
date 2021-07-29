@@ -1,5 +1,5 @@
-Significance
-============
+Significance Testing
+====================
 
 Usually while measuring statistical distances and correlations users may want to test the significance
 of such metrics.

@@ -1,6 +1,6 @@
 import pandas as pd
 
-from fairlens.bias.fairness_scorer import FairnessScorer
+from fairlens.scorer import FairnessScorer
 
 dfc = pd.read_csv("datasets/compas.csv")
 

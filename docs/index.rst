@@ -3,8 +3,7 @@ FairLens
 ========
 
 FairLens is a library that can be used to identify and measure various kinds of biases in structural data.
-This package is data centric i.e. most modules are intended to work purely with datasets.
-In essence, FairLens can be used to create reports on the quality of a dataset in the
+This package can be used to examine and create reports on the quality of a dataset in the
 context of fairness. With legislation around the use of legally protected attributes
 becoming more stringent, this package can help identify potential red flags in datasets
 before models are trained on them. While FairLens was built with data centric fairness in mind,

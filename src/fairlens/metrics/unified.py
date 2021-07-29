@@ -3,13 +3,13 @@ Collection of helper methods which can be used as to interface metrics.
 """
 
 import multiprocessing as mp
-from typing import Callable, Dict, List, Optional, Tuple, Type, Union
+from typing import Any, Callable, List, Mapping, Optional, Tuple, Type, Union
 
 import pandas as pd
 
 from .correlation import cramers_v, kruskal_wallis, pearson
-from .distance import BinomialDistance, DistanceMetric, EarthMoversDistanceCategorical, KolmogorovSmirnovDistance
-from ..bias import utils
+from .distance import BinomialDistance, DistanceMetric, EarthMoversDistance, KolmogorovSmirnovDistance
+from .. import utils
 
 
 def auto_distance(column: pd.Series) -> Type[DistanceMetric]:
@@ -30,14 +30,14 @@ def auto_distance(column: pd.Series) -> Type[DistanceMetric]:
     elif distr_type.is_binary():
         return BinomialDistance
 
-    return EarthMoversDistanceCategorical
+    return EarthMoversDistance
 
 
 def stat_distance(
     df: pd.DataFrame,
     target_attr: str,
-    group1: Union[Dict[str, List[str]], pd.Series],
-    group2: Union[Dict[str, List[str]], pd.Series],
+    group1: Union[Mapping[str, List[Any]], pd.Series],
+    group2: Union[Mapping[str, List[Any]], pd.Series],
     mode: str = "auto",
     p_value: bool = False,
     **kwargs,
@@ -54,15 +54,19 @@ def stat_distance(
             The input datafame.
         target_attr (str):
             The target attribute in the dataframe.
-        group1 (Union[Dict[str, List[str]], pd.Series]):
-            The first group of interest. Can be a dictionary mapping from attribute to values
-            or the raw data in a pandas series.
-        group2 (Union[Optional[Dict[str, List[str]]], pd.Series]], optional):
-            The second group of interest. Can be a dictionary mapping from attribute to values
-            or the raw data in a pandas series. Defaults to None.
+        group1 (Union[Mapping[str, List[Any]], pd.Series]):
+            The first group of interest. Each group can be a mapping / dict from attribute to value or
+            a predicate itself, i.e. pandas series consisting of bools which can be used as a predicate
+            to index a subgroup from the dataframe.
+            Examples: {"Sex": ["Male"]}, df["Sex"] == "Female"
+        group2 (Union[Mapping[str, List[Any]], pd.Series]):
+            The second group of interest. Each group can be a mapping / dict from attribute to value or
+            a predicate itself, i.e. pandas series consisting of bools which can be used as a predicate
+            to index a subgroup from the dataframe.
+            Examples: {"Sex": ["Male"]}, df["Sex"] == "Female"
         mode (str):
             Which distance metric to use. Can be the names of classes from fairlens.bias.metrics, or their
-            __repr__() strings. If set to "auto", it automatically picks the best metric based on the
+            id() strings. If set to "auto", the method automatically picks a suitable metric based on the
             distribution of the target attribute. Defaults to "auto".
         p_value (bool):
             Returns the a suitable p-value for the metric if it exists. Defaults to False.
@@ -85,26 +89,13 @@ def stat_distance(
     """
 
     # Parse group arguments into pandas series'
-    if isinstance(group1, dict) and isinstance(group2, dict):
-        if target_attr not in df.columns:
-            raise ValueError(f'"{target_attr}" is not a valid column name.')
-
-        pred1, pred2 = tuple(utils.get_predicates_mult(df, [group1, group2]))
-
-        group1 = df[pred1][target_attr]
-        group2 = df[pred2][target_attr]
-
-    if not isinstance(group1, pd.Series) or not isinstance(group2, pd.Series):
-        raise TypeError("group1, group2 must be pd.Series or dictionaries")
-
-    if target_attr in df.columns:
-        column = df[target_attr]
-    else:
-        column = pd.concat((group1, group2))
+    pred1, pred2 = tuple(utils.get_predicates_mult(df, [group1, group2]))
+    group1 = df[pred1][target_attr]
+    group2 = df[pred2][target_attr]
 
     # Choose the distance metric
     if mode == "auto":
-        dist_class = auto_distance(column)
+        dist_class = auto_distance(df[target_attr])
     elif mode in DistanceMetric._class_dict:
         dist_class = DistanceMetric._class_dict[mode]
     else:

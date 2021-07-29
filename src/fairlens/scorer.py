@@ -9,8 +9,8 @@ from typing import Optional, Sequence, Tuple
 import pandas as pd
 
 from . import utils
-from ..metrics.unified import stat_distance
-from ..sensitive.detection import detect_names_df
+from .metrics.unified import stat_distance
+from .sensitive.detection import detect_names_df
 
 logger = logging.getLogger(__name__)
 
@@ -167,10 +167,7 @@ class FairnessScorer:
 
             pred = utils.get_predicates_mult(df, [sensitive_group])[0]
 
-            group = df[pred][target_attr]
-            remaining = df[~pred][target_attr]
-
-            dist_res = stat_distance(df, target_attr, group, remaining, mode=mode, p_value=p_value)
+            dist_res = stat_distance(df, target_attr, pred, ~pred, mode=mode, p_value=p_value)
             distance = dist_res[0]
             p = dist_res[1] if p_value else 0
 

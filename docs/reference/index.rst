@@ -10,3 +10,4 @@ API Reference
    fairlens.bias
    fairlens.sensitive
    fairlens.metrics
+   fairlens.plot

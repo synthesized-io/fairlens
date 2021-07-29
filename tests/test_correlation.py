@@ -1,7 +1,7 @@
 import pandas as pd
 
 from fairlens.metrics.correlation import distance_cn_correlation, distance_nn_correlation
-from fairlens.sensitive import correlation as corr
+from fairlens.sensitive.correlation import find_column_correlation, find_sensitive_correlations
 
 
 def test_correlation():
@@ -18,7 +18,7 @@ def test_correlation():
     ]
     df = pd.DataFrame(data, columns=col_names)
     res = {"score": [("gender", "Gender")]}
-    assert corr.find_sensitive_correlations(df) == res
+    assert find_sensitive_correlations(df) == res
 
 
 def test_double_correlation():
@@ -31,7 +31,7 @@ def test_double_correlation():
     ]
     df = pd.DataFrame(data, columns=col_names)
     res = {"corr1": [("gender", "Gender")], "corr2": [("nationality", "Nationality")]}
-    assert corr.find_sensitive_correlations(df) == res
+    assert find_sensitive_correlations(df) == res
 
 
 def test_multiple_correlation():
@@ -48,7 +48,7 @@ def test_multiple_correlation():
     # The first series is correlated with the "race" and "family status" columns, while the second is
     # correlated with the "age" column
     res = {"corr1": [("race", "Ethnicity"), ("marital", "Family Status")]}
-    assert corr.find_sensitive_correlations(df, corr_cutoff=0.9) == res
+    assert find_sensitive_correlations(df, corr_cutoff=0.9) == res
 
 
 def test_common_correlation():
@@ -66,7 +66,7 @@ def test_common_correlation():
         "corr1": [("race", "Ethnicity"), ("age", "Age"), ("marital", "Family Status")],
         "corr2": [("age", "Age")],
     }
-    assert corr.find_sensitive_correlations(df) == res
+    assert find_sensitive_correlations(df) == res
 
 
 def test_column_correlation():
@@ -80,8 +80,8 @@ def test_column_correlation():
     df = pd.DataFrame(data, columns=col_names)
     res1 = [("gender", "Gender")]
     res2 = [("nationality", "Nationality")]
-    assert corr.find_column_correlation("corr1", df) == res1
-    assert corr.find_column_correlation("corr2", df) == res2
+    assert find_column_correlation("corr1", df) == res1
+    assert find_column_correlation("corr2", df) == res2
 
 
 def test_series_correlation():
@@ -101,8 +101,8 @@ def test_series_correlation():
     s2 = pd.Series([120, 130, 210, 220, 200, 115])
     res1 = [("race", "Ethnicity"), ("marital", "Family Status")]
     res2 = [("age", "Age")]
-    assert set(corr.find_column_correlation(s1, df, corr_cutoff=0.9)) == set(res1)
-    assert set(corr.find_column_correlation(s2, df, corr_cutoff=0.9)) == set(res2)
+    assert set(find_column_correlation(s1, df, corr_cutoff=0.9)) == set(res1)
+    assert set(find_column_correlation(s2, df, corr_cutoff=0.9)) == set(res2)
 
 
 def test_basic_nn_distance_corr():
