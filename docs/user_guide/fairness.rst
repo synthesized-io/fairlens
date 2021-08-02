@@ -1,16 +1,22 @@
 Fairness and Bias
 =================
 
-This is a general guide to fairness and bias in data science. Since FairLens currently only
-supports structural data, this guide is centered around biases that can arise from the
-usage of such data.
-
-We recommend looking at `A Survey on Bias and Fairness in Machine Learning <https://dl.acm.org/doi/abs/10.1145/3457607>`_
-:sup:`[1]` for a more detailed overview.
-
+This is a general guide to assessing fairness and bias in supervised learning tasks (classification, regression)
+using structural datasets.
 
 Literature Review
 -----------------
+
+In most supervised learning problems, a model is trained on a set of features :math:`X`, to predict or estimate
+a target variable :math:`Y`. The resulting prediction of a trained model is denoted by :math:`R`. Additionally, we
+define :math:`A` as a subset of :math:`X`, which corresponds to legally protected attributes such as
+ethnicity, gender, etc.
+
+.. math::
+
+  \underbrace{\text{Title}\hspace{2mm}\overbrace{\text{Gender}\hspace{2mm} \text{Ethnicity}}^{A}\hspace{2mm}\text{Legal Status}}_{X}\hspace{3mm}\overbrace{\text{Raw Score}}^{Y}\hspace{3mm}\overbrace{\text{Predicted Score}}^{R}
+
+There are multiple definitions of fairness in literature
 
 There is a large amount of literature on fairness and bias, in the context of data science and
 machine learning, in academia.
@@ -38,7 +44,7 @@ that are equal across the sensitive groups. This implies that the model has the 
 classifying a true positive as positive and incorrectly classifying a true positive as negative.
 
 .. math::
-    P(\hat{y} \mid y = 0, G = male) = P(\hat{y} \mid y = 0, G = female)
+  P(\hat{y} \mid y = 0, G = male) = P(\hat{y} \mid y = 0, G = female)
 
 Statistical parity
 ^^^^^^^^^^^^^^^^^^

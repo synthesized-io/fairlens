@@ -2,13 +2,16 @@
 FairLens
 ========
 
-FairLens is a library that can be used to identify and measure various kinds of biases in structural data.
-This package can be used to examine and create reports on the quality of a dataset in the
-context of fairness. With legislation around the use of legally protected attributes
-becoming more stringent, this package can help identify potential red flags in datasets
-before models are trained on them. While FairLens was built with data centric fairness in mind,
-users may find some metrics useful for model centric approaches involving altered
-loss functions or regularization [1, 2].
+FairLens is a tool to help people assess the fairness of datasets and models in machine learning.
+
+
+.. FairLens is a library that can be used to identify and measure various kinds of biases in structural data.
+.. This package can be used to examine and create reports on the quality of a dataset in the
+.. context of fairness. With legislation around the use of legally protected attributes
+.. becoming more stringent, this package can help identify potential red flags in datasets
+.. before models are trained on them. While FairLens was built with data centric fairness in mind,
+.. users may find some metrics useful for model centric approaches involving altered
+.. loss functions or regularization [1, 2].
 
 .. raw:: html
 
@@ -23,8 +26,8 @@ loss functions or regularization [1, 2].
    Fairness and Bias
    ^^^^^^^^^^^^^^^^^
 
-   An introduction to fairness and bias in data science. Find out more about the different types of biases
-   in data and how they can be identified and mitigated.
+   An introduction to fairness and bias in data science. Learn more about how you can assess the fairness of
+   your machine learning pipeline.
 
    +++
 
@@ -39,7 +42,7 @@ loss functions or regularization [1, 2].
    User Guide
    ^^^^^^^^^^
 
-   Jump right in and begin using *FairLens*. Learn how to identify and measure different kinds of
+   Jump right in and begin using FairLens. Learn how to identify and measure different kinds of
    biases in your datasets.
 
    +++
@@ -56,7 +59,7 @@ loss functions or regularization [1, 2].
    ^^^^^^^^^^^^^
 
    The reference guide contains a detailed description of
-   the *FairLens* API. The reference describes how the methods work and which parameters can
+   the FairLens API. The reference describes how the methods work and which parameters can
    be used. It assumes that you have an understanding of the key concepts.
 
    +++
@@ -74,7 +77,7 @@ loss functions or regularization [1, 2].
 
    Saw a typo in the documentation? Want to improve
    existing functionalities? The contributing guidelines will guide
-   you through the process of improving *FairLens*.
+   you through the process of improving FairLens.
 
    +++
 

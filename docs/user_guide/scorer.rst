@@ -1,11 +1,18 @@
 Fairness Scorer
 ===============
 
-Users can use the :code:`FairnessScorer` to automatically analyze the dataset and look for inherent biases and hidden correlations.
+The class :code:`fairlens.FairnessScorer` can be used to automatically analyze the dataset and look for inherent
+biases and hidden correlations.
 
 
-Demographic Score
-^^^^^^^^^^^^^^^^^
+Report Generation
+-----------------
+
+The method :code:`fairlens.FairnessScorer`
+
+
+Distribution Score
+------------------
 
 The :code:`distribution_score` method in the fairness scorer allows us to detect biases by measuring
 whether the distribution of a target variable (score) relative to a demographic (Asian males), is

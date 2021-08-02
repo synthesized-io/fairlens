@@ -116,9 +116,9 @@ def distr_plot(
     if "kde" in kwargs:
         kde = kwargs.pop("kde")
 
-    shrink = int(show_hist)
+    w = int(show_hist)
     if "shrink" in kwargs:
-        shrink = kwargs.pop("shrink")
+        w = kwargs.pop("shrink")
 
     stat = "probability" if normalize else "count"
     if "stat" in kwargs:
@@ -137,7 +137,7 @@ def distr_plot(
         bins = "auto"
 
     for pred in preds:
-        sns.histplot(column[pred], bins=bins, color=next(palette), kde=kde, shrink=shrink, stat=stat, ax=ax, **kwargs)
+        sns.histplot(column[pred], bins=bins, color=next(palette), kde=kde, shrink=w, stat=stat, ax=ax, **kwargs)
 
     if show_curve and shade and not show_hist:
         palette = itertools.cycle(cmap)
@@ -176,7 +176,7 @@ def attr_distr_plot(
             The target attribute.
         attr (str):
             The attribute whose values' distributions are to be plotted.
-        distr_type (Optional[str]):
+        distr_type (Optional[str], optional):
             The type of distribution of the target attribute. Can take values from
             ["categorical", "continuous", "binary", "datetime"]. If None, the type of
             distribution is inferred based on the data in the column. Defaults to None.
@@ -220,14 +220,8 @@ def attr_distr_plot(
         attr_distr_type = utils.infer_distr_type(col).value
 
     # Bin data
-    if attr_distr_type == "continuous":
-        quantiles = min(max_bins, utils.fd_opt_bins(df_[attr]))
-        df_.loc[:, attr] = pd.qcut(df_[attr], quantiles).apply(
-            lambda iv: "[" + "{:.2f}".format(iv.left) + ", " + "{:.2f}".format(iv.right) + "]"
-        )
-
-    elif attr_distr_type == "datetime":
-        df_.loc[:, attr] = utils.quantize_date(col)
+    if attr_distr_type == "continuous" or attr_distr_type == "datetime":
+        df_.loc[:, attr] = utils._bin_as_string(col, attr_distr_type, max_bins=max_bins)
 
     # Values ordered by counts in order for overlay to work well.
     unique_values = df_[attr].dropna().value_counts().keys()
@@ -256,7 +250,7 @@ def attr_distr_plot(
     if ax is None:
         ax = plt.gca()
 
-    distr_plot(df_, target_attr, groups, distr_type=distr_type, legend=False, labels=labels, ax=ax, **kwargs)
+    distr_plot(df_, target_attr, groups, distr_type=distr_type, labels=labels, ax=ax, **kwargs)
     plt.title(attr)
 
     return ax

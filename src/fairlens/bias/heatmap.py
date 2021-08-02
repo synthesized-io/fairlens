@@ -64,7 +64,6 @@ def two_column_heatmap(
         right=1.0 - margin_right / fig_width,
     )
 
-    sns.set(font_scale=1.6)
     sns.heatmap(
         corr_matrix,
         vmin=0,
