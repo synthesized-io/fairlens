@@ -2,35 +2,80 @@
 FairLens
 ========
 
-FairLens is an open source Python library for automatically discovering bias and measuring fairness in data.
-The package can be used to quickly identify bias, and provides multiple metrics to measure fairness across a
-range of sensitive and legally protected characteristics such as age, race and sex.
+FairLens is a tool to help people assess the fairness of datasets and models in machine learning.
 
+.. raw:: html
 
-Project background
-==================
+   <br/>
 
-The rapid adoption of the data-driven approach and machine learning by businesses across the board has sparked a large amount of
-interest from legal authorities and motivated recent legislation on the topic of fairness and bias in machine learning.
-There is a substantial amount of evidence of various occurrences of discrimintation, including biases in recommender systems,
-biases in predictive policing algorithms, and biases in risk assessment.
+.. panels::
+   :card: + intro-card text-center
 
+   ---
+   :fa:`balance-scale,text-black fa-4x,style=fa`
 
-Fairlens ...
+   Fairness and Bias
+   ^^^^^^^^^^^^^^^^^
 
-Features
-========
+   An introduction to fairness and bias in data science. Learn more about how you can assess the fairness of
+   your machine learning pipeline.
 
-* Measure inherent biases present in datasets using a wide range of metrics.
-* Detect sensitive attributes and any hidden aliases they may have.
-* Visualize the distribution of different demographics in the data.
-* Automatically generate reports.
+   +++
 
+   .. link-button:: user_guide/fairness
+      :type: ref
+      :text: Go
+      :classes: btn-block btn-secondary
 
-Implementation notes
-====================
+   ---
+   :fa:`book,text-black fa-4x,style=fa`
 
-* Citations, etc.
+   User Guide
+   ^^^^^^^^^^
+
+   Jump right in and begin using FairLens. Learn how to identify and measure different kinds of
+   biases in your datasets.
+
+   +++
+
+   .. link-button:: user_guide/quickstart
+      :type: ref
+      :text: Go
+      :classes: btn-block btn-secondary
+
+   ---
+   :fa:`code,text-black fa-4x,style=fa`
+
+   API reference
+   ^^^^^^^^^^^^^
+
+   The reference guide contains a detailed description of
+   the FairLens API. The reference describes how the methods work and which parameters can
+   be used. It assumes that you have an understanding of the key concepts.
+
+   +++
+
+   .. link-button:: reference/index
+      :type: ref
+      :text: Go
+      :classes: btn-block btn-secondary
+
+   ---
+   :fa:`users,text-black fa-4x,style=fa`
+
+   Contributing
+   ^^^^^^^^^^^^
+
+   Saw a typo in the documentation? Want to improve
+   existing functionalities? The contributing guidelines will guide
+   you through the process of improving FairLens.
+
+   +++
+
+   .. link-button:: contributing
+      :type: ref
+      :text: Go
+      :classes: btn-block btn-secondary
 
 .. toctree::
    :maxdepth: 3
@@ -39,5 +84,4 @@ Implementation notes
 
    user_guide/index
    reference/index
-   changelog
    contributing
