@@ -8,5 +8,6 @@ API Reference
    :recursive:
 
    fairlens.bias
-   fairlens.scorer
    fairlens.sensitive
+   fairlens.metrics
+   fairlens.plot
