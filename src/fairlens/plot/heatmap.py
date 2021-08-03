@@ -1,3 +1,7 @@
+"""
+Plot correlation heatmaps for datasets.
+"""
+
 from typing import Callable, List, Optional
 
 import matplotlib.pyplot as plt

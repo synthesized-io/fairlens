@@ -19,7 +19,21 @@ from .distance import (  # isort:skip
     HellingerDistance,
 )
 
+from .significance import (  # isort:skip
+    binom_test,
+    binominal_proportion_p_value,
+    binominal_proportion_interval,
+    bootstrap_binned_statistic,
+    bootstrap_statistic,
+    permutation_statistic,
+    resampling_p_value,
+    resampling_interval,
+)
+
 __all__ = [
+    "auto_distance",
+    "correlation_matrix",
+    "stat_distance",
     "DistanceMetric",
     "CategoricalDistanceMetric",
     "ContinuousDistanceMetric",
@@ -32,7 +46,12 @@ __all__ = [
     "JensenShannonDivergence",
     "Norm",
     "HellingerDistance",
-    "auto_distance",
-    "correlation_matrix",
-    "stat_distance",
+    "binom_test",
+    "binominal_proportion_p_value",
+    "binominal_proportion_interval",
+    "bootstrap_binned_statistic",
+    "bootstrap_statistic",
+    "permutation_statistic",
+    "resampling_p_value",
+    "resampling_interval",
 ]

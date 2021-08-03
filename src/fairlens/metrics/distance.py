@@ -13,7 +13,7 @@ from scipy.spatial.distance import jensenshannon
 from scipy.stats import entropy, kruskal, ks_2samp
 
 from .. import utils
-from ..bias import p_value as pv
+from ..metrics import significance as pv
 
 
 class DistanceMetric(ABC):
@@ -156,7 +156,7 @@ class ContinuousDistanceMetric(DistanceMetric):
         else:
             raise ValueError('p_value_test must be one of ["permutation", "bootstrap"]')
 
-        return pv.resampling_pvalue(self.distance(x, y), ts_distribution)
+        return pv.resampling_p_value(self.distance(x, y), ts_distribution)
 
 
 class CategoricalDistanceMetric(DistanceMetric):
@@ -226,7 +226,7 @@ class CategoricalDistanceMetric(DistanceMetric):
 
         ts_distribution = pv.bootstrap_binned_statistic(h_x, h_y, distance_call, n_samples=100)
 
-        return pv.resampling_pvalue(distance_call(h_x, h_y), ts_distribution)
+        return pv.resampling_p_value(distance_call(h_x, h_y), ts_distribution)
 
 
 class MeanDistance(ContinuousDistanceMetric):
