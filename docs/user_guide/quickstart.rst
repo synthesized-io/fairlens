@@ -2,7 +2,8 @@ Quickstart
 ==========
 
 Installation
-^^^^^^^^^^^^
+------------
+
 FairLens can be installed using pip
 
 .. code-block:: bash
@@ -11,7 +12,7 @@ FairLens can be installed using pip
 
 
 Generate Report
-^^^^^^^^^^^^^^^
+---------------
 
 The object :code:`fairlens.FairnessScorer` can be used to automatically generate a fairness report on a
 dataset, provided a target attribute.
