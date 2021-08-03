@@ -2,35 +2,89 @@
 FairLens
 ========
 
-FairLens is an open source Python library for automatically discovering bias and measuring fairness in data.
-The package can be used to quickly identify bias, and provides multiple metrics to measure fairness across a
-range of sensitive and legally protected characteristics such as age, race and sex.
+FairLens is a tool to help people assess the fairness of datasets and models in machine learning.
 
 
-Project background
-==================
+.. FairLens is a library that can be used to identify and measure various kinds of biases in structural data.
+.. This package can be used to examine and create reports on the quality of a dataset in the
+.. context of fairness. With legislation around the use of legally protected attributes
+.. becoming more stringent, this package can help identify potential red flags in datasets
+.. before models are trained on them. While FairLens was built with data centric fairness in mind,
+.. users may find some metrics useful for model centric approaches involving altered
+.. loss functions or regularization [1, 2].
 
-The rapid adoption of the data-driven approach and machine learning by businesses across the board has sparked a large amount of
-interest from legal authorities and motivated recent legislation on the topic of fairness and bias in machine learning.
-There is a substantial amount of evidence of various occurrences of discrimintation, including biases in recommender systems,
-biases in predictive policing algorithms, and biases in risk assessment.
+.. raw:: html
 
+   <br/>
 
-Fairlens ...
+.. panels::
+   :card: + intro-card text-center
 
-Features
-========
+   ---
+   :fa:`balance-scale,text-black fa-4x,style=fa`
 
-* Measure inherent biases present in datasets using a wide range of metrics.
-* Detect sensitive attributes and any hidden aliases they may have.
-* Visualize the distribution of different demographics in the data.
-* Automatically generate reports.
+   Fairness and Bias
+   ^^^^^^^^^^^^^^^^^
 
+   An introduction to fairness and bias in data science. Learn more about how you can assess the fairness of
+   your machine learning pipeline.
 
-Implementation notes
-====================
+   +++
 
-* Citations, etc.
+   .. link-button:: user_guide/fairness
+      :type: ref
+      :text: Go
+      :classes: btn-block btn-secondary
+
+   ---
+   :fa:`book,text-black fa-4x,style=fa`
+
+   User Guide
+   ^^^^^^^^^^
+
+   Jump right in and begin using FairLens. Learn how to identify and measure different kinds of
+   biases in your datasets.
+
+   +++
+
+   .. link-button:: user_guide/quickstart
+      :type: ref
+      :text: Go
+      :classes: btn-block btn-secondary
+
+   ---
+   :fa:`code,text-black fa-4x,style=fa`
+
+   API reference
+   ^^^^^^^^^^^^^
+
+   The reference guide contains a detailed description of
+   the FairLens API. The reference describes how the methods work and which parameters can
+   be used. It assumes that you have an understanding of the key concepts.
+
+   +++
+
+   .. link-button:: reference/index
+      :type: ref
+      :text: Go
+      :classes: btn-block btn-secondary
+
+   ---
+   :fa:`users,text-black fa-4x,style=fa`
+
+   Contributing
+   ^^^^^^^^^^^^
+
+   Saw a typo in the documentation? Want to improve
+   existing functionalities? The contributing guidelines will guide
+   you through the process of improving FairLens.
+
+   +++
+
+   .. link-button:: contributing
+      :type: ref
+      :text: Go
+      :classes: btn-block btn-secondary
 
 .. toctree::
    :maxdepth: 3
@@ -39,5 +93,4 @@ Implementation notes
 
    user_guide/index
    reference/index
-   changelog
    contributing
