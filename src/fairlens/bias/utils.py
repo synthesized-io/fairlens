@@ -344,3 +344,20 @@ def fd_opt_bins(column: pd.Series) -> int:
     iqr = column.quantile(0.75) - column.quantile(0.25)
 
     return int((column.max() - column.min()) / (2 * iqr * (n ** (-1 / 3))))
+
+
+def _bin_as_string(col: pd.Series, distr_type: str, max_bins: int = 10, prefix: bool = False):
+    if distr_type == "continuous":
+
+        def iv_to_str(iv):
+            pre = col.name + " " if prefix else ""
+            return pre + "[" + "{:.2f}".format(iv.left) + ", " + "{:.2f}".format(iv.right) + "]"
+
+        quantiles = min(max_bins, fd_opt_bins(col))
+        return pd.qcut(col, quantiles).apply(iv_to_str)
+
+    elif distr_type == "datetime":
+        return quantize_date(col)
+
+    else:
+        raise ValueError("Non continuous column cannot be binned.")
