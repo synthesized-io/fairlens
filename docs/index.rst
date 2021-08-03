@@ -4,15 +4,6 @@ FairLens
 
 FairLens is a tool to help people assess the fairness of datasets and models in machine learning.
 
-
-.. FairLens is a library that can be used to identify and measure various kinds of biases in structural data.
-.. This package can be used to examine and create reports on the quality of a dataset in the
-.. context of fairness. With legislation around the use of legally protected attributes
-.. becoming more stringent, this package can help identify potential red flags in datasets
-.. before models are trained on them. While FairLens was built with data centric fairness in mind,
-.. users may find some metrics useful for model centric approaches involving altered
-.. loss functions or regularization [1, 2].
-
 .. raw:: html
 
    <br/>
