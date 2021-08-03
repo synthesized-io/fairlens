@@ -150,12 +150,16 @@ def bin(
     return binned
 
 
-def quantize_date(column: pd.Series):
+def quantize_date(column: pd.Series) -> pd.Series:
     """Quantize a column of dates into bins of uniform width in years, days or months.
 
     Args:
         column (pd.Series):
             The column of dates to quantize. Must be have a dtype of "datetime64[ns]".
+
+    Returns:
+        pd.Series:
+            Quantized series.
     """
 
     TEN_YEAR_THRESHOLD = 15
@@ -234,7 +238,7 @@ def infer_dtype(col: pd.Series) -> pd.Series:
 
 
 def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: int = 10) -> DistrType:
-    """Infers whether the data in a column or series is continuous, categorical or binary.
+    """Infers whether the data in a column or series is datetime, continuous, categorical or binary.
 
     Args:
         column (pd.Series):
@@ -263,14 +267,17 @@ def infer_distr_type(column: pd.Series, ctl_mult: float = 2.5, min_num_unique: i
     n_rows = len(col)
     dtype = col.dtype
 
-    if dtype == "datetime64[ns]":
+    if n_unique == 2:
+        return DistrType.Binary
+
+    elif dtype == "float64":
+        return DistrType.Continuous
+
+    elif dtype == "datetime64[ns]":
         return DistrType.Datetime
 
     elif n_unique > max(min_num_unique, ctl_mult * np.log(n_rows)) and dtype in ["float64", "int64"]:
         return DistrType.Continuous
-
-    elif n_unique == 2 and np.isin(unique, [0, 1]).all():
-        return DistrType.Binary
 
     else:
         return DistrType.Categorical
@@ -344,3 +351,20 @@ def fd_opt_bins(column: pd.Series) -> int:
     iqr = column.quantile(0.75) - column.quantile(0.25)
 
     return int((column.max() - column.min()) / (2 * iqr * (n ** (-1 / 3))))
+
+
+def _bin_as_string(col: pd.Series, distr_type: str, max_bins: int = 10, prefix: bool = False):
+    if distr_type == "continuous":
+
+        def iv_to_str(iv):
+            pre = col.name + " " if prefix else ""
+            return pre + "[" + "{:.2f}".format(iv.left) + ", " + "{:.2f}".format(iv.right) + "]"
+
+        quantiles = min(max_bins, fd_opt_bins(col))
+        return pd.qcut(col, quantiles).apply(iv_to_str)
+
+    elif distr_type == "datetime":
+        return quantize_date(col)
+
+    else:
+        raise ValueError("Non continuous column cannot be binned.")
