@@ -25,7 +25,6 @@ def distr_plot(
     shade: bool = True,
     normalize: bool = False,
     cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
-    labels: Optional[Sequence[str]] = None,
     ax: Optional[Axes] = None,
 ) -> Axes:
     """Plot the distribution of the groups with respect to the target attribute.
@@ -55,8 +54,6 @@ def distr_plot(
         cmap (Optional[Sequence[Tuple[float, float, float]]], optional):
             A sequence of RGB tuples used to colour the histograms. If None seaborn's default pallete
             will be used. Defaults to None.
-        labels (Optional[Sequence[str]], optional):
-            A list of labels for each of the groups which will be used for the legend. Defaults to None.
         ax (Optional[matplotlib.axes.Axes], optional):
             An axis to plot the figure on. Defaults to plt.gca(). Defaults to None.
 
@@ -106,9 +103,6 @@ def distr_plot(
         ax.set_xticks(bins + 0.5)
     else:
         bins = "auto"
-
-    if labels is not None:
-        plt.legend(labels)
 
     plt.xlabel(target_attr)
 
@@ -248,9 +242,9 @@ def attr_distr_plot(
         shade=shade,
         normalize=normalize,
         cmap=cmap,
-        labels=labels,
         ax=ax,
     )
+    plt.legend(labels)
     plt.title(attr)
 
     return ax
