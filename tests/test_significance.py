@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 
+from fairlens.metrics.distance import BinomialDistance, MeanDistance
 from fairlens.metrics.significance import binominal_proportion_p_value as bin_prop
 from fairlens.metrics.significance import bootstrap_binned_statistic as bootstrap_binned
 from fairlens.metrics.significance import bootstrap_statistic as bootstrap
 from fairlens.metrics.significance import permutation_statistic as perm_stat
 from fairlens.metrics.significance import resampling_interval, resampling_p_value
-from fairlens.metrics.distance import BinomialDistance, MeanDistance
 
 epsilon = 1e-5
 df = pd.read_csv("datasets/compas.csv")

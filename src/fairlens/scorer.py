@@ -29,7 +29,6 @@ class FairnessScorer:
         target_attr: str,
         sensitive_attrs: Optional[Sequence[str]] = None,
         detect_sensitive: bool = False,
-        detect_hidden: bool = False,
         distr_type: Optional[str] = None,
         sensitive_distr_types: Optional[Mapping[str, str]] = None,
     ):
@@ -44,9 +43,6 @@ class FairnessScorer:
                 The sensitive attribute names. Defaults to None.
             detect_sensitive (bool, optional):
                 Whether to try to detect sensitive attributes from the column names. Defaults to False.
-            detect_hidden (bool, optional):
-                Whether to try to detect sensitive attributes from hidden correlations with other sensitive
-                attributes. Defaults to False.
             distr_type (Optional[str], optional):
                 The type of distribution of the target attribute. Can take values from
                 ["categorical", "continuous", "binary", "datetime"]. If None, the type of
@@ -88,7 +84,8 @@ class FairnessScorer:
 
     def distribution_score(
         self,
-        mode: str = "auto",
+        metric: str = "auto",
+        method: str = "dist_to_rest",
         p_value: bool = False,
         max_comb: Optional[int] = None,
     ) -> pd.DataFrame:
@@ -96,7 +93,7 @@ class FairnessScorer:
         of the population w.r.t. the target variable.
 
         Args:
-            mode (str, optional):
+            metric (str, optional):
                 Choose a metric to use. Defaults to automatically chosen metric depending on
                 the distribution of the target variable.
             p_value (bool, optional):
@@ -114,6 +111,10 @@ class FairnessScorer:
                 col = utils.infer_dtype(df[attr])
                 df.loc[:, attr] = utils._bin_as_string(col, distr_type.value, prefix=True)
 
+        # Convert binary attributes to 0s and 1s
+        if self.distr_type.is_binary():
+            df.loc[:, self.target_attr] = pd.factorize(df[self.target_attr])[0]
+
         if len(sensitive_attrs) == 0 or len(df) == 0 or len(df.dropna()) == 0:
             return 0.0, pd.DataFrame([], columns=["Group", "Distance", "Proportion", "Counts"])
 
@@ -127,41 +128,24 @@ class FairnessScorer:
                 if len(df_not_nan) == 0:
                     continue
 
-                df_dist = _calculate_distance(df, self.target_attr, list(sensitive_attr), mode=mode, p_value=p_value)
+                df_dist = _calculate_distance(df, self.target_attr, list(sensitive_attr), metric, method, p_value)
                 df_dists.append(df_dist)
 
         df_dist = pd.concat(df_dists, ignore_index=True)
 
         return df_dist.reset_index(drop=True)
 
-    def demographic_report(self, mode: str = "auto", alpha: Optional[float] = 0.95, min_count: Optional[int] = 100):
-        """Generate a report on the fairness of different groups of sensitive attributes.
-
-        Args:
-            mode (str, optional):
-                Choose a custom metric to use. Defaults to automatically chosen metric depending on
-                the distribution of the target variable.
-            alpha (Optional[float], optional):
-                Maximum p-value to accept a bias. Includes all sub-groups by default. Defaults to 0.95.
-            min_count (Optional[int], optional):
-                If set, sub-groups with less samples than min_count will be ignored. Defaults to 100.
-        """
-
-        df_dist = self.distribution_score(p_value=(alpha is not None))
-
-        if alpha is not None:
-            df_dist = df_dist[df_dist["P-Value"] < alpha]
-
-        if min_count is not None:
-            df_dist = df_dist[df_dist["Counts"] > min_count]
-
-        score = _calculate_score(df_dist)
-
-        print("Distance Table:")
-        print(df_dist)
-        print(f"\nWeighted Mean Statistical Distance: {score}\n")
-
-    def plot_distributions(self, figsize: Optional[Tuple[int, int]] = None, max_width: int = 3, **kwargs):
+    def plot_distributions(
+        self,
+        figsize: Optional[Tuple[int, int]] = None,
+        max_width: int = 3,
+        max_bins: int = 8,
+        show_hist: Optional[bool] = None,
+        show_curve: Optional[bool] = None,
+        shade: bool = True,
+        normalize: bool = False,
+        cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
+    ):
         """Plot the distributions of the target variable with respect to all sensitive values.
 
         Args:
@@ -169,11 +153,80 @@ class FairnessScorer:
                 The size of each figure if `separate` is True. Defaults to (6, 4).
             max_width (int, optional):
                 The maximum amount of figures. Defaults to 3.
-            **kwargs:
-                Additional keywords passed down to fairlens.plot.attr_distr_plot().
+            show_hist (Optional[bool], optional):
+                Shows the histogram if True. Defaults to True if the data is categorical or binary.
+            show_curve (Optional[bool], optional):
+                Shows a KDE if True. Defaults to True if the data is continuous or a date.
+            shade (bool, optional):
+                Shades the curve if True. Defaults to True.
+            normalize (bool, optional):
+                Normalizes the counts so the sum of the bar heights is 1. Defaults to False.
+            cmap (Optional[Sequence[Tuple[float, float, float]]], optional):
+                A sequence of RGB tuples used to colour the histograms. If None seaborn's default pallete
+                will be used. Defaults to None.
+            hist_kws (Optional[Mapping[str, Any]], optional):
+                Additional keyword arguments passed to seaborn.histplot(). Defaults to None.
         """
 
-        mult_distr_plot(self.df, self.target_attr, self.sensitive_attrs, figsize=figsize, max_width=max_width, **kwargs)
+        mult_distr_plot(
+            self.df,
+            self.target_attr,
+            self.sensitive_attrs,
+            figsize=figsize,
+            max_width=max_width,
+            max_bins=max_bins,
+            show_hist=show_hist,
+            show_curve=show_curve,
+            shade=shade,
+            normalize=normalize,
+            cmap=cmap,
+        )
+
+    def demographic_report(
+        self,
+        metric: str = "auto",
+        method: str = "dist_to_rest",
+        alpha: Optional[float] = 0.95,
+        min_count: Optional[int] = 100,
+        max_rows: int = 10,
+        hide_positive: bool = False,
+    ):
+        """Generate a report on the fairness of different groups of sensitive attributes.
+
+        Args:
+            metric (str, optional):
+                Choose a custom metric to use. Defaults to automatically chosen metric depending on
+                the distribution of the target variable.
+            alpha (Optional[float], optional):
+                Maximum p-value to accept a bias. Includes all sub-groups by default. Defaults to 0.95.
+            min_count (Optional[int], optional):
+                If set, sub-groups with less samples than min_count will be ignored. Defaults to 100.
+            max_rows (int, optional):
+                Maximum number of biased demographics to display. Defaults to 10.
+            hide_positive (bool, optional):
+                Hides positive distances if set to True. This may be useful when using metrics which can return
+                negative distances (binomial distance), in order to inspect a skew in only one direction.
+                Alternatively changing the method may yeild more significant results.
+                Defaults to False.
+        """
+
+        df_dist = self.distribution_score(metric=metric, method=method, p_value=(alpha is not None))
+
+        if alpha is not None:
+            df_dist = df_dist[df_dist["P-Value"] < alpha]
+
+        if min_count is not None:
+            df_dist = df_dist[df_dist["Counts"] > min_count]
+
+        score = calculate_score(df_dist)
+
+        if hide_positive:
+            df_dist = df_dist[df_dist["Distance"] < 0]
+
+        print(f"Sensitive Attributes: {self.sensitive_attrs}")
+        print("Most skewed demographics:")
+        print(df_dist.sort_values("Distance", ascending=False, key=abs)[:max_rows].to_string(index=False))
+        print(f"\nWeighted Mean Statistical Distance: {score}\n")
 
     def proxy_report(self):
         pass
@@ -209,26 +262,29 @@ class FairnessScorer:
         #     plt.show()
 
 
-def _calculate_distance(
-    df: pd.DataFrame, target_attr: str, sensitive_attrs: Sequence[str], mode: str = "auto", p_value: bool = False
-) -> pd.DataFrame:
-    """Calculates the distance between the distribution of all the unique groups of values and the
-    distribution without the respective value.
+def calculate_score(df_dist: pd.DataFrame) -> float:
+    """Calculate the weighted mean pairwise statistical distance.
 
     Args:
-        sensitive_attrs (Sequence[str]):
-            The list of sensitive attributes to consider.
-        mode (str, optional):
-            Choose a different metric to use. Defaults to automatically chosen metric depending on
-            the distribution of the target variable.
-        p_value (bool, optional):
-            Whether or not to compute a p-value. Defaults to False.
+        df_dist (pd.DataFrame):
+            A dataframe of statistical distances produced by or `fairlens.FairnessScorer.distribution_score`.
 
     Returns:
-        pd.DataFrame:
-            A dataframe consisting of the groups and their distances to the remaining dataset sorted
-            in ascending order.
+        float:
+            The weighted mean statistical distance.
     """
+
+    return (df_dist["Distance"].abs() * df_dist["Counts"]).sum() / df_dist["Counts"].sum()
+
+
+def _calculate_distance(
+    df: pd.DataFrame,
+    target_attr: str,
+    sensitive_attrs: Sequence[str],
+    metric: str = "auto",
+    method: str = "dist_to_rest",
+    p_value: bool = False,
+) -> pd.DataFrame:
 
     unique = df[sensitive_attrs].drop_duplicates()
 
@@ -239,7 +295,12 @@ def _calculate_distance(
 
         pred = utils.get_predicates_mult(df, [sensitive_group])[0]
 
-        dist_res = stat_distance(df, target_attr, pred, ~pred, mode=mode, p_value=p_value)
+        if method == "dist_to_rest":
+            pred_other = ~pred
+        else:
+            pred_other = pd.Series([True] * len(df))
+
+        dist_res = stat_distance(df, target_attr, pred, pred_other, mode=metric, p_value=p_value)
         distance = dist_res[0]
         p = dist_res[1] if p_value else 0
 
@@ -259,18 +320,3 @@ def _calculate_distance(
         df_dist.drop(columns=["P-Value"], inplace=True)
 
     return df_dist
-
-
-def _calculate_score(df_dist: pd.DataFrame) -> float:
-    """Calculate the weighted mean pairwise statistical distance.
-
-    Args:
-        df_dist (pd.DataFrame):
-            A dataframe of statistical distances produced by or `distribution_score` or `_calculate_distance`.
-
-    Returns:
-        float:
-            The weighted mean statistical distance.
-    """
-
-    return (df_dist["Distance"] * df_dist["Counts"]).sum() / df_dist["Counts"].sum()

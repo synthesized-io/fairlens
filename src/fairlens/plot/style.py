@@ -4,6 +4,7 @@ Change the plotting styles.
 
 import seaborn as sns
 
+
 def use_style():
     """Set the default seaborn style to a predefined style that works well with the package."""
 

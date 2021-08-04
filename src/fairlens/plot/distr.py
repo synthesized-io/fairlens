@@ -15,21 +15,6 @@ from matplotlib.axes import Axes
 from .. import utils
 
 
-def use_style():
-    """Set the default seaborn style to a predefined style that works well with the package."""
-
-    sns.reset_defaults()
-    sns.set_style("darkgrid")
-    sns.set(font="Verdana")
-    sns.set_context("paper")
-
-
-def reset_style():
-    """Restore the seaborn style to its defaults."""
-
-    sns.reset_defaults()
-
-
 def distr_plot(
     df: pd.DataFrame,
     target_attr: str,
@@ -42,7 +27,6 @@ def distr_plot(
     cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
     labels: Optional[Sequence[str]] = None,
     ax: Optional[Axes] = None,
-    **kwargs,
 ) -> Axes:
     """Plot the distribution of the groups with respect to the target attribute.
 
@@ -65,18 +49,16 @@ def distr_plot(
         show_curve (Optional[bool], optional):
             Shows a KDE if True. Defaults to True if the data is continuous or a date.
         shade (bool, optional):
-            Shades the curve if True. Defaults to True if the data is continuous or a datetime.
+            Shades the curve if True. Defaults to True.
         normalize (bool, optional):
             Normalizes the counts so the sum of the bar heights is 1. Defaults to False.
         cmap (Optional[Sequence[Tuple[float, float, float]]], optional):
             A sequence of RGB tuples used to colour the histograms. If None seaborn's default pallete
             will be used. Defaults to None.
         labels (Optional[Sequence[str]], optional):
-            A list of labels for each of the groups which will be used for the legend.
+            A list of labels for each of the groups which will be used for the legend. Defaults to None.
         ax (Optional[matplotlib.axes.Axes], optional):
-            An axis to plot the figure on. Defaults to plt.gca().
-        **kwargs:
-            Additional keyword arguments passed to seaborn.histplot().
+            An axis to plot the figure on. Defaults to plt.gca(). Defaults to None.
 
     Returns:
         matplotlib.axes.Axes:
@@ -112,32 +94,24 @@ def distr_plot(
     if show_curve is None:
         show_curve = distr_type == "continuous" or distr_type == "datetime"
 
-    kde = show_curve
-    if "kde" in kwargs:
-        kde = kwargs.pop("kde")
-
-    w = int(show_hist)
-    if "shrink" in kwargs:
-        w = kwargs.pop("shrink")
-
+    shrink = int(show_hist)
     stat = "probability" if normalize else "count"
-    if "stat" in kwargs:
-        stat = kwargs.pop("stat")
 
-    if "bins" in kwargs:
-        bins = kwargs.pop("bins")
+    if distr_type == "continuous":
+        _, bins = utils.zipped_hist((df[target_attr],), ret_bins=True, distr_type=distr_type)
     elif distr_type == "datetime":
         bins = utils.fd_opt_bins(column)  # TODO: Look at seaborn log scaling in more detail
-    elif distr_type == "continuous":
-        _, bins = utils.zipped_hist((df[target_attr],), ret_bins=True, distr_type=distr_type)
     elif column.dtype in ["int64", "float64"]:
         bins = np.arange(0, column.max() + 1.5) - 0.5
         ax.set_xticks(bins + 0.5)
     else:
         bins = "auto"
 
-    for pred in preds:
-        sns.histplot(column[pred], bins=bins, color=next(palette), kde=kde, shrink=w, stat=stat, ax=ax, **kwargs)
+    if distr_type == "binary":
+        plt.hist([column[pred] for pred in preds], color=[c for c, _ in zip(palette, preds)], density=normalize)
+    else:
+        for pred in preds:
+            sns.histplot(column[pred], bins=bins, color=next(palette), kde=show_curve, shrink=shrink, stat=stat, ax=ax)
 
     if show_curve and shade and not show_hist:
         palette = itertools.cycle(cmap)
@@ -164,8 +138,12 @@ def attr_distr_plot(
     separate: bool = False,
     figsize: Optional[Tuple[int, int]] = None,
     max_width: int = 3,
+    show_hist: Optional[bool] = None,
+    show_curve: Optional[bool] = None,
+    shade: bool = True,
+    normalize: bool = False,
+    cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
     ax: Optional[Axes] = None,
-    **kwargs,
 ) -> Union[Axes]:
     """Plot the distribution of the target attribute with respect to all the unique values in the column `attr`.
 
@@ -181,7 +159,7 @@ def attr_distr_plot(
             ["categorical", "continuous", "binary", "datetime"]. If None, the type of
             distribution is inferred based on the data in the column. Defaults to None.
         attr_distr_type (Optional[str], optional):
-            The type of distribution of attr. Can be "categorical", "continuous" or "datetime".
+            The type of distribution of `attr`. Can be "categorical", "continuous" or "datetime".
             If None the type of distribution is inferred based on the data in the column.
             Defaults to None.
         max_bins (int, optional):
@@ -192,10 +170,19 @@ def attr_distr_plot(
             The size of each figure if `separate` is True. Defaults to (6, 4).
         max_width (int, optional):
             The maximum amount of figures in a row if `separate` is True. Defaults to 3.
-        ax (Optional[matplotlib.Axes], optional):
-            An axis to plot the figure on. Defaults to plt.gca().
-        **kwargs:
-            Additional keyword arguments passed to distr_plot() or sns.histplot().
+        show_hist (Optional[bool], optional):
+            Shows the histogram if True. Defaults to True if the data is categorical or binary.
+        show_curve (Optional[bool], optional):
+            Shows a KDE if True. Defaults to True if the data is continuous or a date.
+        shade (bool, optional):
+            Shades the curve if True. Defaults to True.
+        normalize (bool, optional):
+            Normalizes the counts so the sum of the bar heights is 1. Defaults to False.
+        cmap (Optional[Sequence[Tuple[float, float, float]]], optional):
+            A sequence of RGB tuples used to colour the histograms. If None seaborn's default pallete
+            will be used. Defaults to None.
+        ax (Optional[matplotlib.axes.Axes], optional):
+            An axis to plot the figure on. Defaults to plt.gca(). Defaults to None.
 
     Returns:
         Optional[matplotlib.axes.Axes]:
@@ -242,7 +229,18 @@ def attr_distr_plot(
 
         for i, (group, title) in enumerate(zip(groups, labels)):
             ax_ = fig.add_subplot(r, c, i + 1)
-            distr_plot(df_, target_attr, [group], distr_type=distr_type, ax=ax_, **kwargs)
+            distr_plot(
+                df_,
+                target_attr,
+                [group],
+                distr_type=distr_type,
+                show_hist=show_hist,
+                show_curve=show_curve,
+                shade=shade,
+                normalize=normalize,
+                cmap=cmap,
+                ax=ax_,
+            )
             plt.title(title)
 
         return None
@@ -250,7 +248,19 @@ def attr_distr_plot(
     if ax is None:
         ax = plt.gca()
 
-    distr_plot(df_, target_attr, groups, distr_type=distr_type, labels=labels, ax=ax, **kwargs)
+    distr_plot(
+        df_,
+        target_attr,
+        groups,
+        distr_type=distr_type,
+        show_hist=show_hist,
+        show_curve=show_curve,
+        shade=shade,
+        normalize=normalize,
+        cmap=cmap,
+        labels=labels,
+        ax=ax,
+    )
     plt.title(attr)
 
     return ax
@@ -262,9 +272,16 @@ def mult_distr_plot(
     attrs: Sequence[str],
     figsize: Optional[Tuple[int, int]] = None,
     max_width: int = 3,
-    **kwargs,
+    distr_type: Optional[str] = None,
+    attr_distr_types: Optional[Mapping[str, str]] = None,
+    max_bins: int = 8,
+    show_hist: Optional[bool] = None,
+    show_curve: Optional[bool] = None,
+    shade: bool = True,
+    normalize: bool = False,
+    cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
 ):
-    """Plot the pdf of the all values for each of the unique values in the column `attr`
+    """Plot the distribution of the all values for each of the unique values in the column `attr`
     with respect to the target attribute.
 
     Args:
@@ -278,8 +295,27 @@ def mult_distr_plot(
             The size of each figure if `separate` is True. Defaults to (6, 4).
         max_width (int, optional):
             The maximum amount of figures. Defaults to 3.
-        **kwargs:
-            Additional keywords passed down to attr_distr_plot().
+        distr_type (Optional[str], optional):
+            The type of distribution of the target attribute. Can take values from
+            ["categorical", "continuous", "binary", "datetime"]. If None, the type of
+            distribution is inferred based on the data in the column. Defaults to None.
+        attr_distr_types (Optional[Mapping[str, str]], optional):
+            The types of distribution of the attributes in `attrs`. Passed as a mapping
+            from attribute name to corresponding distribution type.
+            Can take values from ["categorical", "continuous", "binary", "datetime"].
+            If None, the type of distribution of all sensitive attributes are inferred
+            based on the data in the respective columns. Defaults to None.
+        show_hist (Optional[bool], optional):
+            Shows the histogram if True. Defaults to True if the data is categorical or binary.
+        show_curve (Optional[bool], optional):
+            Shows a KDE if True. Defaults to True if the data is continuous or a date.
+        shade (bool, optional):
+            Shades the curve if True. Defaults to True.
+        normalize (bool, optional):
+            Normalizes the counts so the sum of the bar heights is 1. Defaults to False.
+        cmap (Optional[Sequence[Tuple[float, float, float]]], optional):
+            A sequence of RGB tuples used to colour the histograms. If None seaborn's default pallete
+            will be used. Defaults to None.
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
@@ -288,6 +324,8 @@ def mult_distr_plot(
 
     .. image:: ../../savefig/mult_distr_plot.png
     """
+
+    attr_distr_types = attr_distr_types or {}
 
     if figsize is None:
         figsize = 6, 4
@@ -301,4 +339,18 @@ def mult_distr_plot(
 
     for i, attr in enumerate(attrs):
         ax_ = fig.add_subplot(r, c, i + 1)
-        attr_distr_plot(df, target_attr, attr, ax=ax_, **kwargs)
+        attr_distr_type = attr_distr_types[attr] if attr in attr_distr_types else None
+        attr_distr_plot(
+            df,
+            target_attr,
+            attr,
+            distr_type=distr_type,
+            attr_distr_type=attr_distr_type,
+            max_bins=max_bins,
+            show_hist=show_hist,
+            show_curve=show_curve,
+            shade=shade,
+            normalize=normalize,
+            cmap=cmap,
+            ax=ax_,
+        )
