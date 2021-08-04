@@ -150,14 +150,6 @@ def correlation_matrix(
         y_type = utils.infer_distr_type(df[col_y])
 
         for col_x in columns_x:
-            if col_y == col_x:
-                coeffs.append(1.0)
-                continue
-
-            if (col_x, col_y) in table:
-                coeffs.append(table[(col_x, col_y)])
-                continue
-
             x_type = utils.infer_distr_type(df[col_x])
             if y_type.is_continuous() and x_type.is_continuous():
                 coeffs.append(num_num_metric(df[col_y], df[col_x]))
