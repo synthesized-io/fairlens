@@ -9,6 +9,7 @@ src/_version.py
 
 docs/_build/
 docs/savefig
+_autosummary/
 
 .env/
 

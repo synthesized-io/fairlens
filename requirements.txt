@@ -1,2 +1,4 @@
+dcor==0.5.3
 numpy==1.18.4
 pandas==1.1.5
+seaborn==0.11.1

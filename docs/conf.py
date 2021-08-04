@@ -47,10 +47,21 @@ release = version("fairlens")
 extensions = [
     "sphinx.ext.napoleon",
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosummary",
+    "sphinx.ext.viewcode",
     "m2r2",
     "IPython.sphinxext.ipython_console_highlighting",
     "IPython.sphinxext.ipython_directive",
+    "sphinx_panels",
 ]
+
+autosummary_generate = True
+add_module_names = False
+autodoc_typehints = "description"
+
+autodoc_default_options = {"exclude-members": "__weakref__,__dict__,__init_subclass__"}
+
+panels_add_bootstrap_css = False
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -72,6 +83,10 @@ html_theme = "pydata_sphinx_theme"
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ["_static"]
+html_css_files = [
+    "css/custom.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css",
+]
 
 # Customization
 html_logo = "_static/Synthesized-Logo-Colour.png"

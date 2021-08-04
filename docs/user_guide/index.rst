@@ -3,17 +3,19 @@ User Guide
 ==========
 
 .. toctree::
-  :hidden:
   :glob:
+  :caption: Getting Started
 
-  bias
-  viz
+  quickstart
+  fairness
+
+.. toctree::
+  :glob:
+  :caption: User Guides
+
+  metrics
   sensitive
-
-Getting Started
-^^^^^^^^^^^^^^^
-FairLens can be installed using pip
-
-.. code-block:: bash
-
-  pip install fairlens
+  correlations
+  viz
+  scorer
+  significance

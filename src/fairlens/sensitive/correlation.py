@@ -19,6 +19,7 @@ def find_sensitive_correlations(
     """Looks at the columns that are not considered to be immediately sensitive and finds if any is strongly
     correlated with a sensitive column, specifying both the sensitive column name and the sensitive category
     it is a part of.
+
     Args:
         df (pd.DataFrame):
             Pandas dataframe that will be analyzed.
@@ -39,6 +40,7 @@ def find_sensitive_correlations(
             detecting sensitive attributes are defined. By default, the configuration
             is the one describing protected attributes and groups according to the
             UK Government.
+
     Returns:
         Dict[str, Tuple[Optional[str]]]:
             The returned value is a dictionary with the non-sensitive column as the key and a tuple as the value,
@@ -86,6 +88,7 @@ def find_column_correlation(
     or the column corresponding to the given name.
     If matches are found, a list containing the correlated
     column names and its associated sensitive category, respectively, is returned.
+
     Args:
         col (Union[str, pd.Series]):
             Pandas series or dataframe column name that will be analyzed.
@@ -108,6 +111,7 @@ def find_column_correlation(
             detecting sensitive attributes are defined. By default, the configuration
             is the one describing protected attributes and groups according to the
             UK Government.
+
     Returns:
         List[Tuple[str, Optional[str]]]:
             The returned value is a list containing tuples of all the correlated sensitive columns that were
@@ -162,7 +166,7 @@ def _compute_series_correlation(
 
     # If we have a categorical-continuous association, we use Kruskal-Wallis and check the p-value instead.
     if arrays:
-        args = [group.array for group in arrays]
+        args = [np.array(group.array, dtype=float) for group in arrays]
         try:
             _, p_val = ss.kruskal(*args, nan_policy="omit")
         except ValueError:
