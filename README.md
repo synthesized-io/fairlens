@@ -37,7 +37,8 @@ fscorer = FairnessScorer(
     sensitive_attributes=["Sex", "Ethnicity", "MaritalStatus", "Language"]
 )
 fscorer.report()
-
+```
+```
 Sensitive Attributes: Sex, Ethnicity, MaritalStatus, Language
 
                              Group  Distance  Proportion  Counts
