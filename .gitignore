@@ -5,6 +5,7 @@ pip-wheel-metadata/
 build/
 dist/
 *.swp
+src/_version.py
 
 docs/_build/
 docs/savefig
