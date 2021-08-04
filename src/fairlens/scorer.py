@@ -9,12 +9,8 @@ from typing import Mapping, Optional, Sequence, Tuple
 import pandas as pd
 
 from . import utils
-
-# from .bias.heatmap import two_column_heatmap
 from .metrics.unified import stat_distance
 from .plot.distr import mult_distr_plot
-
-# from .sensitive.correlation import find_sensitive_correlations
 from .sensitive.detection import detect_names_df
 
 logger = logging.getLogger(__name__)
@@ -227,39 +223,6 @@ class FairnessScorer:
         print("Most skewed demographics:")
         print(df_dist.sort_values("Distance", ascending=False, key=abs)[:max_rows].to_string(index=False))
         print(f"\nWeighted Mean Statistical Distance: {score}\n")
-
-    def proxy_report(self):
-        pass
-        # TODO: Fix bugs in correlations
-        # if detect_proxies:
-        #     proxy_dict = find_sensitive_correlations(df)
-        #     proxy_col = proxy_dict.keys()
-        #     sensitive_col = [proxy_dict[key][0] for key in proxy_dict.keys()]
-        #     category_col = [proxy_dict[key][1] for key in proxy_dict.keys()]
-
-        #     df_proxy = pd.DataFrame(
-        #         list(zip(proxy_col, sensitive_col, category_col)),
-        #         columns=["Proxy", "Sensitive Column", "Protected Category"],
-        #     )
-
-        #     print(
-        #         "Below are the detected proxies for sensitive attributes using a default \
-        #             correlation coefficient cutoff of 0.75.\n"
-        #     )
-        #     print(df_proxy)
-
-        # If full heatmap is set to true, the full correlation heatmap will be output. Otherwise, only the
-        # correlations of the sensitive attributes with the non-sensitive ones will be calculated.
-        # TODO: Fix heatmap formatting
-        # if full_heatmap:
-        #     two_column_heatmap(df)
-        #     plt.show()
-        # else:
-        #     columns_sensitive = self.sensitive_attrs
-        #     columns_nonsensitive = list(set(df.columns) - set(self.sensitive_attrs))
-
-        #     two_column_heatmap(df, columns_x=columns_sensitive, columns_y=columns_nonsensitive)
-        #     plt.show()
 
 
 def calculate_score(df_dist: pd.DataFrame) -> float:
