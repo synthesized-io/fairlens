@@ -45,8 +45,6 @@ def test_multiple_correlation():
         ["arabian", 19, 10, 2200, "married", 10, 60],
     ]
     df = pd.DataFrame(data, columns=col_names)
-    # The first series is correlated with the "race" and "family status" columns, while the second is
-    # correlated with the "age" column
     res = {"corr1": [("race", "Ethnicity"), ("marital", "Family Status")]}
     assert find_sensitive_correlations(df, corr_cutoff=0.9) == res
 
@@ -95,8 +93,6 @@ def test_series_correlation():
         ["arabian", 19, 10, 2200, "married", 10],
     ]
     df = pd.DataFrame(data, columns=col_names)
-    # The first series is correlated with the "race" and "family status" columns, while the second is
-    # correlated with the "age" column
     s1 = pd.Series([60, 90, 120, 90, 120, 60])
     s2 = pd.Series([120, 130, 210, 220, 200, 115])
     res1 = [("race", "Ethnicity"), ("marital", "Family Status")]
