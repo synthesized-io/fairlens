@@ -1,36 +1,32 @@
 import pandas as pd
 
-from fairlens.scorer.fairness_scorer import FairnessScorer
+from fairlens.scorer import FairnessScorer, calculate_score
 
 dfc = pd.read_csv("datasets/compas.csv")
 
 
-def test_fairness_scorer_runs():
-    fscorer = FairnessScorer(dfc, "RawScore", ["Ethnicity", "Sex"])
-    assert fscorer.sensitive_attrs == ["Ethnicity", "Sex"]
+def test_fairness_scorer_runs_compas():
+    fscorer = FairnessScorer(dfc, "RawScore", ["DateOfBirth", "Ethnicity", "Sex"])
+    assert fscorer.sensitive_attrs == ["DateOfBirth", "Ethnicity", "Sex"]
     assert fscorer.target_attr == "RawScore"
 
-    score = fscorer.distribution_score(alpha=0.95)[0]
+    _ = fscorer.plot_distributions()
+    df_dist = fscorer.distribution_score()
+    score = calculate_score(df_dist)
     assert score > 0
 
 
 def test_sensitive_attr_detection():
     fscorer = FairnessScorer(dfc, "RawScore")
-    assert sorted(fscorer.sensitive_attrs) == ["DateOfBirth", "Ethnicity", "Language", "MaritalStatus", "Sex"]
+    assert fscorer.sensitive_attrs == ["DateOfBirth", "Ethnicity", "Language", "MaritalStatus", "Sex"]
 
-    fscorer = FairnessScorer(dfc, "RawScore", ["Arbitrary"], detect_sensitive=True)
-    assert sorted(fscorer.sensitive_attrs) == [
-        "Arbitrary",
-        "DateOfBirth",
-        "Ethnicity",
-        "Language",
-        "MaritalStatus",
-        "Sex",
-    ]
+    fscorer = FairnessScorer(dfc, "RawScore", ["RawScore"], detect_sensitive=True)
+    assert fscorer.sensitive_attrs == ["DateOfBirth", "Ethnicity", "Language", "MaritalStatus", "RawScore", "Sex"]
 
 
 def test_distribution_score():
     fscorer = FairnessScorer(dfc, "RawScore", ["Ethnicity", "Sex"])
-    score, df_dist = fscorer.distribution_score()
+    df_dist = fscorer.distribution_score()
+    score = calculate_score(df_dist)
 
     assert score * df_dist["Counts"].sum() == (df_dist["Distance"] * df_dist["Counts"]).sum()

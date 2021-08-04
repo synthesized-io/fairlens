@@ -1,9 +1,11 @@
 """
 Collection of methods which can be used to numerically or analytically compute p-values and confidence intervals.
+
 This module provides three functions to sample and generate distributions required for estimating p_values:
   - `permutation_statistic`
   - `bootstrap_statistic`
   - `bootstrap_binned_statistic`
+
 The functions, `resampling_p_value`, `resampling_interval` can be use these distributions to
 carry out p-value tests or obtain a confidence interval.
 """
@@ -17,6 +19,7 @@ from scipy.stats import beta, binom_test, norm
 
 def binominal_proportion_p_value(p_obs: float, p_null: float, n: int, alternative: str = "two-sided") -> float:
     """Calculate an exact p-value for an observed binomial proportion of a sample.
+
     Args:
         p_obs (float):
             Observed proportion of successes.
@@ -27,6 +30,7 @@ def binominal_proportion_p_value(p_obs: float, p_null: float, n: int, alternativ
         alternative (str, optional):
             Indicates the alternative hypothesis. One of "two-sided", "greater", "less".
             Defaults to "two-sided".
+
     Returns:
         float:
             The p-value under the null hypothesis.
@@ -40,6 +44,7 @@ def binominal_proportion_interval(
     p: float, n: int, cl: float = 0.95, method: str = "clopper-pearson"
 ) -> Tuple[float, float]:
     """Calculate an approximate confidence interval for a binomial proportion of a sample.
+
     Args:
         p (float):
             Proportion of successes.
@@ -50,6 +55,7 @@ def binominal_proportion_interval(
         method (str, optional):
             Approximation method. One of "normal", "clopper-pearson", "agresti-coull".
             Defaults to "clopper-pearson".
+
     Returns:
         Tuple[float, float]:
             A tuple containing the confidence interval.
@@ -87,6 +93,7 @@ def permutation_statistic(
 ) -> np.ndarray:
     """
     Performs the sampling for a two sample permutation test.
+
     Args:
         x (pd.Series):
             First data sample.
@@ -96,6 +103,7 @@ def permutation_statistic(
             Function that computes the test statistic.
         n_perm (int):
             Number of permutations.
+
     Returns:
         np.ndarray:
             The distribution of the statistic on a n_perm permutations of samples.
@@ -121,6 +129,7 @@ def bootstrap_statistic(
     sample_size: Optional[int] = None,
 ) -> np.ndarray:
     """Compute the samples of a statistic estimate using the bootstrap method.
+
     Args:
         x (pd.Series):
             First data sample.
@@ -132,6 +141,7 @@ def bootstrap_statistic(
             Number of bootstrap samples to perform.
         sample_size (Optional[int], optional):
             Number of data samples in a bootstrap sample.
+
     Returns:
         np.ndarray:
             The bootstrap samples.
@@ -153,6 +163,7 @@ def bootstrap_binned_statistic(
     h_x: pd.Series, h_y: pd.Series, statistic: Callable[[pd.Series, pd.Series], float], n_samples: int = 1000
 ) -> np.ndarray:
     """Compute the samples of a binned statistic estimate using the bootstrap method.
+
     Args:
         h_x (pd.Series):
             First histogram.
@@ -162,6 +173,7 @@ def bootstrap_binned_statistic(
             Function that computes the statistic.
         n_samples (int, optional):
             Number of bootstrap samples to perform.
+
     Returns:
         np.ndarray:
             The bootstrap samples.
@@ -187,6 +199,7 @@ def bootstrap_binned_statistic(
 
 def resampling_p_value(t_obs: float, t_distribution: pd.Series, alternative: str = "two-sided") -> float:
     """Compute a p-value using a resampled test statistic distribution.
+
     Args:
         t_obs (float):
             Observed value of the test statistic.
@@ -195,6 +208,7 @@ def resampling_p_value(t_obs: float, t_distribution: pd.Series, alternative: str
         alternative (str, optional):
             Indicates the alternative hypothesis. One of "two-sided", "greater", "less".
             Defaults to "two-sided".
+
     Returns:
         float:
             The p-value under the null hypothesis.
@@ -220,6 +234,7 @@ def resampling_p_value(t_obs: float, t_distribution: pd.Series, alternative: str
 def resampling_interval(t_obs: float, t_distribution: pd.Series, cl: float = 0.95):
     """Compute a confidence interval using a distribution of the test statistic
     on resampled data.
+
     Args:
         t_obs (float):
             Observed value of the test statistic.
@@ -227,6 +242,7 @@ def resampling_interval(t_obs: float, t_distribution: pd.Series, cl: float = 0.9
             Samples of test statistic distribution.
         cl (float, optional):
             Confidence level of the interval.
+
     Returns:
         Tuple[float, float]:
             A tuple containing the confidence interval.

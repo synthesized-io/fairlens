@@ -1,3 +1,7 @@
+"""
+Identify legally protected attributes in a dataset.
+"""
+
 import json
 import os
 import pathlib

@@ -360,8 +360,8 @@ def _bin_as_string(col: pd.Series, distr_type: str, max_bins: int = 10, prefix: 
             pre = col.name + " " if prefix else ""
             return pre + "[" + "{:.2f}".format(iv.left) + ", " + "{:.2f}".format(iv.right) + "]"
 
-        quantiles = min(max_bins, fd_opt_bins(col))
-        return pd.qcut(col, quantiles).apply(iv_to_str)
+        quantiles = min(max_bins, col.nunique())
+        return pd.qcut(col, quantiles, duplicates="drop").apply(iv_to_str)
 
     elif distr_type == "datetime":
         return quantize_date(col)

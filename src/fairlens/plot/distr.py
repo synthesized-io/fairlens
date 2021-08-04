@@ -29,6 +29,7 @@ def distr_plot(
     ax: Optional[Axes] = None,
 ) -> Axes:
     """Plot the distribution of the groups with respect to the target attribute.
+
     Args:
         df (pd.DataFrame):
             The input dataframe.
@@ -58,9 +59,11 @@ def distr_plot(
             A list of labels for each of the groups which will be used for the legend. Defaults to None.
         ax (Optional[matplotlib.axes.Axes], optional):
             An axis to plot the figure on. Defaults to plt.gca(). Defaults to None.
+
     Returns:
         matplotlib.axes.Axes:
             The matplotlib axis containing the plot.
+
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
         >>> g1 = {"Ethnicity": ["African-American"]}
@@ -68,6 +71,7 @@ def distr_plot(
         >>> g3 = {"Ethnicity": ["Asian"]}}
         >>> distr_plot(df, "RawScore", [g1, g2, g3])
         >>> plt.show()
+
         .. image:: ../../savefig/distr_plot.png
     """
 
@@ -137,6 +141,7 @@ def attr_distr_plot(
     ax: Optional[Axes] = None,
 ) -> Optional[Axes]:
     """Plot the distribution of the target attribute with respect to all the unique values in the column `attr`.
+
     Args:
         df (pd.DataFrame):
             The input dataframe.
@@ -169,13 +174,16 @@ def attr_distr_plot(
             will be used. Defaults to None.
         ax (Optional[matplotlib.axes.Axes], optional):
             An axis to plot the figure on. Defaults to plt.gca(). Defaults to None.
+
     Returns:
         Optional[matplotlib.axes.Axes]:
             The matplotlib axes containing the plot if `separate` is False, otherwise None.
+
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
         >>> attr_distr_plot(df, "RawScore", "Ethnicity")
         >>> plt.show()
+
         .. image:: ../../savefig/attr_distr_plot.png
     """
 
@@ -265,6 +273,7 @@ def mult_distr_plot(
 ):
     """Plot the distribution of the all values for each of the unique values in the column `attr`
     with respect to the target attribute.
+
     Args:
         df (pd.DataFrame):
             The input dataframe.
@@ -299,10 +308,12 @@ def mult_distr_plot(
         cmap (Optional[Sequence[Tuple[float, float, float]]], optional):
             A sequence of RGB tuples used to colour the histograms. If None seaborn's default pallete
             will be used. Defaults to None.
+
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
         >>> mult_distr_plot(df, "RawScore", ["Ethnicity", "Sex", "MaritalStatus", "Language", "DateOfBirth"])
         >>> plt.show()
+
     .. image:: ../../savefig/mult_distr_plot.png
     """
 

@@ -19,8 +19,10 @@ from ..metrics import significance as pv
 class DistanceMetric(ABC):
     """
     Base class for distance metrics that compare samples from two distributions.
+
     Computes the distance between the probability distributions of x and y with respect to the
     target attribute.
+
     Subclasses must implement a distance method.
     """
 
@@ -42,11 +44,13 @@ class DistanceMetric(ABC):
 
     def __call__(self, x: pd.Series, y: pd.Series) -> Optional[float]:
         """Calculate the distance between two distributions.
+
         Args:
             x (pd.Series):
                 The data in the column representing the first group.
             y (pd.Series):
                 The data in the column representing the second group.
+
         Returns:
             Optional[float]:
                 The computed distance.
@@ -60,11 +64,13 @@ class DistanceMetric(ABC):
     @abstractmethod
     def check_input(self, x: pd.Series, y: pd.Series) -> bool:
         """Check whether the input is valid. Returns False if x and y have different dtypes by default.
+
         Args:
             x (pd.Series):
                 The data in the column representing the first group.
             y (pd.Series):
                 The data in the column representing the second group.
+
         Returns:
             bool:
                 Whether or not the input is valid.
@@ -74,11 +80,13 @@ class DistanceMetric(ABC):
     @abstractmethod
     def distance(self, x: pd.Series, y: pd.Series) -> float:
         """Distance between the distribution of numerical data in x and y. Derived classes must implement this.
+
         Args:
             x (pd.Series):
                 Numerical data in a column.
             y (pd.Series):
                 Numerical data in a column.
+
         Returns:
             float:
                 The computed distance.
@@ -87,11 +95,13 @@ class DistanceMetric(ABC):
 
     def p_value(self, x: pd.Series, y: pd.Series) -> float:
         """Returns a p-value for the test that x and y are sampled from the same distribution.
+
         Args:
             x (pd.Series):
                 Numerical data in a column.
             y (pd.Series):
                 Numerical data in a column.
+
         Returns:
             float:
                 The computed p-value.
@@ -116,11 +126,13 @@ class DistanceMetric(ABC):
 class ContinuousDistanceMetric(DistanceMetric):
     """
     Base class for distance metrics on continuous data.
+
     Subclasses must implement a distance method.
     """
 
     def __init__(self, p_value_test="bootstrap"):
         """Initialize continuous distance metric.
+
         Args:
             p_value_test (str, optional):
                 Choose which method of resampling will be used to compute the p-value. Overidden by metrics
@@ -150,15 +162,18 @@ class ContinuousDistanceMetric(DistanceMetric):
 class CategoricalDistanceMetric(DistanceMetric):
     """
     Base class for distance metrics on categorical data.
+
     Continuous data is automatically binned to create histograms, bin edges can be provided as an argument
     and will be used to bin continous data. If the data has been pre-binned and consists of pd.Intervals
     for instance, the histograms will be computed using the counts of each bin, and the bin_edges, if given,
     will be used in metrics such as EarthMoversDistanceCategorical to compute the distance space.
+
     Subclasses must implement a distance_pdf method.
     """
 
     def __init__(self, bin_edges: Optional[np.ndarray] = None):
         """Initialize categorical distance metric.
+
         Args:
             bin_edges (Optional[np.ndarray], optional):
                 A numpy array of bin edges used to bin continuous data or to indicate bins of pre-binned data
@@ -183,6 +198,7 @@ class CategoricalDistanceMetric(DistanceMetric):
     @abstractmethod
     def distance_pdf(self, p: pd.Series, q: pd.Series, bin_edges: Optional[np.ndarray]) -> float:
         """Distance between 2 aligned normalized histograms. Derived classes must implement this.
+
         Args:
             p (pd.Series):
                 A normalized histogram.
@@ -191,6 +207,7 @@ class CategoricalDistanceMetric(DistanceMetric):
             bin_edges (Optional[np.ndarray]):
                 bin_edges for binned continuous data. Used by metrics such as Earth Mover's Distance to compute the
                 distance metric space.
+
         Returns:
             float:
                 The computed distance.
@@ -282,6 +299,7 @@ class KruskalWallis(ContinuousDistanceMetric):
 class EarthMoversDistance(CategoricalDistanceMetric):
     """
     Earth movers distance (EMD), aka Wasserstein 1-distance, for categorical data.
+
     Using EarthMoversDistance on the raw data is faster and recommended.
     """
 

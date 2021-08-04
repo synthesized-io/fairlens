@@ -13,11 +13,13 @@ import scipy.stats as ss
 def cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
     """Metric that calculates the corrected Cramer's V statistic for categorical-categorical
     correlations, used in heatmap generation.
+
     Args:
         sr_a (pd.Series):
             First categorical series to analyze.
         sr_b (pd.Series):
             Second categorical series to analyze.
+
     Returns:
         float: Value of the statistic.
     """
@@ -47,9 +49,11 @@ def cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
 def pearson(sr_a: pd.Series, sr_b: pd.Series) -> float:
     """Metric that calculates Pearson's correlation coefficent for numerical-numerical
     pairs of series, used in heatmap generation.
+
     Args:
         sr_a (pd.Series): First numerical series to analyze.
         sr_b (pd.Series): Second numerical series to analyze.
+
     Returns:
         float: Value of the coefficient.
     """
@@ -59,11 +63,13 @@ def pearson(sr_a: pd.Series, sr_b: pd.Series) -> float:
 def kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
     """Metric that uses the Kruskal-Wallis H Test to obtain a p-value indicating the possibility
     that a categorical and numerical series are not correlated, used in heatmap generation.
+
     Args:
         sr_a (pd.Series):
             The categorical series to analyze, used for grouping the numerical one.
         sr_b (pd.Series):
             The numerical series to analyze.
+
     Returns:
         float:
             The correlation coefficient, calculating by subtracting the p-value from 1, as the
@@ -87,6 +93,7 @@ def kruskal_wallis_boolean(sr_a: pd.Series, sr_b: pd.Series, p_cutoff: float = 0
     """Metric that uses the Kruskal-Wallis H Test to obtain a p-value that is used to determine
     whether the possibility that the columns obtained by grouping the continuous series
     by the categorical series come from the same distribution. Used for proxy detection.
+
     Args:
         sr_a (pd.Series):
             The categorical series to analyze, used for grouping the numerical one.
@@ -94,6 +101,7 @@ def kruskal_wallis_boolean(sr_a: pd.Series, sr_b: pd.Series, p_cutoff: float = 0
             The numerical series to analyze.
         p_cutoff (float):
             The maximum admitted p-value for the distributions to be considered independent.
+
     Returns:
         bool: Bool value representing whether or not the two series are correlated.
     """
@@ -117,11 +125,13 @@ def kruskal_wallis_boolean(sr_a: pd.Series, sr_b: pd.Series, p_cutoff: float = 0
 def distance_nn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
     """Metric that uses non-linear correlation distance to obtain a correlation coefficient for
     numerical-numerical column pairs.
+
     Args:
         sr_a (pd.Series):
             First numerical series to analyze.
         sr_b (pd.Series):
             Second numerical series to analyze.
+
     Returns:
         float:
             The correlation coefficient.
@@ -140,11 +150,13 @@ def distance_nn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
 def distance_cn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
     """Metric that uses non-linear correlation distance to obtain a correlation coefficient for
     categorical-numerical column pairs.
+
     Args:
         sr_a (pd.Series):
             The categorical series to analyze, used for grouping the numerical one.
         sr_b (pd.Series):
             The numerical series to analyze.
+
     Returns:
         float:
             The correlation coefficient.
