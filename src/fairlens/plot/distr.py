@@ -4,7 +4,7 @@ Visualize distributions of data.
 
 import itertools
 from math import ceil
-from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Iterator, List, Mapping, Optional, Sequence, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -107,23 +107,20 @@ def distr_plot(
     else:
         bins = "auto"
 
-    if distr_type == "binary":
-        plt.hist([column[pred] for pred in preds], color=[c for c, _ in zip(palette, preds)], density=normalize)
-    else:
-        for pred in preds:
-            sns.histplot(column[pred], bins=bins, color=next(palette), kde=show_curve, shrink=shrink, stat=stat, ax=ax)
-
-    if show_curve and shade and not show_hist:
-        palette = itertools.cycle(cmap)
-
-        for line in ax.lines:
-            xy = line.get_xydata()
-            ax.fill_between(xy[:, 0], xy[:, 1], color=next(palette), alpha=0.3)
-
     if labels is not None:
         plt.legend(labels)
 
     plt.xlabel(target_attr)
+
+    if distr_type == "binary":
+        plt.hist([column[pred] for pred in preds], color=[c for c, _ in zip(palette, preds)], density=normalize, ax=ax)
+        return ax
+
+    for pred in preds:
+        sns.histplot(column[pred], bins=bins, color=next(palette), kde=show_curve, shrink=shrink, stat=stat, ax=ax)
+
+    if shade and not show_hist:
+        _shade_area(ax, palette, alpha=0.3)
 
     return ax
 
@@ -134,17 +131,15 @@ def attr_distr_plot(
     attr: str,
     distr_type: Optional[str] = None,
     attr_distr_type: Optional[str] = None,
-    max_bins: int = 8,
+    max_quantiles: int = 8,
     separate: bool = False,
-    figsize: Optional[Tuple[int, int]] = None,
-    max_width: int = 3,
     show_hist: Optional[bool] = None,
     show_curve: Optional[bool] = None,
     shade: bool = True,
     normalize: bool = False,
     cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
     ax: Optional[Axes] = None,
-) -> Union[Axes]:
+) -> Optional[Axes]:
     """Plot the distribution of the target attribute with respect to all the unique values in the column `attr`.
 
     Args:
@@ -162,14 +157,10 @@ def attr_distr_plot(
             The type of distribution of `attr`. Can be "categorical", "continuous" or "datetime".
             If None the type of distribution is inferred based on the data in the column.
             Defaults to None.
-        max_bins (int, optional):
-            The maximum amount of bins to use for continuous data. Defaults to 8.
+        max_quantiles (int, optional):
+            The maximum amount of quantiles to use for continuous data. Defaults to 8.
         separate (bool, optional):
             Separate into multiple plots (subplot). Defaults to False.
-        figsize (Optional[Tuple[int, int]], optional):
-            The size of each figure if `separate` is True. Defaults to (6, 4).
-        max_width (int, optional):
-            The maximum amount of figures in a row if `separate` is True. Defaults to 3.
         show_hist (Optional[bool], optional):
             Shows the histogram if True. Defaults to True if the data is categorical or binary.
         show_curve (Optional[bool], optional):
@@ -208,7 +199,7 @@ def attr_distr_plot(
 
     # Bin data
     if attr_distr_type == "continuous" or attr_distr_type == "datetime":
-        df_.loc[:, attr] = utils._bin_as_string(col, attr_distr_type, max_bins=max_bins)
+        df_.loc[:, attr] = utils._bin_as_string(col, attr_distr_type, max_bins=max_quantiles)
 
     # Values ordered by counts in order for overlay to work well.
     unique_values = df_[attr].dropna().value_counts().keys()
@@ -217,12 +208,11 @@ def attr_distr_plot(
     groups = [pd.Series([True] * len(df_))] + [(df_[attr] == val) for val in unique_values]
 
     if separate:
-        if figsize is None:
-            figsize = 6, 5
+        figsize = 6, 5
 
         n = len(groups)
-        r = ceil(n / max_width)
-        c = min(n, max_width)
+        r = ceil(n / 3)
+        c = min(n, 3)
         fig = plt.figure(figsize=(figsize[0] * c, figsize[1] * r))
         fig.tight_layout()
         plt.subplots_adjust(hspace=0.3)
@@ -274,7 +264,7 @@ def mult_distr_plot(
     max_width: int = 3,
     distr_type: Optional[str] = None,
     attr_distr_types: Optional[Mapping[str, str]] = None,
-    max_bins: int = 8,
+    max_quantiles: int = 8,
     show_hist: Optional[bool] = None,
     show_curve: Optional[bool] = None,
     shade: bool = True,
@@ -305,6 +295,8 @@ def mult_distr_plot(
             Can take values from ["categorical", "continuous", "binary", "datetime"].
             If None, the type of distribution of all sensitive attributes are inferred
             based on the data in the respective columns. Defaults to None.
+        max_quantiles (int, optional):
+            The maximum amount of quantiles to use for continuous data. Defaults to 8.
         show_hist (Optional[bool], optional):
             Shows the histogram if True. Defaults to True if the data is categorical or binary.
         show_curve (Optional[bool], optional):
@@ -346,7 +338,7 @@ def mult_distr_plot(
             attr,
             distr_type=distr_type,
             attr_distr_type=attr_distr_type,
-            max_bins=max_bins,
+            max_quantiles=max_quantiles,
             show_hist=show_hist,
             show_curve=show_curve,
             shade=shade,
@@ -354,3 +346,10 @@ def mult_distr_plot(
             cmap=cmap,
             ax=ax_,
         )
+
+
+def _shade_area(ax: Axes, palette: Iterator[Any], alpha: float = 0.3):
+    """Shade area under all lines in axes."""
+    for line in ax.lines:
+        xy = line.get_xydata()
+        ax.fill_between(xy[:, 0], xy[:, 1], color=next(palette), alpha=alpha)

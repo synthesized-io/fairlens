@@ -135,7 +135,7 @@ class FairnessScorer:
         self,
         figsize: Optional[Tuple[int, int]] = None,
         max_width: int = 3,
-        max_bins: int = 8,
+        max_quantiles: int = 8,
         show_hist: Optional[bool] = None,
         show_curve: Optional[bool] = None,
         shade: bool = True,
@@ -149,6 +149,8 @@ class FairnessScorer:
                 The size of each figure if `separate` is True. Defaults to (6, 4).
             max_width (int, optional):
                 The maximum amount of figures. Defaults to 3.
+            max_quantiles (int, optional):
+                The maximum amount of quantiles to use for continuous data. Defaults to 8.
             show_hist (Optional[bool], optional):
                 Shows the histogram if True. Defaults to True if the data is categorical or binary.
             show_curve (Optional[bool], optional):
@@ -170,7 +172,7 @@ class FairnessScorer:
             self.sensitive_attrs,
             figsize=figsize,
             max_width=max_width,
-            max_bins=max_bins,
+            max_quantiles=max_quantiles,
             show_hist=show_hist,
             show_curve=show_curve,
             shade=shade,
