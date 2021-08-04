@@ -1,4 +1,4 @@
-from . import bias, metrics, plot, sensitive
+from . import metrics, plot, sensitive
 from .scorer import FairnessScorer
 
-__all__ = ["FairnessScorer", "bias", "metrics", "plot", "sensitive"]
+__all__ = ["FairnessScorer", "metrics", "plot", "sensitive"]
