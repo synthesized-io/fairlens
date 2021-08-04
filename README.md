@@ -1,12 +1,15 @@
 ![FairLens Logo](docs/_static/FairLens_759x196.png)
 
-# FairLens
-[![CI](https://github.com/synthesized-io/fairlens/workflows/CI/badge.svg)](https://github.com/synthesized-io/fairlens/actions)
-[![Documentation Status](https://readthedocs.org/projects/fairlens/badge/?version=latest)]()
+[![CI](https://github.com/synthesized-io/fairlens/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/synthesized-io/fairlens/actions/workflows/ci.yml)
+![PyPI](https://img.shields.io/pypi/v/fairlens)
+![PyPI - Downloads](https://img.shields.io/pypi/dw/fairlens)
 [![Python version](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9-blue.svg)]()
-[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Documentation Status](https://readthedocs.org/projects/fairlens/badge/?version=latest)]()
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
+[![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+![GitHub Repo stars](https://img.shields.io/github/stars/synthesized-io/fairlens?style=social)
 
+# FairLens
 
 FairLens is an open source Python library for automatically discovering bias and measuring fairness in data. The package can be used to quickly identify bias, and provides multiple metrics to measure fairness across a range of sensitive and legally protected characteristics such as age, race and sex.
 
