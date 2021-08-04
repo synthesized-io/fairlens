@@ -2,8 +2,7 @@
 Collection of helper methods which can be used as to interface metrics.
 """
 
-import multiprocessing as mp
-from typing import Any, Callable, List, Mapping, Optional, Tuple, Type, Union
+from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, Union
 
 import pandas as pd
 
@@ -72,11 +71,9 @@ def stat_distance(
             Returns the a suitable p-value for the metric if it exists. Defaults to False.
         **kwargs:
             Keyword arguments for the distance metric. Passed to the __init__ function of distance metrics.
-
     Returns:
         Tuple[float, ...]:
             The distance as a float, and the p-value if p_value is set to True and can be computed.
-
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
         >>> group1 = {"Ethnicity": ["African-American", "African-Am"]}
@@ -142,50 +139,40 @@ def correlation_matrix(
             The correlation matrix to be used in heatmap generation.
     """
 
-    if columns_x is None:
-        columns_x = df.columns
+    columns_x = columns_x or df.columns
+    columns_y = columns_y or df.columns
 
-    if columns_y is None:
-        columns_y = df.columns
+    table: Dict[Tuple[str, str], float] = {}
 
-    pool = mp.Pool(mp.cpu_count())
+    series_list = list()
+    for col_y in columns_y:
+        coeffs = list()
+        y_type = utils.infer_distr_type(df[col_y])
 
-    series_list = [
-        pd.Series(
-            pool.starmap(
-                _correlation_matrix_helper,
-                [(df[col_x], df[col_y], num_num_metric, cat_num_metric, cat_cat_metric) for col_x in columns_x],
-            ),
-            index=columns_x,
-            name=col_y,
-        )
-        for col_y in columns_y
-    ]
+        for col_x in columns_x:
+            if col_y == col_x:
+                coeffs.append(1.0)
+                continue
 
-    pool.close()
+            if (col_x, col_y) in table:
+                coeffs.append(table[(col_x, col_y)])
+                continue
+
+            x_type = utils.infer_distr_type(df[col_x])
+            if y_type.is_continuous() and x_type.is_continuous():
+                coeffs.append(num_num_metric(df[col_y], df[col_x]))
+
+            elif y_type.is_continuous():
+                coeffs.append(cat_num_metric(df[col_x], df[col_y]))
+
+            elif x_type.is_continuous():
+                coeffs.append(cat_num_metric(df[col_y], df[col_x]))
+
+            else:
+                coeffs.append(cat_cat_metric(df[col_y], df[col_x]))
+
+            table[(col_y, col_x)] = coeffs[-1]
+
+        series_list.append(pd.Series(coeffs, index=columns_x, name=col_y))
 
     return pd.concat(series_list, axis=1, keys=[series.name for series in series_list])
-
-
-def _correlation_matrix_helper(
-    sr_a: pd.Series,
-    sr_b: pd.Series,
-    num_num_metric: Callable[[pd.Series, pd.Series], float] = pearson,
-    cat_num_metric: Callable[[pd.Series, pd.Series], float] = kruskal_wallis,
-    cat_cat_metric: Callable[[pd.Series, pd.Series], float] = cramers_v,
-) -> float:
-
-    a_type = utils.infer_distr_type(sr_a)
-    b_type = utils.infer_distr_type(sr_b)
-
-    if a_type.is_continuous() and b_type.is_continuous():
-        return num_num_metric(sr_a, sr_b)
-
-    elif b_type.is_continuous():
-        return cat_num_metric(sr_a, sr_b)
-
-    elif a_type.is_continuous():
-        return cat_num_metric(sr_b, sr_a)
-
-    else:
-        return cat_cat_metric(sr_a, sr_b)
