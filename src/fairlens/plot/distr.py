@@ -89,10 +89,10 @@ def distr_plot(
         distr_type = utils.infer_distr_type(column).value
 
     if show_hist is None:
-        show_hist = distr_type == "categorical" or distr_type == "binary"
+        show_hist = distr_type in ("categorical", "binary")
 
     if show_curve is None:
-        show_curve = distr_type == "continuous" or distr_type == "datetime"
+        show_curve = distr_type in ("continuous", "datetime")
 
     shrink = int(show_hist)
     stat = "probability" if normalize else "count"
