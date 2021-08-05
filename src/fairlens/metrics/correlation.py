@@ -1,5 +1,5 @@
 """
-Collection of metrics that measure the correlation between two distributions.
+Collection of metrics, tests that measure the correlation between two univariate distributions.
 """
 
 import warnings
