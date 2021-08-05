@@ -101,7 +101,8 @@ class FairnessScorer:
             p_value (bool, optional):
                 Whether or not to compute a p-value for the distances.
             max_comb (Optional[int], optional):
-                Max number of combinations of sensitive attributes to be considered. Defaults to None.
+                Max number of combinations of sensitive attributes to be considered.
+                If None all combinations are considered. Defaults to 4.
         """
 
         df = self.df[self.sensitive_attrs + [self.target_attr]].copy()
@@ -152,7 +153,7 @@ class FairnessScorer:
 
         Args:
             figsize (Optional[Tuple[int, int]], optional):
-                The size of each figure if `separate` is True. Defaults to (6, 4).
+                The size of each figure. Defaults to (6, 4).
             max_width (int, optional):
                 The maximum amount of figures. Defaults to 3.
             max_quantiles (int, optional):
@@ -189,6 +190,7 @@ class FairnessScorer:
         metric: str = "auto",
         method: str = "dist_to_all",
         alpha: Optional[float] = 0.95,
+        max_comb: Optional[int] = 4,
         min_count: Optional[int] = 100,
         max_rows: int = 10,
         hide_positive: bool = False,
@@ -198,7 +200,7 @@ class FairnessScorer:
         Args:
             metric (str, optional):
                 Choose a custom metric to use. Defaults to automatically chosen metric depending on
-                the distribution of the target variable.
+                the distribution of the target variable. See
             method (str, optional):
                 The method used to apply the metric to the sub-group. Can take values
                 ["dist_to_all", "dist_to_rest"] which correspond to measuring the distance
@@ -206,7 +208,10 @@ class FairnessScorer:
                 overall distribution without the subgroup, respectively.
                 Defaults to "dist_to_all".
             alpha (Optional[float], optional):
-                Maximum p-value to accept a bias. Includes all sub-groups by default. Defaults to 0.95.
+                The significance level to accept a bias. Defaults to 0.95.
+            max_comb (Optional[int], optional):
+                Max number of combinations of sensitive attributes to be considered.
+                If None all combinations are considered. Defaults to 4.
             min_count (Optional[int], optional):
                 If set, sub-groups with less samples than min_count will be ignored. Defaults to 100.
             max_rows (int, optional):
@@ -218,10 +223,10 @@ class FairnessScorer:
                 Defaults to False.
         """
 
-        df_dist = self.distribution_score(metric=metric, method=method, p_value=(alpha is not None))
+        df_dist = self.distribution_score(metric=metric, method=method, p_value=(alpha is not None), max_comb=max_comb)
 
         if alpha is not None:
-            df_dist = df_dist[df_dist["P-Value"] < alpha]
+            df_dist = df_dist[df_dist["P-Value"] < (1 - alpha)]
 
         if min_count is not None:
             df_dist = df_dist[df_dist["Counts"] > min_count]
