@@ -1,8 +1,8 @@
 ![FairLens Logo](docs/_static/FairLens_759x196.png)
 
 [![CI](https://github.com/synthesized-io/fairlens/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/synthesized-io/fairlens/actions/workflows/ci.yml)
-![PyPI](https://img.shields.io/pypi/v/fairlens)
-![PyPI - Downloads](https://img.shields.io/pypi/dw/fairlens)
+[![PyPI](https://img.shields.io/pypi/v/fairlens)](https://pypi.org/project/fairlens/0.1.0rc1/)
+[![PyPI - Downloads](https://img.shields.io/pypi/dw/fairlens)](https://pypi.org/project/fairlens/0.1.0rc1/)
 [![Python version](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9-blue.svg)]()
 [![Documentation Status](https://readthedocs.org/projects/fairlens/badge/?version=latest)]()
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
