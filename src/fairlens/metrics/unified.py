@@ -133,6 +133,10 @@ def correlation_matrix(
         cat_cat_metric (Callable[[pd.Series, pd.Series], float], optional):
             The correlation metric used for categorical-categorical series pairs. Defaults to corrected Cramer's V
             statistic.
+        columns_x (Optional[List[str]]):
+            The column names that determine the rows of the matrix.
+        columns_y (Optional[List[str]]):
+            The column names that determine the columns of the matrix.
 
     Returns:
         pd.DataFrame:
