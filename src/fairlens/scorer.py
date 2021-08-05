@@ -168,8 +168,6 @@ class FairnessScorer:
             cmap (Optional[Sequence[Tuple[float, float, float]]], optional):
                 A sequence of RGB tuples used to colour the histograms. If None seaborn's default pallete
                 will be used. Defaults to None.
-            hist_kws (Optional[Mapping[str, Any]], optional):
-                Additional keyword arguments passed to seaborn.histplot(). Defaults to None.
         """
 
         mult_distr_plot(
