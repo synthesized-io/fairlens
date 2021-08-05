@@ -94,7 +94,7 @@ class FairnessScorer:
                 the distribution of the target variable.
             method (str, optional):
                 The method used to apply the metric to the sub-group. Can take values
-                ["dist_to_all", "dist_from_rest"] which correspond to measuring the distance
+                ["dist_to_all", dist_to_rest"] which correspond to measuring the distance
                 between the subgroup distribution and the overall distribution, or the
                 overall distribution without the subgroup, respectively.
                 Defaults to "dist_to_all".
@@ -203,7 +203,7 @@ class FairnessScorer:
                 the distribution of the target variable.
             method (str, optional):
                 The method used to apply the metric to the sub-group. Can take values
-                ["dist_to_all", "dist_from_rest"] which correspond to measuring the distance
+                ["dist_to_all", "dist_to_rest"] which correspond to measuring the distance
                 between the subgroup distribution and the overall distribution, or the
                 overall distribution without the subgroup, respectively.
                 Defaults to "dist_to_all".
