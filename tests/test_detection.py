@@ -1,14 +1,11 @@
-import os
-
 import pandas as pd
 
 from fairlens.sensitive.detection import _detect_name, detect_names_df
 
-TEST_DIR = os.path.dirname(os.path.abspath(__file__))
-MOCK_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_mock.json")
-ENGB_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_engb.json")
+MOCK_CONFIG_PATH = "src/fairlens/sensitive/configs/config_mock.json"
+ENGB_CONFIG_PATH = "src/fairlens/sensitive/configs/config_engb.json"
 
-dfc = pd.read_csv("datasets/compas.csv")
+df_compas = pd.read_csv("datasets/compas.csv")
 
 
 def test_detect_name():
@@ -119,7 +116,7 @@ def test_compas_detect_shallow():
         "MaritalStatus": "Family Status",
         "Sex": "Gender",
     }
-    assert detect_names_df(dfc) == res
+    assert detect_names_df(df_compas) == res
 
 
 def test_compas_detect_deep():
