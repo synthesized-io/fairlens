@@ -93,7 +93,7 @@ Now let us generate a heatmap using the default metrics first.
 .. ipython:: python
 
     import matplotlib.pyplot as plt
-    from fairlens.bias.heatmap import two_column_heatmap
+    from fairlens.plot.heatmap import two_column_heatmap
 
     @savefig linear_correlation.png
     two_column_heatmap(df)

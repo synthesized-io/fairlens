@@ -14,9 +14,11 @@ from .. import utils
 
 def auto_distance(column: pd.Series) -> Type[DistanceMetric]:
     """Return a suitable statistical distance metric based on the distribution of the data.
+
     Args:
         column (pd.Series):
             The input data in a pd.Series.
+
     Returns:
         Type[DistanceMetric]:
             The class of the distance metric.
@@ -45,6 +47,7 @@ def stat_distance(
     the most suitable metric depending on the target attributes' distribution is chosen.
     If group1 is a dictionary and group2 is None then the distance is computed between group1 and the rest of the
     dataset.
+
     Args:
         df (pd.DataFrame):
             The input datafame.
@@ -68,9 +71,11 @@ def stat_distance(
             Returns the a suitable p-value for the metric if it exists. Defaults to False.
         **kwargs:
             Keyword arguments for the distance metric. Passed to the __init__ function of distance metrics.
+
     Returns:
         Tuple[float, ...]:
             The distance as a float, and the p-value if p_value is set to True and can be computed.
+
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
         >>> group1 = {"Ethnicity": ["African-American", "African-Am"]}
@@ -118,6 +123,7 @@ def correlation_matrix(
 ) -> pd.DataFrame:
     """This function creates a correlation matrix out of a dataframe, using a correlation metric for each
     possible type of pair of series (i.e. numerical-numerical, categorical-numerical, categorical-categorical).
+
     Args:
         df (pd.DataFrame):
             The dataframe that will be analyzed to produce correlation coefficients.
@@ -129,6 +135,7 @@ def correlation_matrix(
         cat_cat_metric (Callable[[pd.Series, pd.Series], float], optional):
             The correlation metric used for categorical-categorical series pairs. Defaults to corrected Cramer's V
             statistic.
+
     Returns:
         pd.DataFrame:
             The correlation matrix to be used in heatmap generation.

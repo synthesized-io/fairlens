@@ -79,8 +79,6 @@ def r2_linear_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
     Returns:
         float: Value of the R2 score.
     """
-    sr_a = sr_a.apply(pd.to_numeric, errors="coerce")
-
     x = sr_b.to_numpy()
     y_categorical = sr_a.to_numpy()
 
