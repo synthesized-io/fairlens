@@ -189,7 +189,7 @@ class FairnessScorer:
         self,
         metric: str = "auto",
         method: str = "dist_to_all",
-        alpha: Optional[float] = 0.95,
+        alpha: Optional[float] = 0.05,
         max_comb: Optional[int] = 4,
         min_count: Optional[int] = 100,
         max_rows: int = 10,
@@ -208,7 +208,7 @@ class FairnessScorer:
                 overall distribution without the subgroup, respectively.
                 Defaults to "dist_to_all".
             alpha (Optional[float], optional):
-                The significance level to accept a bias. Defaults to 0.95.
+                The maximum p-value to accept a bias. Defaults to 0.05.
             max_comb (Optional[int], optional):
                 Max number of combinations of sensitive attributes to be considered.
                 If None all combinations are considered. Defaults to 4.
@@ -226,7 +226,7 @@ class FairnessScorer:
         df_dist = self.distribution_score(metric=metric, method=method, p_value=(alpha is not None), max_comb=max_comb)
 
         if alpha is not None:
-            df_dist = df_dist[df_dist["P-Value"] < (1 - alpha)]
+            df_dist = df_dist[df_dist["P-Value"] < alpha]
 
         if min_count is not None:
             df_dist = df_dist[df_dist["Counts"] > min_count]
