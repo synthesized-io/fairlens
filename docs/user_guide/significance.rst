@@ -21,7 +21,7 @@ we can do the following.
 
 .. ipython:: python
   import pandas as pd
-  from fairlens.bias.p_value import bootstrap_statistic, permutation_statistic
+  from fairlens.metrics import bootstrap_statistic, permutation_statistic
 
   df = pd.read_csv("../datasets/compas.csv")
 
@@ -45,7 +45,7 @@ following methods.
 
 .. ipython:: python
 
-  from fairlens.bias.p_value import resampling_interval
+  from fairlens.metrics import resampling_interval
 
   t_observed = test_statistic(group1, group2)
 
@@ -53,6 +53,6 @@ following methods.
 
 .. ipython:: python
 
-  from fairlens.bias.p_value import resampling_p_value
+  from fairlens.metrics import resampling_p_value
 
   resampling_p_value(t_observed, t_distribution, alternative="two-sided")
