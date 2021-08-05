@@ -35,7 +35,7 @@ and identifying any inherent biases present in a dataset.
   fscorer = fl.FairnessScorer(df, "RawScore", ["Ethnicity", "Sex"])
 
 
-The :code:`demographic_report` estimates the extent to which the distribution of the target column is independant
+The :code:`demographic_report` estimates the extent to which the distribution of the target column is independent
 of the sensitive attributes. This is done by using a suitable distance metric to test the significance of the
 distance between the distributions of each senstitive demographic and the overall population. In the below case,
 our target variable, "RawScore", is continuous, so the Kolmogorov Smirnov test is carried out by default.
