@@ -1,5 +1,5 @@
 """
-Visualization Tools.
+Tools to visualize distributions and heatmaps.
 """
 
 

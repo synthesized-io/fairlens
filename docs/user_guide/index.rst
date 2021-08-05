@@ -6,8 +6,15 @@ User Guide
   :glob:
   :caption: Getting Started
 
-  quickstart
   fairness
+  quickstart
+
+.. toctree::
+  :glob:
+  :caption: Tutorials
+
+  adult
+  german
 
 .. toctree::
   :glob:

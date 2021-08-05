@@ -1,5 +1,5 @@
 """
-Collection of distance, correlation metrics.
+Collection of distance, correlation metrics and statistical tests.
 """
 
 from .unified import auto_distance, correlation_matrix, stat_distance

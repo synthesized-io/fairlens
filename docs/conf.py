@@ -88,4 +88,4 @@ html_css_files = [
 ]
 
 # Customization
-html_logo = "_static/Synthesized-Logo-Colour.png"
+html_logo = "_static/FairLens.png"

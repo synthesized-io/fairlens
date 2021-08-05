@@ -1,7 +1,7 @@
-Fairness and Bias
-=================
+Fairness
+========
 
-This is a general guide to assessing fairness and bias in supervised learning tasks (classification, regression)
+This is a general guide to assessing fairness in supervised learning tasks (classification, regression)
 using structural datasets.
 
 Literature Review

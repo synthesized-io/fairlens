@@ -4,7 +4,7 @@ Visualize distributions of data.
 
 import itertools
 from math import ceil
-from typing import Any, Iterator, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -25,7 +25,6 @@ def distr_plot(
     shade: bool = True,
     normalize: bool = False,
     cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
-    labels: Optional[Sequence[str]] = None,
     ax: Optional[Axes] = None,
 ) -> Axes:
     """Plot the distribution of the groups with respect to the target attribute.
@@ -55,8 +54,6 @@ def distr_plot(
         cmap (Optional[Sequence[Tuple[float, float, float]]], optional):
             A sequence of RGB tuples used to colour the histograms. If None seaborn's default pallete
             will be used. Defaults to None.
-        labels (Optional[Sequence[str]], optional):
-            A list of labels for each of the groups which will be used for the legend. Defaults to None.
         ax (Optional[matplotlib.axes.Axes], optional):
             An axis to plot the figure on. Defaults to plt.gca(). Defaults to None.
 
@@ -68,8 +65,7 @@ def distr_plot(
         >>> df = pd.read_csv("datasets/compas.csv")
         >>> g1 = {"Ethnicity": ["African-American"]}
         >>> g2 = {"Ethnicity": ["Caucasian"]}
-        >>> g3 = {"Ethnicity": ["Asian"]}}
-        >>> distr_plot(df, "RawScore", [g1, g2, g3])
+        >>> distr_plot(df, "RawScore", [g1, g2])
         >>> plt.show()
 
         .. image:: ../../savefig/distr_plot.png
@@ -89,10 +85,10 @@ def distr_plot(
         distr_type = utils.infer_distr_type(column).value
 
     if show_hist is None:
-        show_hist = distr_type == "categorical" or distr_type == "binary"
+        show_hist = distr_type in ["categorical", "binary"]
 
     if show_curve is None:
-        show_curve = distr_type == "continuous" or distr_type == "datetime"
+        show_curve = distr_type in ["continuous", "datetime"]
 
     shrink = int(show_hist)
     stat = "probability" if normalize else "count"
@@ -107,20 +103,13 @@ def distr_plot(
     else:
         bins = "auto"
 
-    if labels is not None:
-        plt.legend(labels)
-
     plt.xlabel(target_attr)
-
-    if distr_type == "binary":
-        plt.hist([column[pred] for pred in preds], color=[c for c, _ in zip(palette, preds)], density=normalize, ax=ax)
-        return ax
 
     for pred in preds:
         sns.histplot(column[pred], bins=bins, color=next(palette), kde=show_curve, shrink=shrink, stat=stat, ax=ax)
 
     if shade and not show_hist:
-        _shade_area(ax, palette, alpha=0.3)
+        _shade_area(ax, cmap, alpha=0.3)
 
     return ax
 
@@ -235,9 +224,6 @@ def attr_distr_plot(
 
         return None
 
-    if ax is None:
-        ax = plt.gca()
-
     distr_plot(
         df_,
         target_attr,
@@ -248,9 +234,10 @@ def attr_distr_plot(
         shade=shade,
         normalize=normalize,
         cmap=cmap,
-        labels=labels,
         ax=ax,
     )
+
+    plt.legend(labels)
     plt.title(attr)
 
     return ax
@@ -348,8 +335,10 @@ def mult_distr_plot(
         )
 
 
-def _shade_area(ax: Axes, palette: Iterator[Any], alpha: float = 0.3):
+def _shade_area(ax: Axes, cmap: Sequence[Tuple[float, float, float]], alpha: float = 0.3):
     """Shade area under all lines in axes."""
+
+    palette = itertools.cycle(cmap)
     for line in ax.lines:
         xy = line.get_xydata()
         ax.fill_between(xy[:, 0], xy[:, 1], color=next(palette), alpha=alpha)

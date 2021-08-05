@@ -29,6 +29,7 @@ Let's first look at how we would go about detecting correlations inside a datafr
 .. ipython:: python
 
     import pandas as pd
+    import fairlens as fl
 
     columns = ["gender", "random", "score"]
     data = [["male", 10, 50], ["female", 20, 80], ["male", 20, 60], ["female", 10, 90]]
@@ -41,9 +42,7 @@ protected category of the sensitive one:
 
 .. ipython:: python
 
-    from fairlens.sensitive.correlation import find_sensitive_correlations
-
-    find_sensitive_correlations(df)
+    fl.sensitive.find_sensitive_correlations(df)
 
 In this example, the two scores are both correlated with sensitive columns, the first one with gender and
 the second with nationality:
@@ -59,7 +58,7 @@ the second with nationality:
     ]
     df = pd.DataFrame(data, columns=col_names)
 
-    find_sensitive_correlations(df)
+    fl.sensitive.find_sensitive_correlations(df)
 
 
 Correlation Heatmaps
@@ -93,10 +92,9 @@ Now let us generate a heatmap using the default metrics first.
 .. ipython:: python
 
     import matplotlib.pyplot as plt
-    from fairlens.bias.heatmap import two_column_heatmap
 
     @verbatim
-    two_column_heatmap(df)
+    fl.plot.heatmap(df)
 
     @verbatim
     plt.show()
@@ -106,6 +104,7 @@ for numerical-numerical and numerical-categorical associations for added precisi
 
 .. ipython:: python
 
+    @verbatim
     from fairlens.metrics import correlation as cm
 
     @verbatim

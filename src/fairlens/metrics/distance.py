@@ -1,5 +1,5 @@
 """
-Collection of metrics that measure the distance, or similarity, between two distributions.
+Collection of metrics, tests that measure the distance, or similarity, between two univariate distributions.
 """
 
 import inspect

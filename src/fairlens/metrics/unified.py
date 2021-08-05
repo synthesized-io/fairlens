@@ -65,7 +65,7 @@ def stat_distance(
             to index a subgroup from the dataframe.
             Examples: {"Sex": ["Male"]}, df["Sex"] == "Female"
         mode (str):
-            Which distance metric to use. Can be the names of classes from fairlens.bias.metrics, or their
+            Which distance metric to use. Can be the names of classes from `fairlens.metrics`, or their
             id() strings. If set to "auto", the method automatically picks a suitable metric based on the
             distribution of the target attribute. Defaults to "auto".
         p_value (bool):

@@ -81,7 +81,7 @@ class FairnessScorer:
     def distribution_score(
         self,
         metric: str = "auto",
-        method: str = "dist_to_rest",
+        method: str = "dist_to_all",
         p_value: bool = False,
         max_comb: Optional[int] = None,
     ) -> pd.DataFrame:
@@ -92,6 +92,12 @@ class FairnessScorer:
             metric (str, optional):
                 Choose a metric to use. Defaults to automatically chosen metric depending on
                 the distribution of the target variable.
+            method (str, optional):
+                The method used to apply the metric to the sub-group. Can take values
+                ["dist_to_all", "dist_from_rest"] which correspond to measuring the distance
+                between the subgroup distribution and the overall distribution, or the
+                overall distribution without the subgroup, respectively.
+                Defaults to "dist_to_all".
             p_value (bool, optional):
                 Whether or not to compute a p-value for the distances.
             max_comb (Optional[int], optional):
@@ -183,7 +189,7 @@ class FairnessScorer:
     def demographic_report(
         self,
         metric: str = "auto",
-        method: str = "dist_to_rest",
+        method: str = "dist_to_all",
         alpha: Optional[float] = 0.95,
         min_count: Optional[int] = 100,
         max_rows: int = 10,
@@ -195,6 +201,12 @@ class FairnessScorer:
             metric (str, optional):
                 Choose a custom metric to use. Defaults to automatically chosen metric depending on
                 the distribution of the target variable.
+            method (str, optional):
+                The method used to apply the metric to the sub-group. Can take values
+                ["dist_to_all", "dist_from_rest"] which correspond to measuring the distance
+                between the subgroup distribution and the overall distribution, or the
+                overall distribution without the subgroup, respectively.
+                Defaults to "dist_to_all".
             alpha (Optional[float], optional):
                 Maximum p-value to accept a bias. Includes all sub-groups by default. Defaults to 0.95.
             min_count (Optional[int], optional):
@@ -221,9 +233,13 @@ class FairnessScorer:
         if hide_positive:
             df_dist = df_dist[df_dist["Distance"] < 0]
 
+        df_dist = df_dist.sort_values("P-Value", ascending=True, key=abs)
+        df_dist["Distance"] = df_dist["Distance"].map("{:.3f}".format)
+        df_dist["P-Value"] = df_dist["P-Value"].map("{:.2e}".format)
+
         print(f"Sensitive Attributes: {self.sensitive_attrs}")
         print("Most skewed demographics:")
-        print(df_dist.sort_values("Distance", ascending=False, key=abs)[:max_rows].to_string(index=False))
+        print(df_dist[:max_rows].to_string(index=False))
         print(f"\nWeighted Mean Statistical Distance: {score}\n")
 
 
@@ -247,7 +263,7 @@ def _calculate_distance(
     target_attr: str,
     sensitive_attrs: Sequence[str],
     metric: str = "auto",
-    method: str = "dist_to_rest",
+    method: str = "dist_to_all",
     p_value: bool = False,
 ) -> pd.DataFrame:
 
