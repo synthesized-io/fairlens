@@ -9,9 +9,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as ss
 from sklearn import linear_model
-from sklearn.metrics import r2_score
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import LabelEncoder
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 
 
 def cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
@@ -79,20 +77,29 @@ def r2_linear_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
     Returns:
         float: Value of the R2 score.
     """
-    x = sr_b.to_numpy()
-    y_categorical = sr_a.to_numpy()
+    x = sr_b.to_numpy().reshape(-1, 1)
+    y = sr_a.to_numpy()
 
     enc = LabelEncoder()
-    enc.fit(y_categorical)
-    y = enc.transform(y_categorical)
-    x_train, x_test, y_train, y_test = train_test_split(x.reshape(-1, 1), y, test_size=0.2)
+    y = enc.fit_transform(y)
 
-    regr = linear_model.LinearRegression()
-    regr.fit(x_train, y_train)
+    lr_feature = linear_model.LogisticRegression()
+    lr_feature.fit(x, y)
 
-    y_pred = regr.predict(x_test)
+    y_one_hot = OneHotEncoder(sparse=False).fit_transform(y.reshape(-1, 1))
 
-    return r2_score(y_true=y_test, y_pred=y_pred)
+    log_pred = lr_feature.predict_log_proba(x)
+    ll_feature = np.sum(y_one_hot * log_pred)
+
+    lr_intercept = linear_model.LogisticRegression()
+    lr_intercept.fit(np.ones_like(y).reshape(-1, 1), y)
+
+    log_pred = lr_intercept.predict_log_proba(x)
+    ll_intercept = np.sum(y_one_hot * log_pred)
+
+    pseudo_r2 = 1 - ll_feature / ll_intercept
+
+    return pseudo_r2
 
 
 def kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
