@@ -1,4 +1,5 @@
-"""Calculating p_values for using sampling techniques.
+"""
+Collection of methods which can be used to numerically or analytically compute p-values and confidence intervals.
 
 This module provides three functions to sample and generate distributions required for estimating p_values:
   - `permutation_statistic`

@@ -1,12 +1,12 @@
 import numpy as np
 import pandas as pd
 
-from fairlens.bias.metrics import MeanDistance, stat_distance
-from fairlens.bias.p_value import binominal_proportion_p_value as bin_prop
-from fairlens.bias.p_value import bootstrap_binned_statistic as bootstrap_binned
-from fairlens.bias.p_value import bootstrap_statistic as bootstrap
-from fairlens.bias.p_value import permutation_statistic as perm_stat
-from fairlens.bias.p_value import resampling_interval, resampling_p_value
+from fairlens.metrics.distance import BinomialDistance, MeanDistance
+from fairlens.metrics.significance import binominal_proportion_p_value as bin_prop
+from fairlens.metrics.significance import bootstrap_binned_statistic as bootstrap_binned
+from fairlens.metrics.significance import bootstrap_statistic as bootstrap
+from fairlens.metrics.significance import permutation_statistic as perm_stat
+from fairlens.metrics.significance import resampling_interval, resampling_p_value
 
 epsilon = 1e-5
 df = pd.read_csv("datasets/compas.csv")
@@ -17,9 +17,9 @@ group2 = {"Ethnicity": ["African-American"]}
 
 def test_binomial():
     assert abs(bin_prop(0.2, 0.1, 10) - (1 - (0.9 ** 10 + 0.9 ** 9))) < epsilon
-    assert stat_distance(df, "", pd.Series([1, 1]), pd.Series([0, 0]), p_value=True)[1] == 0
-    assert stat_distance(df, "", pd.Series([1, 0]), pd.Series([1, 0]), p_value=True)[1] == 1
-    assert stat_distance(df, "", pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 1, 0]), p_value=True)[1] == 0.625
+    assert BinomialDistance().p_value(pd.Series([1, 1]), pd.Series([0, 0])) == 0
+    assert BinomialDistance().p_value(pd.Series([1, 0]), pd.Series([1, 0])) == 1
+    assert BinomialDistance().p_value(pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 1, 0])) == 0.625
 
 
 def test_bootstrap():

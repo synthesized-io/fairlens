@@ -1,7 +1,7 @@
 import pandas as pd
 import seaborn as sns
 
-from fairlens.bias.viz import attr_distr_plot, distr_plot, mult_distr_plot
+from fairlens.plot.distr import attr_distr_plot, distr_plot, mult_distr_plot
 
 dfc = pd.read_csv("datasets/compas.csv")
 
