@@ -8,6 +8,10 @@ import dcor as dcor
 import numpy as np
 import pandas as pd
 import scipy.stats as ss
+from sklearn import linear_model
+from sklearn.metrics import r2_score
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import LabelEncoder
 
 
 def cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
@@ -58,6 +62,39 @@ def pearson(sr_a: pd.Series, sr_b: pd.Series) -> float:
         float: Value of the coefficient.
     """
     return abs(sr_a.corr(sr_b))
+
+
+def r2_linear_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
+    """Metric used for categorical-numerical continuous. It trains a linear model on
+    a percentage of the data, with the numerical series elements as inputs and classes
+    from the categorical series as targets. It is then tested on the remainder of the
+    series and the predictions alongside the true values are used to compute a R2 score.
+
+    Args:
+        sr_a (pd.Series):
+            The categorical series to analyze, representing target classes.
+        sr_b (pd.Series):
+            The numerical series to analyze.
+
+    Returns:
+        float: Value of the R2 score.
+    """
+    sr_a = sr_a.apply(pd.to_numeric, errors="coerce")
+
+    x = sr_b.to_numpy()
+    y_categorical = sr_a.to_numpy()
+
+    enc = LabelEncoder()
+    enc.fit(y_categorical)
+    y = enc.transform(y_categorical)
+    x_train, x_test, y_train, y_test = train_test_split(x.reshape(-1, 1), y, test_size=0.2)
+
+    regr = linear_model.LinearRegression()
+    regr.fit(x_train, y_train)
+
+    y_pred = regr.predict(x_test)
+
+    return r2_score(y_true=y_test, y_pred=y_pred)
 
 
 def kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
