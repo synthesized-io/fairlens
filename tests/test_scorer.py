@@ -1,6 +1,6 @@
 import pandas as pd
 
-from fairlens.scorer import FairnessScorer, _calculate_score
+from fairlens.scorer import FairnessScorer, calculate_score
 
 dfc = pd.read_csv("datasets/compas.csv")
 dfg = pd.read_csv("datasets/german_credit_data.csv")
@@ -11,9 +11,8 @@ def test_fairness_scorer_runs_compas():
     assert fscorer.sensitive_attrs == ["DateOfBirth", "Ethnicity", "Sex"]
     assert fscorer.target_attr == "RawScore"
 
-    _ = fscorer.plot_distributions()
     df_dist = fscorer.distribution_score()
-    score = _calculate_score(df_dist)
+    score = calculate_score(df_dist)
     assert score > 0
 
 
@@ -39,6 +38,6 @@ def test_sensitive_attr_detection():
 def test_distribution_score():
     fscorer = FairnessScorer(dfc, "RawScore", ["Ethnicity", "Sex"])
     df_dist = fscorer.distribution_score()
-    score = _calculate_score(df_dist)
+    score = calculate_score(df_dist)
 
     assert score * df_dist["Counts"].sum() == (df_dist["Distance"] * df_dist["Counts"]).sum()

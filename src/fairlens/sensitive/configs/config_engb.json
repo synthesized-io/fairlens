@@ -169,7 +169,7 @@
                 "zambian",
                 "zimbabwean"
             ],
-            "Family Status": ["married", "single", "widowed", "divorced", "separated", "pregnant"],
+            "Family Status": ["married", "single", "widowed", "divorced", "separated", "pregnant", "husband", "wife", "family", "child"],
             "Disability": [
                 "hearing",
                 "impairment",

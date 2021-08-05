@@ -1,11 +1,18 @@
 Fairness Scorer
 ===============
 
-Users can use the :code:`FairnessScorer` to automatically analyze the dataset and look for inherent biases and hidden correlations.
+The class :code:`fairlens.FairnessScorer` can be used to automatically analyze the dataset and look for inherent
+biases and hidden correlations.
 
 
-Demographic Score
-^^^^^^^^^^^^^^^^^
+Report Generation
+-----------------
+
+The method :code:`fairlens.FairnessScorer`
+
+
+Distribution Score
+------------------
 
 The :code:`distribution_score` method in the fairness scorer allows us to detect biases by measuring
 whether the distribution of a target variable (score) relative to a demographic (Asian males), is
@@ -20,15 +27,15 @@ Let's test this out the on the compas dataset.
 .. ipython:: python
 
   import pandas as pd
-  from fairlens.scorer.fairness_scorer import FairnessScorer
+  import fairlens as fl
 
   df = pd.read_csv("../datasets/compas.csv")
-  df
+  df.info()
 
   sensitive_attrs = ["Ethnicity", "Sex"]
   target_attr = "RawScore"
 
-  fscorer = FairnessScorer(df, target_attr, sensitive_attrs)
+  fscorer = fl.FairnessScorer(df, target_attr, sensitive_attrs)
   fscorer.distribution_score()
 
 Generate Report

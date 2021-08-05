@@ -1,3 +1,7 @@
+"""
+Identify legally protected attributes in a dataset.
+"""
+
 import json
 import os
 import pathlib
@@ -6,8 +10,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
-PROJ_DIR = os.path.dirname(os.path.abspath(__file__))
-DEFAULT_CONFIG_PATH = os.path.join(PROJ_DIR, "./configs/config_engb.json")
+DEFAULT_PATH = "./configs/config_engb.json"
 
 attr_synonym_dict: Dict[str, List[str]] = {}
 attr_value_dict: Dict[str, List[str]] = {}
@@ -96,19 +99,23 @@ def detect_names_df(
     return sensitive_dict
 
 
-def load_config(config_path: Union[str, pathlib.Path] = DEFAULT_CONFIG_PATH) -> Tuple[Any, Any]:
+def load_config(config_path: Union[str, pathlib.Path] = DEFAULT_PATH) -> Tuple[Any, Any]:
     """Changes the configuration that creates the underlying synonym and possible value dictionaries
     on which the shallow and deep search algorithms for sensitive attributes are based.
 
     Args:
         config_path (Union[str, pathlib.Path], optional):
-            The path of the JSON file containing the configuration. Defaults to DEFAULT_CONFIG_PATH.
+            The path of the JSON file containing the configuration.
+            Defaults to fairlens/sensitive/configs/config_engb.json.
 
     Returns:
         Tuple[Any, Any]:
             Returns a tuple containing the synonym and value dictionaries in a format readable by the
             main detection function.
     """
+
+    if config_path == DEFAULT_PATH:
+        config_path = os.path.join(os.path.dirname(__file__), DEFAULT_PATH)
 
     with open(config_path) as json_file:
         config_dict = json.load(json_file)
@@ -134,6 +141,7 @@ def _detect_name(
     attr_synonym_dict: Dict[str, List[str]] = None,
 ) -> Optional[str]:
     """Detects whether a given attribute is sensitive and returns the corresponding sensitive group.
+
     Args:
         name (str):
             The name of the attribute.
@@ -145,6 +153,7 @@ def _detect_name(
             The dictionary of sensitive category synonyms that is used for the shallow search.
             If none is passed, it defaults to the configuration describing protected attributes
             and groups according to the UK Government.
+
     Returns:
         Optional[str]:
             The sensitive name corresponding to the input.
@@ -187,6 +196,7 @@ def _detect_names_dict(
     attr_synonym_dict: Dict[str, List[str]] = None,
 ) -> Dict[str, Optional[str]]:
     """Creates a dictionary which maps the attribute names to the corresponding sensitive attribute.
+
     Args:
         names (List[str]):
             List of attribute names.
@@ -198,10 +208,12 @@ def _detect_names_dict(
             The dictionary of sensitive category synonyms that is used for the shallow search.
             If none is passed, it defaults to the configuration describing protected attributes
             and groups according to the UK Government.
+
     Returns:
         Dict[str, Optional[str]]:
             A dictionary containing a mapping from attribute names to a string representing the corresponding
             sensitive attribute category or None.
+
     Examples:
         >>> _detect_names_dict(["age", "gender", "legality", "risk"])
         {"age": "Age", "gender": "Gender", "legality": None, "risk": None}
