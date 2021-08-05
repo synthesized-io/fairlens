@@ -1,6 +1,6 @@
-{{ objname | escape | underline}}
+{{ fullname | replace(module.split(".")[-1] + ".", "") }}
+{{ underline }}
 
 .. currentmodule:: {{ module }}
 
-.. The line below is not a comment
 .. auto{{ objtype }}:: {{ objname }}

@@ -5,6 +5,10 @@ from fairlens.sensitive.detection import _detect_name, detect_names_df
 MOCK_CONFIG_PATH = "src/fairlens/sensitive/configs/config_mock.json"
 ENGB_CONFIG_PATH = "src/fairlens/sensitive/configs/config_engb.json"
 
+df_adult = pd.read_csv("datasets/adult.csv")
+df_compas = pd.read_csv("datasets/compas.csv")
+df_german = pd.read_csv("datasets/german_credit_data.csv")
+df_titanic = pd.read_csv("datasets/titanic.csv")
 df_compas = pd.read_csv("datasets/compas.csv")
 
 
@@ -108,6 +112,18 @@ def test_dataframe_dict_numbers():
     assert detect_names_df(df, deep_search=True) == res
 
 
+def test_adult_detect_shallow():
+    res = {"age": "Age", "marital-status": "Family Status", "race": "Ethnicity", "sex": "Gender"}
+    assert dt.detect_names_df(df_adult) == res
+
+
+def test_adult_detect_deep():
+    df_adult_deep = df_adult.copy()
+    df_adult_deep = df_adult_deep.rename(columns={"marital-status": "A", "race": "B", "sex": "C"})
+    res = {"age": "Age", "A": "Family Status", "B": "Ethnicity", "C": "Gender", "relationship": "Family Status"}
+    assert dt.detect_names_df(df_adult_deep, deep_search=True) == res
+
+
 def test_compas_detect_shallow():
     res = {
         "DateOfBirth": "Age",
@@ -116,12 +132,15 @@ def test_compas_detect_shallow():
         "MaritalStatus": "Family Status",
         "Sex": "Gender",
     }
+    assert dt.detect_names_df(df_compas) == res
     assert detect_names_df(df_compas) == res
 
 
 def test_compas_detect_deep():
-    dfc_deep = pd.read_csv("datasets/compas.csv")
-    dfc_deep = dfc_deep.rename(columns={"Ethnicity": "A", "Language": "Random", "MaritalStatus": "B", "Sex": "C"})
+    df_compas_deep = df_compas.copy()
+    df_compas_deep = df_compas_deep.rename(
+        columns={"Ethnicity": "A", "Language": "Random", "MaritalStatus": "B", "Sex": "C"}
+    )
     res = {
         "DateOfBirth": "Age",
         "A": "Ethnicity",
@@ -129,7 +148,133 @@ def test_compas_detect_deep():
         "B": "Family Status",
         "C": "Gender",
     }
+    assert dt.detect_names_df(df_compas_deep, deep_search=True) == res
     assert detect_names_df(dfc_deep, deep_search=True) == res
+
+
+def test_german_detect_shallow():
+    res = {"Age": "Age", "Sex": "Gender"}
+    assert dt.detect_names_df(df_german) == res
+
+
+def test_german_detect_deep():
+    df_german_deep = df_german.copy()
+    df_german_deep = df_german_deep.rename(columns={"Sex": "ABCD"})
+    res = {"Age": "Age", "ABCD": "Gender"}
+    assert dt.detect_names_df(df_german_deep, deep_search=True) == res
+
+
+def test_titanic_detect_shallow():
+    res = {"Sex": "Gender", "Age": "Age"}
+    assert dt.detect_names_df(df_titanic) == res
+
+
+def test_titanic_detect_deep():
+    df_titanic_deep = df_titanic.copy()
+    df_titanic_deep = df_titanic_deep.rename(columns={"Sex": "RandomColumn"})
+    res = {"Age": "Age", "RandomColumn": "Gender"}
+    assert dt.detect_names_df(df_titanic_deep, deep_search=True) == res
+
+
+def test_correlation():
+    col_names = ["gender", "random", "score"]
+    data = [
+        ["male", 10, 60],
+        ["female", 10, 80],
+        ["male", 10, 60],
+        ["female", 10, 80],
+        ["male", 9, 59],
+        ["female", 11, 80],
+        ["male", 12, 61],
+        ["female", 10, 83],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    res = {"score": [("gender", "Gender")]}
+    assert corr.find_sensitive_correlations(df) == res
+
+
+def test_double_correlation():
+    col_names = ["gender", "nationality", "random", "corr1", "corr2"]
+    data = [
+        ["woman", "spanish", 715, 10, 20],
+        ["man", "spanish", 1008, 20, 20],
+        ["man", "french", 932, 20, 10],
+        ["woman", "french", 1300, 10, 10],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    res = {"corr1": [("gender", "Gender")], "corr2": [("nationality", "Nationality")]}
+    assert corr.find_sensitive_correlations(df) == res
+
+
+def test_multiple_correlation():
+    col_names = ["race", "age", "score", "entries", "marital", "credit", "corr1"]
+    data = [
+        ["arabian", 21, 10, 2000, "married", 10, 60],
+        ["carribean", 20, 10, 3000, "single", 10, 90],
+        ["indo-european", 41, 10, 1900, "widowed", 10, 120],
+        ["carribean", 40, 10, 2000, "single", 10, 90],
+        ["indo-european", 42, 10, 2500, "widowed", 10, 120],
+        ["arabian", 19, 10, 2200, "married", 10, 60],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    # The first series is correlated with the "race" and "family status" columns, while the second is
+    # correlated with the "age" column
+    res = {"corr1": [("race", "Ethnicity"), ("marital", "Family Status")]}
+    assert corr.find_sensitive_correlations(df, corr_cutoff=0.9) == res
+
+
+def test_common_correlation():
+    col_names = ["race", "age", "score", "entries", "marital", "credit", "corr1", "corr2"]
+    data = [
+        ["arabian", 21, 10, 2000, "married", 10, 60, 120],
+        ["carribean", 20, 10, 3000, "single", 10, 90, 130],
+        ["indo-european", 41, 10, 1900, "widowed", 10, 120, 210],
+        ["carribean", 40, 10, 2000, "single", 10, 90, 220],
+        ["indo-european", 42, 10, 2500, "widowed", 10, 120, 200],
+        ["arabian", 19, 10, 2200, "married", 10, 60, 115],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    res = {
+        "corr1": [("race", "Ethnicity"), ("age", "Age"), ("marital", "Family Status")],
+        "corr2": [("race", "Ethnicity"), ("age", "Age"), ("marital", "Family Status")],
+    }
+    assert corr.find_sensitive_correlations(df) == res
+
+
+def test_column_correlation():
+    col_names = ["gender", "nationality", "random", "corr1", "corr2"]
+    data = [
+        ["woman", "spanish", 715, 10, 20],
+        ["man", "spanish", 1008, 20, 20],
+        ["man", "french", 932, 20, 10],
+        ["woman", "french", 1300, 10, 10],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    res1 = [("gender", "Gender")]
+    res2 = [("nationality", "Nationality")]
+    assert corr.find_column_correlation("corr1", df) == res1
+    assert corr.find_column_correlation("corr2", df) == res2
+
+
+def test_series_correlation():
+    col_names = ["race", "age", "score", "entries", "marital", "credit"]
+    data = [
+        ["arabian", 21, 10, 2000, "married", 10],
+        ["carribean", 20, 10, 3000, "single", 10],
+        ["indo-european", 41, 10, 1900, "widowed", 10],
+        ["carribean", 40, 10, 2000, "single", 10],
+        ["indo-european", 42, 10, 2500, "widowed", 10],
+        ["arabian", 19, 10, 2200, "married", 10],
+    ]
+    df = pd.DataFrame(data, columns=col_names)
+    # The first series is correlated with the "race" and "family status" columns, while the second is
+    # correlated with the "age" column
+    s1 = pd.Series([60, 90, 120, 90, 120, 60])
+    s2 = pd.Series([120, 130, 210, 220, 200, 115])
+    res1 = [("race", "Ethnicity"), ("marital", "Family Status")]
+    res2 = [("age", "Age")]
+    assert set(corr.find_column_correlation(s1, df, corr_cutoff=0.9)) == set(res1)
+    assert set(corr.find_column_correlation(s2, df, corr_cutoff=0.9)) == set(res2)
 
 
 def test_default_config():
