@@ -9,7 +9,6 @@ df_adult = pd.read_csv("datasets/adult.csv")
 df_compas = pd.read_csv("datasets/compas.csv")
 df_german = pd.read_csv("datasets/german_credit_data.csv")
 df_titanic = pd.read_csv("datasets/titanic.csv")
-df_compas = pd.read_csv("datasets/compas.csv")
 
 
 def test_detect_name():
@@ -133,7 +132,6 @@ def test_compas_detect_shallow():
         "Sex": "Gender",
     }
     assert detect_names_df(df_compas) == res
-    assert detect_names_df(df_compas) == res
 
 
 def test_compas_detect_deep():
@@ -148,7 +146,6 @@ def test_compas_detect_deep():
         "B": "Family Status",
         "C": "Gender",
     }
-    assert detect_names_df(df_compas_deep, deep_search=True) == res
     assert detect_names_df(df_compas_deep, deep_search=True) == res
 
 
