@@ -7,7 +7,6 @@ API Reference
    :template: module.rst
    :recursive:
 
-   fairlens.bias
    fairlens.sensitive
    fairlens.metrics
    fairlens.plot
