@@ -22,8 +22,8 @@ def find_sensitive_correlations(
     """Looks at the columns that are not considered to be immediately sensitive and finds if any is strongly
     correlated with a sensitive column, specifying both the sensitive column name and the sensitive category
     it is a part of.
-
     Args:
+
         df (pd.DataFrame):
             Pandas dataframe that will be analyzed.
         threshold (float, optional):
@@ -91,8 +91,8 @@ def find_column_correlation(
     or the column corresponding to the given name.
     If matches are found, a list containing the correlated
     column names and its associated sensitive category, respectively, is returned.
-
     Args:
+
         col (Union[str, pd.Series]):
             Pandas series or dataframe column name that will be analyzed.
         df (pd.DataFrame):
