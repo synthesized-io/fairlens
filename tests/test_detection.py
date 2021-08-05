@@ -9,7 +9,10 @@ TEST_DIR = os.path.dirname(os.path.abspath(__file__))
 MOCK_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_mock.json")
 ENGB_CONFIG_PATH = os.path.join(TEST_DIR, "../src/fairlens/sensitive/configs/config_engb.json")
 
-dfc = pd.read_csv("datasets/compas.csv")
+df_adult = pd.read_csv("datasets/adult.csv")
+df_compas = pd.read_csv("datasets/compas.csv")
+df_german = pd.read_csv("datasets/german_credit_data.csv")
+df_titanic = pd.read_csv("datasets/titanic.csv")
 
 
 def test_detect_name():
@@ -112,6 +115,18 @@ def test_dataframe_dict_numbers():
     assert dt.detect_names_df(df, deep_search=True) == res
 
 
+def test_adult_detect_shallow():
+    res = {"age": "Age", "marital-status": "Family Status", "race": "Ethnicity", "sex": "Gender"}
+    assert dt.detect_names_df(df_adult) == res
+
+
+def test_adult_detect_deep():
+    df_adult_deep = df_adult.copy()
+    df_adult_deep = df_adult_deep.rename(columns={"marital-status": "A", "race": "B", "sex": "C"})
+    res = {"age": "Age", "A": "Family Status", "B": "Ethnicity", "C": "Gender", "relationship": "Family Status"}
+    assert dt.detect_names_df(df_adult_deep, deep_search=True) == res
+
+
 def test_compas_detect_shallow():
     res = {
         "DateOfBirth": "Age",
@@ -120,12 +135,14 @@ def test_compas_detect_shallow():
         "MaritalStatus": "Family Status",
         "Sex": "Gender",
     }
-    assert dt.detect_names_df(dfc) == res
+    assert dt.detect_names_df(df_compas) == res
 
 
 def test_compas_detect_deep():
-    dfc_deep = pd.read_csv("datasets/compas.csv")
-    dfc_deep = dfc_deep.rename(columns={"Ethnicity": "A", "Language": "Random", "MaritalStatus": "B", "Sex": "C"})
+    df_compas_deep = df_compas.copy()
+    df_compas_deep = df_compas_deep.rename(
+        columns={"Ethnicity": "A", "Language": "Random", "MaritalStatus": "B", "Sex": "C"}
+    )
     res = {
         "DateOfBirth": "Age",
         "A": "Ethnicity",
@@ -133,7 +150,31 @@ def test_compas_detect_deep():
         "B": "Family Status",
         "C": "Gender",
     }
-    assert dt.detect_names_df(dfc_deep, deep_search=True) == res
+    assert dt.detect_names_df(df_compas_deep, deep_search=True) == res
+
+
+def test_german_detect_shallow():
+    res = {"Age": "Age", "Sex": "Gender"}
+    assert dt.detect_names_df(df_german) == res
+
+
+def test_german_detect_deep():
+    df_german_deep = df_german.copy()
+    df_german_deep = df_german_deep.rename(columns={"Sex": "ABCD"})
+    res = {"Age": "Age", "ABCD": "Gender"}
+    assert dt.detect_names_df(df_german_deep, deep_search=True) == res
+
+
+def test_titanic_detect_shallow():
+    res = {"Sex": "Gender", "Age": "Age"}
+    assert dt.detect_names_df(df_titanic) == res
+
+
+def test_titanic_detect_deep():
+    df_titanic_deep = df_titanic.copy()
+    df_titanic_deep = df_titanic_deep.rename(columns={"Sex": "RandomColumn"})
+    res = {"Age": "Age", "RandomColumn": "Gender"}
+    assert dt.detect_names_df(df_titanic_deep, deep_search=True) == res
 
 
 def test_correlation():
