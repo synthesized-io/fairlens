@@ -20,7 +20,7 @@ Report Generation
 
 The fairness scorer supports three different methods for report generation.
 
-The :code:`plot_distribution` method produces a set of plots the distribution of the target variable in each subgroup
+The :code:`plot_distribution` method produces plots the distribution of the target variable in each subgroup
 in a column, for each column. This is useful for understanding the different distributions of protected groups
 and identifying any inherent biases present in a dataset.
 
