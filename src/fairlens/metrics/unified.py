@@ -156,19 +156,51 @@ def correlation_matrix(
         for col_x in columns_x:
             x_type = utils.infer_distr_type(df[col_x])
             if y_type.is_continuous() and x_type.is_continuous():
-                coeffs.append(num_num_metric(df[col_y], df[col_x]))
+                coeffs.append(
+                    _correlation_matrix_helper(df[col_y], df[col_x], num_num_metric, cat_num_metric, cat_cat_metric)
+                )
 
             elif y_type.is_continuous():
-                coeffs.append(cat_num_metric(df[col_x], df[col_y]))
+                coeffs.append(
+                    _correlation_matrix_helper(df[col_x], df[col_y], num_num_metric, cat_num_metric, cat_cat_metric)
+                )
 
             elif x_type.is_continuous():
-                coeffs.append(cat_num_metric(df[col_y], df[col_x]))
+                coeffs.append(
+                    _correlation_matrix_helper(df[col_y], df[col_x], num_num_metric, cat_num_metric, cat_cat_metric)
+                )
 
             else:
-                coeffs.append(cat_cat_metric(df[col_y], df[col_x]))
+                coeffs.append(
+                    _correlation_matrix_helper(df[col_y], df[col_x], num_num_metric, cat_num_metric, cat_cat_metric)
+                )
 
             table[(col_y, col_x)] = coeffs[-1]
 
         series_list.append(pd.Series(coeffs, index=columns_x, name=col_y))
 
     return pd.concat(series_list, axis=1, keys=[series.name for series in series_list])
+
+
+def _correlation_matrix_helper(
+    sr_a: pd.Series,
+    sr_b: pd.Series,
+    num_num_metric: Callable[[pd.Series, pd.Series], float] = pearson,
+    cat_num_metric: Callable[[pd.Series, pd.Series], float] = kruskal_wallis,
+    cat_cat_metric: Callable[[pd.Series, pd.Series], float] = cramers_v,
+) -> float:
+
+    a_type = utils.infer_distr_type(sr_a)
+    b_type = utils.infer_distr_type(sr_b)
+
+    if a_type.is_continuous() and b_type.is_continuous():
+        return num_num_metric(sr_a, sr_b)
+
+    elif b_type.is_continuous():
+        return cat_num_metric(sr_a, sr_b)
+
+    elif a_type.is_continuous():
+        return cat_num_metric(sr_b, sr_a)
+
+    else:
+        return cat_cat_metric(sr_a, sr_b)
