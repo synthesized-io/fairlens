@@ -11,6 +11,7 @@ def test_fairness_scorer_runs_compas():
     assert fscorer.sensitive_attrs == ["DateOfBirth", "Ethnicity", "Sex"]
     assert fscorer.target_attr == "RawScore"
 
+    _ = fscorer.plot_distributions()
     df_dist = fscorer.distribution_score()
     score = calculate_score(df_dist)
     assert score > 0
@@ -23,7 +24,7 @@ def test_fairness_scorer_runs_german():
 
     _ = fscorer.plot_distributions()
     df_dist = fscorer.distribution_score()
-    score = _calculate_score(df_dist)
+    score = calculate_score(df_dist)
     assert score > 0
 
 

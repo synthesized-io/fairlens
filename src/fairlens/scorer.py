@@ -4,12 +4,13 @@ Automatically generate a fairness report for a dataset.
 
 import logging
 from itertools import combinations
-from typing import Mapping, Optional, Sequence
+from typing import Mapping, Optional, Sequence, Tuple
 
 import pandas as pd
 
 from . import utils
 from .metrics.unified import stat_distance
+from .plot.distr import mult_distr_plot
 from .sensitive.detection import detect_names_df
 
 logger = logging.getLogger(__name__)
@@ -80,7 +81,7 @@ class FairnessScorer:
     def distribution_score(
         self,
         metric: str = "auto",
-        method: str = "dist_to_rest",
+        method: str = "dist_to_all",
         p_value: bool = False,
         max_comb: Optional[int] = None,
     ) -> pd.DataFrame:
@@ -91,6 +92,12 @@ class FairnessScorer:
             metric (str, optional):
                 Choose a metric to use. Defaults to automatically chosen metric depending on
                 the distribution of the target variable.
+            method (str, optional):
+                The method used to apply the metric to the sub-group. Can take values
+                ["dist_to_all", "dist_from_rest"] which correspond to measuring the distance
+                between the subgroup distribution and the overall distribution, or the
+                overall distribution without the subgroup, respectively.
+                Defaults to "dist_to_all".
             p_value (bool, optional):
                 Whether or not to compute a p-value for the distances.
             max_comb (Optional[int], optional):
@@ -130,6 +137,111 @@ class FairnessScorer:
 
         return df_dist.reset_index(drop=True)
 
+    def plot_distributions(
+        self,
+        figsize: Optional[Tuple[int, int]] = None,
+        max_width: int = 3,
+        max_quantiles: int = 8,
+        show_hist: Optional[bool] = None,
+        show_curve: Optional[bool] = None,
+        shade: bool = True,
+        normalize: bool = False,
+        cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
+    ):
+        """Plot the distributions of the target variable with respect to all sensitive values.
+
+        Args:
+            figsize (Optional[Tuple[int, int]], optional):
+                The size of each figure if `separate` is True. Defaults to (6, 4).
+            max_width (int, optional):
+                The maximum amount of figures. Defaults to 3.
+            max_quantiles (int, optional):
+                The maximum amount of quantiles to use for continuous data. Defaults to 8.
+            show_hist (Optional[bool], optional):
+                Shows the histogram if True. Defaults to True if the data is categorical or binary.
+            show_curve (Optional[bool], optional):
+                Shows a KDE if True. Defaults to True if the data is continuous or a date.
+            shade (bool, optional):
+                Shades the curve if True. Defaults to True.
+            normalize (bool, optional):
+                Normalizes the counts so the sum of the bar heights is 1. Defaults to False.
+            cmap (Optional[Sequence[Tuple[float, float, float]]], optional):
+                A sequence of RGB tuples used to colour the histograms. If None seaborn's default pallete
+                will be used. Defaults to None.
+            hist_kws (Optional[Mapping[str, Any]], optional):
+                Additional keyword arguments passed to seaborn.histplot(). Defaults to None.
+        """
+
+        mult_distr_plot(
+            self.df,
+            self.target_attr,
+            self.sensitive_attrs,
+            figsize=figsize,
+            max_width=max_width,
+            max_quantiles=max_quantiles,
+            show_hist=show_hist,
+            show_curve=show_curve,
+            shade=shade,
+            normalize=normalize,
+            cmap=cmap,
+        )
+
+    def demographic_report(
+        self,
+        metric: str = "auto",
+        method: str = "dist_to_all",
+        alpha: Optional[float] = 0.95,
+        min_count: Optional[int] = 100,
+        max_rows: int = 10,
+        hide_positive: bool = False,
+    ):
+        """Generate a report on the fairness of different groups of sensitive attributes.
+
+        Args:
+            metric (str, optional):
+                Choose a custom metric to use. Defaults to automatically chosen metric depending on
+                the distribution of the target variable.
+            method (str, optional):
+                The method used to apply the metric to the sub-group. Can take values
+                ["dist_to_all", "dist_from_rest"] which correspond to measuring the distance
+                between the subgroup distribution and the overall distribution, or the
+                overall distribution without the subgroup, respectively.
+                Defaults to "dist_to_all".
+            alpha (Optional[float], optional):
+                Maximum p-value to accept a bias. Includes all sub-groups by default. Defaults to 0.95.
+            min_count (Optional[int], optional):
+                If set, sub-groups with less samples than min_count will be ignored. Defaults to 100.
+            max_rows (int, optional):
+                Maximum number of biased demographics to display. Defaults to 10.
+            hide_positive (bool, optional):
+                Hides positive distances if set to True. This may be useful when using metrics which can return
+                negative distances (binomial distance), in order to inspect a skew in only one direction.
+                Alternatively changing the method may yeild more significant results.
+                Defaults to False.
+        """
+
+        df_dist = self.distribution_score(metric=metric, method=method, p_value=(alpha is not None))
+
+        if alpha is not None:
+            df_dist = df_dist[df_dist["P-Value"] < alpha]
+
+        if min_count is not None:
+            df_dist = df_dist[df_dist["Counts"] > min_count]
+
+        score = calculate_score(df_dist)
+
+        if hide_positive:
+            df_dist = df_dist[df_dist["Distance"] < 0]
+
+        df_dist = df_dist.sort_values("P-Value", ascending=True, key=abs)
+        df_dist["Distance"] = df_dist["Distance"].map("{:.3f}".format)
+        df_dist["P-Value"] = df_dist["P-Value"].map("{:.2e}".format)
+
+        print(f"Sensitive Attributes: {self.sensitive_attrs}")
+        print("Most skewed demographics:")
+        print(df_dist[:max_rows].to_string(index=False))
+        print(f"\nWeighted Mean Statistical Distance: {score}\n")
+
 
 def calculate_score(df_dist: pd.DataFrame) -> float:
     """Calculate the weighted mean pairwise statistical distance.
@@ -151,7 +263,7 @@ def _calculate_distance(
     target_attr: str,
     sensitive_attrs: Sequence[str],
     metric: str = "auto",
-    method: str = "dist_to_rest",
+    method: str = "dist_to_all",
     p_value: bool = False,
 ) -> pd.DataFrame:
 
