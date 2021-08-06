@@ -14,14 +14,15 @@ the data multiple times and recompute the statistic on each sample, thereby prov
 its distribution. The distribution can then be used to compute a p-value or a confidence interval for the
 metric.
 
-Users can resample their data using methods from :code:`fairlens.bias.p-value` to provide an estimate for
+Users can resample their data using methods from :code:`fairlens.metrics` to provide an estimate for
 the distribution of their test statistic. For instance if we want to obtain an estimate for the distribution
 of the distance between the means of two subgroups of data using bootstrapping or permutation testing
 we can do the following.
 
 .. ipython:: python
+
   import pandas as pd
-  from fairlens.metrics import bootstrap_statistic, permutation_statistic
+  import fairlens as fl
 
   df = pd.read_csv("../datasets/compas.csv")
 
@@ -29,10 +30,10 @@ we can do the following.
   group2 = df[df["Sex"] == "Female"]["RawScore"]
   test_statistic = lambda x, y: x.mean() - y.mean()
 
-  t_distribution = permutation_statistic(group1, group2, test_statistic, n_perm=100)
+  t_distribution = fl.metrics.permutation_statistic(group1, group2, test_statistic, n_perm=100)
   t_distribution
 
-  t_distribution = bootstrap_statistic(group1, group2, test_statistic, n_samples=100)
+  t_distribution = fl.metrics.bootstrap_statistic(group1, group2, test_statistic, n_samples=100)
   t_distribution
 
 
@@ -45,14 +46,12 @@ following methods.
 
 .. ipython:: python
 
-  from fairlens.metrics import resampling_interval
-
   t_observed = test_statistic(group1, group2)
 
-  resampling_interval(t_observed, t_distribution, cl=0.95)
+  fl.metrics.resampling_interval(t_observed, t_distribution, cl=0.95)
 
 .. ipython:: python
 
   from fairlens.metrics import resampling_p_value
 
-  resampling_p_value(t_observed, t_distribution, alternative="two-sided")
+  fl.metrics.resampling_p_value(t_observed, t_distribution, alternative="two-sided")

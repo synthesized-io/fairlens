@@ -68,9 +68,3 @@ Individual functions of the demographic report can be called for further analysi
   df_dist = fscorer.distribution_score()
 
   df_dist
-
-The method :code:`fairlens.scorer.calculate_distance` can be used to compute an overall weighted mean distance.
-
-.. ipython:: python
-
-  fl.scorer.calculate_distance(df_dist)

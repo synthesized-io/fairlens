@@ -29,6 +29,7 @@ Let's first look at how we would go about detecting correlations inside a datafr
 .. ipython:: python
 
     import pandas as pd
+    import fairlens as fl
 
     columns = ["gender", "random", "score"]
     data = [["male", 10, 50], ["female", 20, 80], ["male", 20, 60], ["female", 10, 90]]
@@ -41,9 +42,7 @@ protected category of the sensitive one:
 
 .. ipython:: python
 
-    from fairlens.sensitive.correlation import find_sensitive_correlations
-
-    find_sensitive_correlations(df)
+    fl.sensitive.find_sensitive_correlations(df)
 
 In this example, the two scores are both correlated with sensitive columns, the first one with gender and
 the second with nationality:
@@ -59,7 +58,7 @@ the second with nationality:
     ]
     df = pd.DataFrame(data, columns=col_names)
 
-    find_sensitive_correlations(df)
+    fl.sensitive.find_sensitive_correlations(df)
 
 
 Correlation Heatmaps
@@ -88,28 +87,16 @@ the data and check what columns in contains.
     df = pd.read_csv("../datasets/german_credit_data.csv")
     df
 
-Now let us generate a heatmap using the default metrics first.
+We can generate a correlation heatmap to get a rough idea of any potentially hidden correlations.
+This will automatically choose different methods for different types of data, however, these
+are configurable.
 
 .. ipython:: python
 
     import matplotlib.pyplot as plt
-    from fairlens.plot.heatmap import two_column_heatmap
-
-    @savefig linear_correlation.png
-    two_column_heatmap(df)
 
     @verbatim
-    plt.show()
-
-Let's try generating a heatmap of the same dataset, but using some non-linear metrics
-for numerical-numerical and numerical-categorical associations for added precision.
-
-.. ipython:: python
-
-    from fairlens.metrics import correlation as cm
-
-    @savefig nonlinear_correlation.png
-    two_column_heatmap(df, cm.distance_nn_correlation, cm.distance_cn_correlation, cm.cramers_v)
+    fl.plot.two_column_heatmap(df)
 
     @verbatim
     plt.show()
