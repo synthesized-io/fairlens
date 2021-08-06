@@ -79,7 +79,7 @@ def r2_mcfadden(sr_a: pd.Series, sr_b: pd.Series) -> float:
         float: Value of the pseudo-R2 McFadden score.
     """
     x = sr_b.to_numpy().reshape(-1, 1)
-    x = StandardScaler.fit_transform(x)
+    x = StandardScaler().fit_transform(x)
     y = sr_a.to_numpy()
 
     enc = LabelEncoder()
