@@ -41,44 +41,35 @@ import fairlens as fl
 
 # Load in the data
 df = pd.read_csv("datasets/compas.csv")
-fscorer = fl.FairnessScorer(df, "RawScore")
 
 # Automatically generate a report
-fscorer = FairnessScorer(
+fscorer = fl.FairnessScorer(
     df,
     target_attribute="RawScore",
     sensitive_attributes=[
         "Sex",
         "Ethnicity",
-        "MaritalStatus",
-        "Language"
+        "MaritalStatus"
     ]
 )
-fscorer.report()
+fscorer.demographic_report()
 ```
 ```
-Sensitive Attributes: Sex, Ethnicity, MaritalStatus, Language
+Sensitive Attributes: ['Ethnicity', 'MaritalStatus', 'Sex']
 
-                             Group  Distance  Proportion  Counts
-0                             Male  0.162364    0.780928   15838
-1                           Female  0.162364    0.219072    4443
-2                        Caucasian  0.166039    0.358020    7261
-3                 African-American  0.281050    0.444899    9023
-4                         Hispanic  0.190989    0.143681    2914
-5                           Single  0.362521    0.741679   15042
-6                         Married  0.347185    0.134313    2724
-7                  Male, Caucasian  0.119241    0.268724    5450
-8           Male, African-American  0.310895    0.353138    7162
-9                   Male, Hispanic  0.153909    0.115231    2337
-10                    Male, Single  0.289278    0.582910   11822
-11                   Male, Married  0.314981    0.108229    2195
-12                  Female, Single  0.088391    0.158769    3220
-13               Caucasian, Single  0.067940    0.249790    5066
-14        African-American, Single  0.320650    0.369163    7487
-15         Male, Caucasian, Single  0.050034    0.192545    3905
-16  Male, African-American, Single  0.351865    0.291011    5902
+                         Group Distance  Proportion  Counts   P-Value
+African-American, Single, Male    0.249    0.291011    5902 3.62e-251
+      African-American, Single    0.202    0.369163    7487 1.30e-196
+                       Married    0.301    0.134313    2724 7.37e-193
+        African-American, Male    0.201    0.353138    7162 4.03e-188
+                 Married, Male    0.281    0.108229    2195 9.69e-139
+              African-American    0.156    0.444899    9023 3.25e-133
+                      Divorced    0.321    0.063754    1293 7.51e-112
+            Caucasian, Married    0.351    0.049504    1004 7.73e-106
+                  Single, Male    0.121    0.582910   11822  3.30e-95
+           Caucasian, Divorced    0.341    0.037473     760  1.28e-76
 
-Overall Fairness Rating: 0.7617094043914152
+Weighted Mean Statistical Distance: 0.14081832462333957
 ```
 
 See some of our previous blog posts for our take on bias and fairness in ML:

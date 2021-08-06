@@ -1,7 +1,7 @@
-Fairness and Bias
-=================
+Fairness
+========
 
-This is a general guide to assessing fairness and bias in supervised learning tasks (classification, regression)
+This is a general guide to assessing fairness in supervised learning tasks (classification, regression)
 using structural datasets.
 
 Literature Review
@@ -16,7 +16,7 @@ ethnicity, gender, etc.
 
   \underbrace{\text{Title}\hspace{2mm}\overbrace{\text{Gender}\hspace{2mm} \text{Ethnicity}}^{A}\hspace{2mm}\text{Legal Status}}_{X}\hspace{3mm}\overbrace{\text{Raw Score}}^{Y}\hspace{3mm}\overbrace{\text{Predicted Score}}^{R}
 
-There are multiple definitions of fairness in literature
+.. There are multiple definitions of fairness in literature.
 
 There is a large amount of literature on fairness and bias, in the context of data science and
 machine learning, in academia.

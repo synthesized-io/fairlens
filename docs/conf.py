@@ -12,7 +12,7 @@
 
 import os
 import sys
-from importlib.metadata import version
+from importlib.metadata import version as get_version
 
 sys.path.insert(0, os.path.abspath("../src/fairlens"))
 
@@ -36,7 +36,7 @@ copyright = "2021, Synthesized Ltd."
 author = "Synthesized Ltd."
 
 # The full version, including alpha/beta/rc tags
-release = version("fairlens")
+release = get_version("fairlens")
 
 
 # -- General configuration ---------------------------------------------------
