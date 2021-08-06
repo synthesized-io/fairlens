@@ -5,11 +5,13 @@ pip-wheel-metadata/
 build/
 dist/
 *.swp
-src/_version.py
+src/fairlens/version.py
 
-docs/_build/
-docs/savefig
-_autosummary/
+docs/_build/*
+docs/savefig/*
+docs/reference/_autosummary/*
+
+notebooks/.ipynb_checkpoints
 
 .env/
 
@@ -17,5 +19,3 @@ _autosummary/
 
 .coverage
 test-results/
-
-plots/

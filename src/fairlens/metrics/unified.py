@@ -7,9 +7,9 @@ from typing import Any, Callable, List, Mapping, Optional, Tuple, Type, Union
 
 import pandas as pd
 
+from .. import utils
 from .correlation import cramers_v, pearson, r2_mcfadden
 from .distance import BinomialDistance, DistanceMetric, EarthMoversDistance, KolmogorovSmirnovDistance
-from .. import utils
 
 
 def auto_distance(column: pd.Series) -> Type[DistanceMetric]:
