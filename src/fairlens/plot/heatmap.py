@@ -15,7 +15,7 @@ from ..metrics import correlation, unified
 def two_column_heatmap(
     df: pd.DataFrame,
     num_num_metric: Callable[[pd.Series, pd.Series], float] = correlation.pearson,
-    cat_num_metric: Callable[[pd.Series, pd.Series], float] = correlation.r2_linear_correlation,
+    cat_num_metric: Callable[[pd.Series, pd.Series], float] = correlation.r2_mcfadden,
     cat_cat_metric: Callable[[pd.Series, pd.Series], float] = correlation.cramers_v,
     columns_x: Optional[List[str]] = None,
     columns_y: Optional[List[str]] = None,

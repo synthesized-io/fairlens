@@ -7,7 +7,7 @@ from typing import Any, Callable, List, Mapping, Optional, Tuple, Type, Union
 
 import pandas as pd
 
-from .correlation import cramers_v, pearson, r2_linear_correlation
+from .correlation import cramers_v, pearson, r2_mcfadden
 from .distance import BinomialDistance, DistanceMetric, EarthMoversDistance, KolmogorovSmirnovDistance
 from .. import utils
 
@@ -116,7 +116,7 @@ def stat_distance(
 def correlation_matrix(
     df: pd.DataFrame,
     num_num_metric: Callable[[pd.Series, pd.Series], float] = pearson,
-    cat_num_metric: Callable[[pd.Series, pd.Series], float] = r2_linear_correlation,
+    cat_num_metric: Callable[[pd.Series, pd.Series], float] = r2_mcfadden,
     cat_cat_metric: Callable[[pd.Series, pd.Series], float] = cramers_v,
     columns_x: Optional[List[str]] = None,
     columns_y: Optional[List[str]] = None,
@@ -174,7 +174,7 @@ def _correlation_matrix_helper(
     sr_a: pd.Series,
     sr_b: pd.Series,
     num_num_metric: Callable[[pd.Series, pd.Series], float] = pearson,
-    cat_num_metric: Callable[[pd.Series, pd.Series], float] = r2_linear_correlation,
+    cat_num_metric: Callable[[pd.Series, pd.Series], float] = r2_mcfadden,
     cat_cat_metric: Callable[[pd.Series, pd.Series], float] = cramers_v,
 ) -> float:
 

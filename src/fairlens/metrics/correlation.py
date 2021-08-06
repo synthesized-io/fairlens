@@ -62,20 +62,21 @@ def pearson(sr_a: pd.Series, sr_b: pd.Series) -> float:
     return abs(sr_a.corr(sr_b))
 
 
-def r2_linear_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    """Metric used for categorical-numerical continuous. It trains a linear model on
-    a percentage of the data, with the numerical series elements as inputs and classes
-    from the categorical series as targets. It is then tested on the remainder of the
-    series and the predictions alongside the true values are used to compute a R2 score.
+def r2_mcfadden(sr_a: pd.Series, sr_b: pd.Series) -> float:
+    """Metric used for categorical-numerical continuous. It trains two multinomial logistic
+    regression models on the data, one using the numerical series as the feature and the other
+    only using the intercept term as the input. The categorical column is used for the target
+    labels. It then calculates the null and the model likelihoods based on them, which are
+    used to compute the pseudo-R2 McFadden score, which is used as a correlation coefficient.
 
     Args:
         sr_a (pd.Series):
-            The categorical series to analyze, representing target classes.
+            The categorical series to analyze, representing target labels.
         sr_b (pd.Series):
             The numerical series to analyze.
 
     Returns:
-        float: Value of the R2 score.
+        float: Value of the pseudo-R2 McFadden score.
     """
     x = sr_b.to_numpy().reshape(-1, 1)
     y = sr_a.to_numpy()
