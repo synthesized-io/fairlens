@@ -2,11 +2,12 @@
 Collection of helper methods which can be used as to interface metrics.
 """
 
-from typing import Any, Callable, Dict, List, Mapping, Optional, Tuple, Type, Union
+import multiprocessing as mp
+from typing import Any, Callable, List, Mapping, Optional, Tuple, Type, Union
 
 import pandas as pd
 
-from .correlation import cramers_v, kruskal_wallis, pearson
+from .correlation import cramers_v, pearson, r2_mcfadden
 from .distance import BinomialDistance, DistanceMetric, EarthMoversDistance, KolmogorovSmirnovDistance
 from .. import utils
 
@@ -44,7 +45,6 @@ def stat_distance(
     """Computes the statistical distance between two probability distributions ie. group 1 and group 2, with respect
     to the target attribute. The distance metric can be chosen through the mode parameter. If mode is set to "auto",
     the most suitable metric depending on the target attributes' distribution is chosen.
-
     If group1 is a dictionary and group2 is None then the distance is computed between group1 and the rest of the
     dataset.
 
@@ -64,16 +64,18 @@ def stat_distance(
             to index a subgroup from the dataframe.
             Examples: {"Sex": ["Male"]}, df["Sex"] == "Female"
         mode (str):
-            Which distance metric to use. Can be the names of classes from fairlens.bias.metrics, or their
+            Which distance metric to use. Can be the names of classes from `fairlens.metrics`, or their
             id() strings. If set to "auto", the method automatically picks a suitable metric based on the
             distribution of the target attribute. Defaults to "auto".
         p_value (bool):
             Returns the a suitable p-value for the metric if it exists. Defaults to False.
         **kwargs:
             Keyword arguments for the distance metric. Passed to the __init__ function of distance metrics.
+
     Returns:
         Tuple[float, ...]:
             The distance as a float, and the p-value if p_value is set to True and can be computed.
+
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
         >>> group1 = {"Ethnicity": ["African-American", "African-Am"]}
@@ -114,7 +116,7 @@ def stat_distance(
 def correlation_matrix(
     df: pd.DataFrame,
     num_num_metric: Callable[[pd.Series, pd.Series], float] = pearson,
-    cat_num_metric: Callable[[pd.Series, pd.Series], float] = kruskal_wallis,
+    cat_num_metric: Callable[[pd.Series, pd.Series], float] = r2_mcfadden,
     cat_cat_metric: Callable[[pd.Series, pd.Series], float] = cramers_v,
     columns_x: Optional[List[str]] = None,
     columns_y: Optional[List[str]] = None,
@@ -143,32 +145,50 @@ def correlation_matrix(
             The correlation matrix to be used in heatmap generation.
     """
 
-    columns_x = columns_x or df.columns
-    columns_y = columns_y or df.columns
+    if columns_x is None:
+        columns_x = df.columns
 
-    table: Dict[Tuple[str, str], float] = {}
+    if columns_y is None:
+        columns_y = df.columns
 
-    series_list = list()
-    for col_y in columns_y:
-        coeffs = list()
-        y_type = utils.infer_distr_type(df[col_y])
+    pool = mp.Pool(mp.cpu_count())
 
-        for col_x in columns_x:
-            x_type = utils.infer_distr_type(df[col_x])
-            if y_type.is_continuous() and x_type.is_continuous():
-                coeffs.append(num_num_metric(df[col_y], df[col_x]))
+    series_list = [
+        pd.Series(
+            pool.starmap(
+                _correlation_matrix_helper,
+                [(df[col_x], df[col_y], num_num_metric, cat_num_metric, cat_cat_metric) for col_x in columns_x],
+            ),
+            index=columns_x,
+            name=col_y,
+        )
+        for col_y in columns_y
+    ]
 
-            elif y_type.is_continuous():
-                coeffs.append(cat_num_metric(df[col_x], df[col_y]))
-
-            elif x_type.is_continuous():
-                coeffs.append(cat_num_metric(df[col_y], df[col_x]))
-
-            else:
-                coeffs.append(cat_cat_metric(df[col_y], df[col_x]))
-
-            table[(col_y, col_x)] = coeffs[-1]
-
-        series_list.append(pd.Series(coeffs, index=columns_x, name=col_y))
+    pool.close()
 
     return pd.concat(series_list, axis=1, keys=[series.name for series in series_list])
+
+
+def _correlation_matrix_helper(
+    sr_a: pd.Series,
+    sr_b: pd.Series,
+    num_num_metric: Callable[[pd.Series, pd.Series], float] = pearson,
+    cat_num_metric: Callable[[pd.Series, pd.Series], float] = r2_mcfadden,
+    cat_cat_metric: Callable[[pd.Series, pd.Series], float] = cramers_v,
+) -> float:
+
+    a_type = utils.infer_distr_type(sr_a)
+    b_type = utils.infer_distr_type(sr_b)
+
+    if a_type.is_continuous() and b_type.is_continuous():
+        return num_num_metric(sr_a, sr_b)
+
+    elif b_type.is_continuous():
+        return cat_num_metric(sr_a, sr_b)
+
+    elif a_type.is_continuous():
+        return cat_num_metric(sr_b, sr_a)
+
+    else:
+        return cat_cat_metric(sr_a, sr_b)

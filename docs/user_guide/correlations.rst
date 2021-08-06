@@ -93,9 +93,9 @@ Now let us generate a heatmap using the default metrics first.
 .. ipython:: python
 
     import matplotlib.pyplot as plt
-    from fairlens.bias.heatmap import two_column_heatmap
+    from fairlens.plot.heatmap import two_column_heatmap
 
-    @verbatim
+    @savefig linear_correlation.png
     two_column_heatmap(df)
 
     @verbatim
@@ -108,7 +108,7 @@ for numerical-numerical and numerical-categorical associations for added precisi
 
     from fairlens.metrics import correlation as cm
 
-    @verbatim
+    @savefig nonlinear_correlation.png
     two_column_heatmap(df, cm.distance_nn_correlation, cm.distance_cn_correlation, cm.cramers_v)
 
     @verbatim
