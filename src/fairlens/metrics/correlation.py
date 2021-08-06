@@ -1,5 +1,5 @@
 """
-Collection of metrics that measure the correlation between two distributions.
+Collection of metrics, tests that measure the correlation between two univariate distributions.
 """
 
 import warnings
@@ -8,6 +8,8 @@ import dcor as dcor
 import numpy as np
 import pandas as pd
 import scipy.stats as ss
+from sklearn import linear_model
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder
 
 
 def cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
@@ -58,6 +60,47 @@ def pearson(sr_a: pd.Series, sr_b: pd.Series) -> float:
         float: Value of the coefficient.
     """
     return abs(sr_a.corr(sr_b))
+
+
+def r2_mcfadden(sr_a: pd.Series, sr_b: pd.Series) -> float:
+    """Metric used for categorical-numerical continuous. It trains two multinomial logistic
+    regression models on the data, one using the numerical series as the feature and the other
+    only using the intercept term as the input. The categorical column is used for the target
+    labels. It then calculates the null and the model likelihoods based on them, which are
+    used to compute the pseudo-R2 McFadden score, which is used as a correlation coefficient.
+
+    Args:
+        sr_a (pd.Series):
+            The categorical series to analyze, representing target labels.
+        sr_b (pd.Series):
+            The numerical series to analyze.
+
+    Returns:
+        float: Value of the pseudo-R2 McFadden score.
+    """
+    x = sr_b.to_numpy().reshape(-1, 1)
+    y = sr_a.to_numpy()
+
+    enc = LabelEncoder()
+    y = enc.fit_transform(y)
+
+    lr_feature = linear_model.LogisticRegression()
+    lr_feature.fit(x, y)
+
+    y_one_hot = OneHotEncoder(sparse=False).fit_transform(y.reshape(-1, 1))
+
+    log_pred = lr_feature.predict_log_proba(x)
+    ll_feature = np.sum(y_one_hot * log_pred)
+
+    lr_intercept = linear_model.LogisticRegression()
+    lr_intercept.fit(np.ones_like(y).reshape(-1, 1), y)
+
+    log_pred = lr_intercept.predict_log_proba(x)
+    ll_intercept = np.sum(y_one_hot * log_pred)
+
+    pseudo_r2 = 1 - ll_feature / ll_intercept
+
+    return pseudo_r2
 
 
 def kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
