@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from fairlens.bias import utils
+from fairlens import utils
 
 dfc = pd.read_csv("datasets/compas.csv")
 
@@ -65,7 +65,7 @@ def test_infer_dtype():
 
 def test_infer_distr_type():
     assert utils.infer_distr_type(pd.Series(np.linspace(-20, 20, 200))).is_continuous()
-    assert utils.infer_distr_type(pd.Series(np.linspace(-20, 20, 9))).is_categorical()
+    assert utils.infer_distr_type(pd.Series(np.linspace(-20, 20, 9))).is_continuous()
     assert utils.infer_distr_type(pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11])).is_continuous()
     assert utils.infer_distr_type(pd.Series([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])).is_categorical()
     assert utils.infer_distr_type(pd.Series([1, 0] * 10)).is_binary()
@@ -74,7 +74,8 @@ def test_infer_distr_type():
     assert utils.infer_distr_type(pd.Series([1, 1, 1])).is_categorical()
     assert utils.infer_distr_type(pd.Series([0])).is_categorical()
     assert utils.infer_distr_type(pd.Series([2, 2])).is_categorical()
-    assert utils.infer_distr_type(pd.Series(["hi", "hello"])).is_categorical()
+    assert utils.infer_distr_type(pd.Series(["hi", "hello"])).is_binary()
+    assert utils.infer_distr_type(pd.Series(["hi", "hello", "hey"])).is_categorical()
     assert utils.infer_distr_type(pd.Series(["n" + str(i) for i in np.arange(20)])).is_categorical()
 
 
