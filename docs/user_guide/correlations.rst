@@ -92,10 +92,8 @@ This will automatically choose different methods for different types of data, ho
 are configurable.
 
 .. ipython:: python
+    :verbatim:
 
-    import matplotlib.pyplot as plt
-
-    @verbatim
     fl.plot.two_column_heatmap(df)
 
 
@@ -103,7 +101,8 @@ Let's try generating a heatmap of the same dataset, but using some non-linear me
 for numerical-numerical and numerical-categorical associations for added precision.
 
 .. ipython:: python
-    from fairlens.metrics import correlation as cm
+    :verbatim:
 
-    @verbatim
-    two_column_heatmap(df, cm.distance_nn_correlation, cm.distance_cn_correlation, cm.cramers_v)
+    from fairlens.metrics import distance_nn_correlation, distance_cn_correlation, cramers_v
+
+    fl.plot.two_column_heatmap(df, distance_nn_correlation, distance_cn_correlation, cramers_v)
