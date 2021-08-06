@@ -72,6 +72,8 @@ African-American, Single, Male    0.249    0.291011    5902 3.62e-251
 Weighted Mean Statistical Distance: 0.14081832462333957
 ```
 
+Checkout the [documentation](fairlens.readthedocs.io/en/latest) to get started!
+
 See some of our previous blog posts for our take on bias and fairness in ML:
 
 - [Legal consensus regarding biases and fairness in machine learning in Europe and the US](https://www.synthesized.io/post/discrimination-by-artificial-intelligence-2)
