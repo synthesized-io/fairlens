@@ -15,7 +15,7 @@ In some datasets, it is possible that some apparently insensitive attributes are
 with a sensitive column that they effectively become proxies for them and posing the danger to make a
 biased machine learning model if the dataset is used for training.
 
-As such, :code:`detection.py` provides utilities for scanning dataframes and detecting insensitive columns
+As such, the :code:`sensitive` package provides utilities for scanning dataframes and detecting insensitive columns
 that are correlated with a protected category. For a dataframe, a user can choose to scan the whole dataframe
 and its columns or to provide an exterior Pandas series of interest that will be tested against the sensitive
 columns of the data.
@@ -64,7 +64,7 @@ the second with nationality:
 Correlation Heatmaps
 ^^^^^^^^^^^^^^^^^^^^
 
-The :code:`heatmap.py` module allows users to generate a correlation heatmap of any dataset by simply
+The :code:`plot` module allows users to generate a correlation heatmap of any dataset by simply
 passing the dataframe to the :code:`two_column_heatmap()` function, which will plot a heatmap from the
 matrix of the correlation coefficients computed by using the Pearson Coefficient, the Kruskal-Wallis
 Test and Cramer's V between each two of the columns (for numerical-numerical, categorical-numerical and
@@ -98,5 +98,12 @@ are configurable.
     @verbatim
     fl.plot.two_column_heatmap(df)
 
+
+Let's try generating a heatmap of the same dataset, but using some non-linear metrics
+for numerical-numerical and numerical-categorical associations for added precision.
+
+.. ipython:: python
+    from fairlens.metrics import correlation as cm
+
     @verbatim
-    plt.show()
+    two_column_heatmap(df, cm.distance_nn_correlation, cm.distance_cn_correlation, cm.cramers_v)
