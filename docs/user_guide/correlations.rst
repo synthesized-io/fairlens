@@ -96,7 +96,7 @@ are configurable.
     import matplotlib.pyplot as plt
 
     @verbatim
-    fl.plot.heatmap(df)
+    fl.plot.two_column_heatmap(df)
 
     @verbatim
     plt.show()
