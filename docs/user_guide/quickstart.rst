@@ -16,7 +16,7 @@ Assessing Fairness
 
 The object :code:`fairlens.FairnessScorer` can be used to automatically generate a fairness report on a
 dataset, provided a target variable. The target variable is the variable we want to make independent
-of the sensitive groups. We can choose to analyze inherent biases in the dataset used for supervised learning
+of the sensitive groups. We can analyze inherent biases in a dataset used for supervised learning
 by passing in the the name of a desired output column. Alternatively, to assess the fairness of a
 machine learning task on a dataset we can pass in the predicted column instead.
 
