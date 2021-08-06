@@ -95,6 +95,7 @@ html_theme_options = {
     "external_links": [
         {"name": "Synthesized", "url": "https://synthesized.io"},
     ],
+    "google_analytics_id": "UA-130210493-1",
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,
