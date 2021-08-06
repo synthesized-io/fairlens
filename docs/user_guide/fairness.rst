@@ -1,5 +1,5 @@
-Fairness
-========
+Fairness Overview
+=================
 
 This is a general guide to assessing fairness in supervised learning tasks (classification, regression)
 using structural datasets.
