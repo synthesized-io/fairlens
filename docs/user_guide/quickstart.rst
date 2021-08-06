@@ -15,7 +15,7 @@ Assessing Fairness
 ------------------
 
 The object :code:`fairlens.FairnessScorer` can be used to automatically generate a fairness report on a
-dataset, provided a target variable. The target variable is the variable we want to make independant
+dataset, provided a target variable. The target variable is the variable we want to make independent
 of the sensitive groups. We can choose to analyze inherent biases in the dataset used for supervised learning
 by passing in the the name of a desired output column. Alternatively, to assess the fairness of a
 machine learning task on a dataset we can pass in the predicted column instead.
@@ -40,13 +40,13 @@ Below we show an assessment of fairness on a subset of Propublica's COMPAS datas
   fscorer.plot_distributions()
 
 From the plots, we can start to get an idea of where certain prejudices may occur. However, what's more
-important is that we aren't prejudicing a very specific subgroup, which could have a combination of
-different sensitive attributes. The fairness scorer can iterate through all possible combinations of
-these sensitive demographics and use statistical distances to produce an estimate of how independant
+important is that we aren't prejudicing a very specific subgroup, which could have any combination of
+values from sensitive columns. The fairness scorer can iterate through all possible combinations of
+these sensitive demographics and use statistical distances to produce an estimate of how independent
 the distribution of "RawScore" is to the sensitive groups.
 
 At this point we may also find that we want to focus on a subset of the sensitive attributes, in which case we
-can reinitialize the fairness scorer with new them.
+can reinitialize the fairness scorer with new ones.
 
 .. ipython:: python
 
