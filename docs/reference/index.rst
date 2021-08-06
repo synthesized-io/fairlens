@@ -10,3 +10,4 @@ API Reference
    fairlens.sensitive
    fairlens.metrics
    fairlens.plot
+   fairlens.scorer
