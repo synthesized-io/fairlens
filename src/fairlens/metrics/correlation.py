@@ -9,7 +9,7 @@ import numpy as np
 import pandas as pd
 import scipy.stats as ss
 from sklearn import linear_model
-from sklearn.preprocessing import LabelEncoder, OneHotEncoder
+from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 
 
 def cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
@@ -79,6 +79,7 @@ def r2_mcfadden(sr_a: pd.Series, sr_b: pd.Series) -> float:
         float: Value of the pseudo-R2 McFadden score.
     """
     x = sr_b.to_numpy().reshape(-1, 1)
+    x = StandardScaler().fit_transform(x)
     y = sr_a.to_numpy()
 
     enc = LabelEncoder()
@@ -204,6 +205,8 @@ def distance_cn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
         float:
             The correlation coefficient.
     """
+
+    warnings.filterwarnings(action="ignore", category=UserWarning)
 
     sr_a = sr_a.astype("category").cat.codes
     groups = sr_b.groupby(sr_a)
