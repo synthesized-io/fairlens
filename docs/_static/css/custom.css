@@ -49,13 +49,14 @@ pre {
   font-size: 12px !important;
 }
 
+.navbar-brand {
+  margin-left: 5px;
+}
+
 .rst-versions {
   border-radius: 5px;
   font-family: Gilroy, serif;
   padding-bottom: 2px;
-  top: 75px;
-  right: 40px;
-  bottom: auto;
   background: #545454;
   box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2);
   -webkit-touch-callout: none; /* iOS Safari */
@@ -78,6 +79,4 @@ span .fa.fa-book {
 
 .rst-versions.rst-badge {
   display: block;
-  bottom: auto;
-  height: auto;
 }
