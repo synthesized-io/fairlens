@@ -96,6 +96,7 @@ html_theme_options = {
         {"name": "Synthesized", "url": "https://synthesized.io"},
     ],
     "google_analytics_id": "UA-130210493-1",
+    "navbar_end": ["version.html", "navbar-icon-links"],
 }
 
 html_sidebars = {"**": ["search-field.html", "sidebar-nav-bs.html"]}
