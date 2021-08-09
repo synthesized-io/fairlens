@@ -68,7 +68,7 @@ def two_column_heatmap(
         right=1.0 - margin_right / fig_width,
     )
 
-    sns.heatmap(
+    g = sns.heatmap(
         corr_matrix,
         vmin=0,
         vmax=1,
@@ -77,3 +77,6 @@ def two_column_heatmap(
         square=True,
         cbar=True,
     )
+
+    g.set_xticklabels(g.get_xticklabels(), rotation=90, horizontalalignment="right", fontdict={"fontsize": 14})
+    g.set_yticklabels(g.get_yticklabels(), rotation=0, horizontalalignment="right", fontdict={"fontsize": 14})

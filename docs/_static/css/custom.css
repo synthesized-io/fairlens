@@ -49,8 +49,9 @@ pre {
   font-size: 12px !important;
 }
 
-.navbar-brand {
+.navbar-brand img {
   margin-left: 5px;
+  padding: 5px;
 }
 
 .rst-versions {
