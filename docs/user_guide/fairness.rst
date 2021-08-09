@@ -14,7 +14,7 @@ define :math:`A`, a subset of :math:`X`, which corresponds to legally protected 
 
 
 There are multiple definitions of fairness in literature, and while many can be contentious, results are often
-considered fair if they are independent of legally protected characteristics such as age, gender, ethnicity, etc. [1]_
+considered fair if they are independent of legally protected characteristics such as age, gender, and ethnicity [1]_.
 
 .. math::
 
@@ -34,7 +34,7 @@ we model protected or sensitive variables as discrete random variables, which gi
 
   P(R \mid A = a) = P(R \mid A = b)\quad \forall a,b \in A
 
-While Barocas, Hardt et. al propose 2 alternative fairness or non-discrimination criteria, separation and sufficiency,
+While Barocas et. al propose 2 alternative fairness or non-discrimination criteria, separation and sufficiency,
 which are applicable to a range of problems, we have chosen to work with independence because of its generality [2]_.
 Working with this abstract definition of fairness, we quantify the bias of a variable :math:`T` in a group :math:`a`,
 as the statistical distance between the the probability distributions of :math:`P(T \mid A = a)` and :math:`P(T)`.

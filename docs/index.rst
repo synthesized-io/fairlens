@@ -17,7 +17,7 @@ FairLens is a tool to help people assess the fairness of datasets and models in 
    Fairness and Bias
    ^^^^^^^^^^^^^^^^^
 
-   Learn more about fairness and bias in data science and how we measure it.
+   Learn more about fairness and bias in data science and machine learning, and how we measure it in FairLens.
 
    +++
 
