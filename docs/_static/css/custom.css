@@ -54,6 +54,14 @@ pre {
   padding: 5px;
 }
 
+.nv-version {
+  font-weight: bold;
+  font-family: Gilroy, serif;
+  color: #110750;
+  padding: 5px 0 5px 0;
+  margin-left: -5px;
+}
+
 .rst-versions {
   border-radius: 5px;
   font-family: Gilroy, serif;
