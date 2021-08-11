@@ -5,9 +5,15 @@ In most supervised learning problems, a model is trained on a set of features :m
 a target variable :math:`Y`. The resulting prediction of a trained model is denoted by :math:`R`. Additionally, we
 define :math:`A`, a subset of :math:`X`, which corresponds to legally protected attributes.
 
-.. class:: center
-  :math:`\underbrace{\text{Title}\quad \overbrace{\text{Gender}\quad \text{Ethnicity}}^{A}\quad \text{Legal Status}}_{X}\quad \overbrace{\text{Raw Score}}^{Y}\quad \overbrace{\text{Predicted Score}}^{R}` :footcite:p:`compas`
+.. raw:: html
 
+  <div style="width: 100%; margin: auto; text-align: center;">
+
+:math:`\underbrace{\text{Title}\quad \overbrace{\text{Gender}\quad \text{Ethnicity}}^{A}\quad \text{Legal Status}}_{X}\quad \overbrace{\text{Raw Score}}^{Y}\quad \overbrace{\text{Predicted Score}}^{R}` :footcite:p:`compas`
+
+.. raw:: html
+
+  </div>
 
 There are multiple definitions of fairness in literature, and while many can be contentious, results are often
 considered fair if they are independent of legally protected characteristics such as age, gender, and ethnicity
