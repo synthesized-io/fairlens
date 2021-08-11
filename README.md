@@ -4,7 +4,7 @@
 [![PyPI](https://img.shields.io/pypi/v/fairlens)](https://pypi.org/project/fairlens/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dw/fairlens)](https://pypi.org/project/fairlens)
 [![Python version](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9-blue.svg)](https://pypi.org/project/fairlens/)
-[![Documentation Status](https://readthedocs.org/projects/fairlens/badge/?version=latest)](https://fairlens.readthedocs.io/)
+[![Documentation Status](https://readthedocs.org/projects/fairlens/badge/?version=latest)](https://fairlens.readthedocs.io/en/latest)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ![GitHub Repo stars](https://img.shields.io/github/stars/synthesized-io/fairlens?style=social)
@@ -71,6 +71,8 @@ African-American, Single, Male    0.249    0.291011    5902 3.62e-251
 
 Weighted Mean Statistical Distance: 0.14081832462333957
 ```
+
+Check out the [documentation](fairlens.readthedocs.io/en/latest) to get started!
 
 See some of our previous blog posts for our take on bias and fairness in ML:
 
