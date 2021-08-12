@@ -53,6 +53,7 @@ extensions = [
     "IPython.sphinxext.ipython_console_highlighting",
     "IPython.sphinxext.ipython_directive",
     "sphinx_panels",
+    "sphinxcontrib.bibtex",
 ]
 
 autosummary_generate = True
@@ -62,6 +63,8 @@ autodoc_typehints = "description"
 autodoc_default_options = {"exclude-members": "__weakref__,__dict__,__init_subclass__"}
 
 panels_add_bootstrap_css = False
+
+bibtex_bibfiles = ["refs.bib"]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
@@ -109,6 +112,8 @@ html_css_files = [
     "css/custom.css",
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css",
 ]
+
+mathjax_path = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 
 # Customization
 html_logo = "_static/FairLens_196x51.png"
