@@ -49,8 +49,15 @@ Using this definition, we can carry out hypothesis tests to measure the signific
 in a sensitive subgroup. The advantage of using this method is that the target variable can be continuous, categorical
 or binary, depending on the metric or test used.
 
-FairLens assesses the fairness of a variable by looking at all possible sensitive subgroups and measuring the bias in each one.
-The weighted average of these biases indicates how dependent a column is on sensitive features.
+FairLens consists of a range of metrics and tests for statistical similarity and correlation, along with Monte Carlo
+methods for hypothesis testing, which can be used to assess fairness in the aformentioned way. The fairness of
+a variable, with respect to sensitive attributes, is assessed by measuring the bias of the variable in each
+possible sensitive subgroup and taking the weighted average.
+
+In practice, :math:`R` can be substituted with any column in the data. For instance, if :math:`R` is the target column
+:math:`Y` in a dataset, then using the above methods will yeild results indicating inherent biases present in the
+dataset. This can be useful for mitigating bias in the data itself, which may nip the problem in the bud.
+On the other hand, using the predictions as :math:`R` will indicate the algorithmic bias of the model.
 
 References
 ----------
