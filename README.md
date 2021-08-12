@@ -72,7 +72,7 @@ See some of our previous blog posts for our take on bias and fairness in ML:
 
 - **Sensitive Attribute and Proxy Detection** - Methods to identify legally protected features, and measure hidden correlations between these features and others.
 
-- **Visualization Tools** - Tools to visualize the distributions of different types variables in sensitive sub groups.
+- **Visualization Tools** - Tools to visualize the distributions of different types of variables or columns in sensitive sub groups.
 
 - **Fairness Assessment** - A streamlined way of assessing the fairness of an arbitrary dataset, and generating reports highlighting biases and hidden correlations.
 
