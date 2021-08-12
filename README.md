@@ -1,10 +1,11 @@
 ![FairLens Logo](docs/_static/FairLens_759x196.png)
 
+[![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)][sdk_colab_url]
+[![Documentation Status](https://readthedocs.org/projects/fairlens/badge/?version=latest)][documentation_url]
 [![CI](https://github.com/synthesized-io/fairlens/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/synthesized-io/fairlens/actions/workflows/ci.yml)
 [![PyPI](https://img.shields.io/pypi/v/fairlens)](https://pypi.org/project/fairlens/)
 [![PyPI - Downloads](https://img.shields.io/pypi/dw/fairlens)](https://pypi.org/project/fairlens)
 [![Python version](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9-blue.svg)](https://pypi.org/project/fairlens/)
-[![Documentation Status](https://readthedocs.org/projects/fairlens/badge/?version=latest)](https://fairlens.readthedocs.io/en/latest)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 ![GitHub Repo stars](https://img.shields.io/github/stars/synthesized-io/fairlens?style=social)
@@ -72,7 +73,7 @@ African-American, Single, Male    0.249    0.291011    5902 3.62e-251
 Weighted Mean Statistical Distance: 0.14081832462333957
 ```
 
-Check out the [documentation](fairlens.readthedocs.io/en/latest) to get started!
+Check out the [documentation][documentation_url] to get started, or try out FairLens now in [Google Colab][sdk_colab_url]!
 
 See some of our previous blog posts for our take on bias and fairness in ML:
 
@@ -98,3 +99,7 @@ The repository's current roadmap is maintained as a Github project [here](https:
 ## License
 
 This project is licensed under the terms of the [BSD 3](https://github.com/synthesized-io/fairlens/blob/main/LICENSE.md) license.
+
+
+[documentation_url]: https://fairlens.readthedocs.io/en/latest/
+[sdk_colab_url]: https://colab.research.google.com/github/synthesized-io/synthesized-notebooks/blob/master/synthesized-sdk.ipynb
