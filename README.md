@@ -1,4 +1,4 @@
-![FairLens Logo](docs/_static/FairLens_759x196.png)
+<img width=60% src="docs/_static/FairLens_759x196.png">
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)][sdk_colab_url]
 [![Documentation Status](https://readthedocs.org/projects/fairlens/badge/?version=latest)][documentation_url]
