@@ -55,9 +55,9 @@ a variable, with respect to sensitive attributes, is assessed by measuring the b
 possible sensitive subgroup and taking the weighted average.
 
 In practice, :math:`R` can be substituted with any column in the data. For instance, if :math:`R` is the target column
-:math:`Y` in a dataset, then using the above methods will yeild results indicating inherent biases present in the
-dataset. This can be useful for mitigating bias in the data itself, which may nip the problem in the bud.
-On the other hand, using the predictions as :math:`R` will indicate the algorithmic bias of the model.
+:math:`Y` in a dataset, then using the above methods will yield results indicating inherent biases present in the
+dataset. This can be useful for mitigating bias in the data itself.
+On the other hand, using the predictions as :math:`R` will indicate algorithmic bias.
 
 References
 ----------
