@@ -4,7 +4,7 @@ Visualize distributions of data.
 
 import itertools
 from math import ceil
-from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -90,11 +90,11 @@ def distr_plot(
     if show_curve is None:
         show_curve = distr_type in ["continuous", "datetime"]
 
-    kwargs = {}
+    kwargs: Dict[str, Any] = {}
     if not show_hist:
         kwargs["alpha"] = 0
         kwargs["edgecolor"] = "#00000000"
-    
+
     if normalize:
         kwargs["stat"] = "probability"
 
