@@ -93,7 +93,6 @@ are configurable.
 
 .. ipython:: python
     :okwarning:
-    :verbatim:
 
     @savefig corr_heatmap_1.png
     fl.plot.two_column_heatmap(df)
@@ -104,7 +103,6 @@ for numerical-numerical and numerical-categorical associations for added precisi
 
 .. ipython:: python
     :okwarning:
-    :verbatim:
 
     from fairlens.metrics import distance_nn_correlation, distance_cn_correlation, cramers_v
 
