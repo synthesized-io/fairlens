@@ -237,12 +237,12 @@ class FairnessScorer:
             df_dist = df_dist[df_dist["Distance"] < 0]
 
         df_dist = df_dist.sort_values("P-Value", ascending=True, key=abs)
-        df_dist["Distance"] = df_dist["Distance"].map("{:.3f}".format)  # some changed source code
-        df_dist["P-Value"] = df_dist["P-Value"].map("{:.2e}".format)  # some changed source code
+        df_dist["Distance"] = df_dist["Distance"].map("{:.3f}".format)
+        df_dist["P-Value"] = df_dist["P-Value"].map("{:.2e}".format)
 
         print(f"Sensitive Attributes: {self.sensitive_attrs}\n")
         print(df_dist[:max_rows].to_string(index=False))
-        print(f"\nWeighted Mean Statistical Distance: {score}")  # some changed source code
+        print(f"\nWeighted Mean Statistical Distance: {score}")
 
 
 def calculate_score(df_dist: pd.DataFrame) -> float:
@@ -279,7 +279,7 @@ def _calculate_distance(
         pred = utils.get_predicates_mult(df, [sensitive_group])[0]
 
         if method == "dist_to_rest":
-            pred_other = ~pred  # some changed source code
+            pred_other = ~pred
         else:
             pred_other = pd.Series([True] * len(df))
 
