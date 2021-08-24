@@ -18,6 +18,17 @@ def _variance_numerical(x: pd.Series) -> float:
     return moment(x, moment=2, nan_policy="omit")
 
 
+def _multinomial_means(x: pd.Series) -> pd.Series:
+    return x.value_counts(normalize=True, sort=False)
+
+
+def _multinomial_variances(x: pd.Series) -> pd.Series:
+    n = x.size
+    probs = x.value_counts(normalize=True, sort=False)
+    vars = [n * prob * (1 - prob) for prob in probs]
+    return vars
+
+
 def sensitive_group_analysis(
     df: pd.DataFrame, target_attr: str, groups: List[Union[Mapping[str, List[Any]], pd.Series]]
 ) -> pd.DataFrame:
@@ -32,9 +43,9 @@ def sensitive_group_analysis(
     return pd.DataFrame(results)
 
 
-def compute_distribution_mean(x: pd.Series) -> float:
+def compute_distribution_mean(x: pd.Series) -> Union[float, pd.Series]:
     pass
 
 
-def compute_distribution_variance(x: pd.Series) -> float:
+def compute_distribution_variance(x: pd.Series) -> Union[float, pd.Series]:
     pass
