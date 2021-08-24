@@ -256,7 +256,7 @@ def resampling_interval(t_obs: float, t_distribution: pd.Series, cl: float = 0.9
     return t_obs + d1, t_obs + d2
 
 
-def brunnez_munzel_test(
+def brunner_munzel_test(
     df: pd.DataFrame,
     target_attr: str,
     group1: Union[Mapping[str, List[Any]], pd.Series],
