@@ -2,6 +2,8 @@
 This module contains statistical measures for analyzing target variable distributions across sensitive groups.
 """
 
+import functools
+import operator
 from typing import Any, List, Mapping, Union
 
 import pandas as pd
@@ -16,6 +18,21 @@ def _mean_numerical(x: pd.Series) -> float:
 
 def _variance_numerical(x: pd.Series) -> float:
     return moment(x, moment=2, nan_policy="omit")
+
+
+def _mean_datetime(x: pd.Series) -> pd.Timedelta:
+    nums = pd.to_datetime(x)
+    date_min = nums.min()
+    diffs = [num - date_min for num in nums]
+    date_mean = date_min + functools.reduce(operator.add, diffs) / len(diffs)
+    return date_mean
+
+
+def _variance_datetime(x: pd.Series) -> pd.Timedelta:
+    nums = pd.to_datetime(x).astype(int)
+    res = nums.std()
+    std = pd.to_timedelta(res)
+    return std
 
 
 def _multinomial_means(x: pd.Series) -> pd.Series:
@@ -49,6 +66,10 @@ def compute_distribution_mean(x: pd.Series, categorical_mode: str = "multinomial
     if x_type.is_continuous():
         return _mean_numerical(x)
 
+    if x_type.is_datetime():
+        return _mean_datetime(x)
+
+    # We consider a binary distribution to be categorical in essence.
     if categorical_mode == "multinomial":
         return _multinomial_means(x)
     else:
@@ -59,8 +80,12 @@ def compute_distribution_variance(x: pd.Series, categorical_mode: str = "multino
     x_type = utils.infer_distr_type(x)
 
     if x_type.is_continuous():
-        return _mean_numerical(x)
+        return _variance_numerical(x)
 
+    if x_type.is_datetime():
+        return _variance_datetime(x)
+
+    # We consider a binary distribution to be categorical in essence.
     if categorical_mode == "multinomial":
         return _multinomial_variances(x)
     else:
