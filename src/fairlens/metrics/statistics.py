@@ -35,11 +35,11 @@ def _variance_datetime(x: pd.Series) -> pd.Timedelta:
     return std
 
 
-def _multinomial_means(x: pd.Series) -> pd.Series:
+def _means_multinomial(x: pd.Series) -> pd.Series:
     return x.value_counts(normalize=True, sort=False)
 
 
-def _multinomial_variances(x: pd.Series) -> pd.Series:
+def _variances_multinomial(x: pd.Series) -> pd.Series:
     n = x.size
     probs = x.value_counts(normalize=True, sort=False)
     vars = [n * prob * (1 - prob) for prob in probs]
@@ -110,7 +110,7 @@ def compute_distribution_mean(x: pd.Series, categorical_mode: str = "multinomial
 
     # We consider a binary distribution to be categorical in essence.
     if categorical_mode == "multinomial":
-        return _multinomial_means(x)
+        return _means_multinomial(x)
     else:
         return None
 
@@ -142,6 +142,6 @@ def compute_distribution_variance(x: pd.Series, categorical_mode: str = "multino
 
     # We consider a binary distribution to be categorical in essence.
     if categorical_mode == "multinomial":
-        return _multinomial_variances(x)
+        return _variances_multinomial(x)
     else:
         return None
