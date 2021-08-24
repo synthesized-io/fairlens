@@ -7,7 +7,7 @@ import operator
 from typing import Any, List, Mapping, Union
 
 import pandas as pd
-from scipy.stats import moment
+from scipy.stats import entropy, moment
 
 from .. import utils
 
@@ -33,6 +33,19 @@ def _variance_datetime(x: pd.Series) -> pd.Timedelta:
     res = nums.std()
     std = pd.to_timedelta(res)
     return std
+
+
+def _mode_categorical(x: pd.Series) -> Any:
+    return x.value_counts(sort=True)[1]
+
+
+def _variance_square_sum(x: pd.Series) -> float:
+    return (x.value_counts(normalize=True) ** 2).sum()
+
+
+def _variance_entropy(x: pd.Series) -> float:
+    counts = x.value_counts()
+    return entropy(counts)
 
 
 def _means_multinomial(x: pd.Series) -> pd.Series:
@@ -91,8 +104,9 @@ def compute_distribution_mean(x: pd.Series, categorical_mode: str = "multinomial
         x (pd.Series):
             The series representing the distribution for which the mean will be calculated
         categorical_mode (str, optional):
-            Allows the user to choose which method will be used for computing the mean for categorical
-            (and implicitly, binary) series.
+            Allows the user to choose which method will be used for computing the variance for categorical
+            (and implicitly, binary) series. Can be "square", "entropy" or "multinomial". Defaults to
+            "multinomial".
 
     Returns:
         Union[float, pd.Series]:
@@ -109,7 +123,11 @@ def compute_distribution_mean(x: pd.Series, categorical_mode: str = "multinomial
         return _mean_datetime(x)
 
     # We consider a binary distribution to be categorical in essence.
-    if categorical_mode == "multinomial":
+    if categorical_mode == "square":
+        return _mode_categorical(x)
+    elif categorical_mode == "entropy":
+        return _mode_categorical(x)
+    elif categorical_mode == "multinomial":
         return _means_multinomial(x)
     else:
         return None
@@ -124,7 +142,8 @@ def compute_distribution_variance(x: pd.Series, categorical_mode: str = "multino
             The series representing the distribution for which the variance will be calculated
         categorical_mode (str, optional):
             Allows the user to choose which method will be used for computing the variance for categorical
-            (and implicitly, binary) series.
+            (and implicitly, binary) series. Can be "square", "entropy" or "multinomial". Defaults to
+            "multinomial".
 
     Returns:
         Union[float, pd.Series]:
@@ -141,7 +160,11 @@ def compute_distribution_variance(x: pd.Series, categorical_mode: str = "multino
         return _variance_datetime(x)
 
     # We consider a binary distribution to be categorical in essence.
-    if categorical_mode == "multinomial":
+    if categorical_mode == "square":
+        return _variance_square_sum(x)
+    elif categorical_mode == "entropy":
+        return _variance_entropy(x)
+    elif categorical_mode == "multinomial":
         return _variances_multinomial(x)
     else:
         return None
