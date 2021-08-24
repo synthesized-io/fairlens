@@ -4,7 +4,7 @@ Visualize distributions of data.
 
 import itertools
 from math import ceil
-from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -90,20 +90,15 @@ def distr_plot(
     if show_curve is None:
         show_curve = distr_type in ["continuous", "datetime"]
 
-    kwargs: Dict[str, Any] = {}
-    if not show_hist:
-        kwargs["alpha"] = 0
-        kwargs["edgecolor"] = "#00000000"
-
-    if normalize:
-        kwargs["stat"] = "probability"
+    shrink = int(show_hist)
+    stat = "probability" if normalize else "count"
 
     if distr_type == "continuous":
         _, bins = utils.zipped_hist((df[target_attr],), ret_bins=True, distr_type=distr_type)
     elif distr_type == "datetime":
         bins = utils.fd_opt_bins(column)  # TODO: Look at seaborn log scaling in more detail
     elif column.dtype in ["int64", "float64"]:
-        bins = np.arange(column.min(), column.max() + 1.5) - 0.5
+        bins = np.arange(0, column.max() + 1.5) - 0.5
         ax.set_xticks(bins + 0.5)
     else:
         bins = "auto"
@@ -111,7 +106,7 @@ def distr_plot(
     plt.xlabel(target_attr)
 
     for pred in preds:
-        sns.histplot(column[pred], bins=bins, color=next(palette), kde=show_curve, ax=ax, **kwargs)
+        sns.histplot(column[pred], bins=bins, color=next(palette), kde=show_curve, shrink=shrink, stat=stat, ax=ax)
 
     if shade and not show_hist:
         _shade_area(ax, cmap, alpha=0.3)
