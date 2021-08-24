@@ -5,7 +5,6 @@ This module contains statistical measures for analyzing target variable distribu
 from typing import Any, List, Mapping, Union
 
 import pandas as pd
-from pandas.api.types import is_numeric_dtype
 from scipy.stats import moment
 
 from .. import utils
@@ -45,8 +44,11 @@ def sensitive_group_analysis(
 
 
 def compute_distribution_mean(x: pd.Series, categorical_mode: str = "multinomial") -> Union[float, pd.Series]:
-    if is_numeric_dtype(x):
+    x_type = utils.infer_distr_type(x)
+
+    if x_type.is_continuous():
         return _mean_numerical(x)
+
     if categorical_mode == "multinomial":
         return _multinomial_means(x)
     else:
@@ -54,8 +56,11 @@ def compute_distribution_mean(x: pd.Series, categorical_mode: str = "multinomial
 
 
 def compute_distribution_variance(x: pd.Series, categorical_mode: str = "multinomial") -> Union[float, pd.Series]:
-    if is_numeric_dtype(x):
-        return _variance_numerical(x)
+    x_type = utils.infer_distr_type(x)
+
+    if x_type.is_continuous():
+        return _mean_numerical(x)
+
     if categorical_mode == "multinomial":
         return _multinomial_variances(x)
     else:
