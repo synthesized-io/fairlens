@@ -14,6 +14,8 @@ from matplotlib.axes import Axes
 
 from .. import utils
 
+LABEL_THRESH = 5
+
 
 def distr_plot(
     df: pd.DataFrame,
@@ -183,6 +185,9 @@ def attr_distr_plot(
 
     col = utils.infer_dtype(df_[attr])
 
+    if distr_type is None:
+        distr_type = utils.infer_distr_type(df_[target_attr]).value
+
     if attr_distr_type is None:
         attr_distr_type = utils.infer_distr_type(col).value
 
@@ -223,6 +228,16 @@ def attr_distr_plot(
             plt.title(title)
 
         return None
+
+    if distr_type == "binary":
+        sns.countplot(x=df_[attr], hue=df_[target_attr])
+        plt.title(attr)
+
+        if df_[attr].nunique() > LABEL_THRESH:
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+
+        return ax
 
     distr_plot(
         df_,
