@@ -11,6 +11,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
+from seaborn.categorical import _CountPlotter
 
 from .. import utils
 
@@ -230,7 +231,7 @@ def attr_distr_plot(
         return None
 
     if distr_type == "binary":
-        sns.countplot(x=df_[attr], hue=df_[target_attr])
+        _countplot(x=df_[attr], hue=df_[target_attr], palette=cmap, normalize=normalize)
         plt.title(attr)
 
         if df_[attr].nunique() > LABEL_THRESH:
@@ -357,3 +358,74 @@ def _shade_area(ax: Axes, cmap: Sequence[Tuple[float, float, float]], alpha: flo
     for line in ax.lines:
         xy = line.get_xydata()
         ax.fill_between(xy[:, 0], xy[:, 1], color=next(palette), alpha=alpha)
+
+
+def _countplot(
+    x=None,
+    y=None,
+    hue=None,
+    data=None,
+    normalize=False,
+    order=None,
+    hue_order=None,
+    orient=None,
+    color=None,
+    palette=None,
+    saturation=0.75,
+    dodge=True,
+    ax=None,
+    **kwargs
+) -> Axes:
+    """Adaptation of seaborn.countplot"""
+
+    def prob(a):
+        return len(a) / len(x)
+
+    estimator = prob if normalize else len
+    ci = None
+    n_boot = 0
+    units = None
+    seed = None
+    errcolor = None
+    errwidth = None
+    capsize = None
+
+    if x is None and y is not None:
+        orient = "h"
+        x = y
+    elif y is None and x is not None:
+        orient = "v"
+        y = x
+    elif x is not None and y is not None:
+        raise ValueError("Cannot pass values for both `x` and `y`")
+
+    plotter = _CountPlotter(
+        x,
+        y,
+        hue,
+        data,
+        order,
+        hue_order,
+        estimator,
+        ci,
+        n_boot,
+        units,
+        seed,
+        orient,
+        color,
+        palette,
+        saturation,
+        errcolor,
+        errwidth,
+        capsize,
+        dodge,
+    )
+
+    plotter.value_label = "probability" if normalize else "count"
+
+    if ax is None:
+        ax = plt.gca()
+
+    plotter.plot(ax, kwargs)
+
+    return ax
