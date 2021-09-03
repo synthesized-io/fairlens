@@ -29,10 +29,10 @@ def test_fairness_scorer_runs_german():
 
 
 def test_fairness_scorer_runs_adult():
-    fscorer = FairnessScorer(dfa, "class")
-    assert fscorer.sensitive_attrs == ["age", "marital-status", "race", "relationship", "sex"]
+    fscorer = FairnessScorer(dfa, "income", detect_sensitive=True)
+    assert fscorer.sensitive_attrs == ["age", "gender", "marital-status", "race", "relationship"]
 
-    fscorer = FairnessScorer(dfa, "class", ["age", "race", "sex"])
+    fscorer = FairnessScorer(dfa, "income", ["age", "race", "gender"])
 
     _ = fscorer.plot_distributions()
     df_dist = fscorer.distribution_score()
