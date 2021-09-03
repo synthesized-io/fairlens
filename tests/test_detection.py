@@ -112,13 +112,13 @@ def test_dataframe_dict_numbers():
 
 
 def test_adult_detect_shallow():
-    res = {"age": "Age", "marital-status": "Family Status", "race": "Ethnicity", "sex": "Gender"}
+    res = {"age": "Age", "marital-status": "Family Status", "race": "Ethnicity", "gender": "Gender"}
     assert detect_names_df(df_adult) == res
 
 
 def test_adult_detect_deep():
     df_adult_deep = df_adult.copy()
-    df_adult_deep = df_adult_deep.rename(columns={"marital-status": "A", "race": "B", "sex": "C"})
+    df_adult_deep = df_adult_deep.rename(columns={"marital-status": "A", "race": "B", "gender": "C"})
     res = {"age": "Age", "A": "Family Status", "B": "Ethnicity", "C": "Gender", "relationship": "Family Status"}
     assert detect_names_df(df_adult_deep, deep_search=True) == res
 
