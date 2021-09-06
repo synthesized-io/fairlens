@@ -65,7 +65,7 @@ Correlation Heatmaps
 ^^^^^^^^^^^^^^^^^^^^
 
 The :code:`plot` module allows users to generate a correlation heatmap of any dataset by simply
-passing the dataframe to the :code:`two_column_heatmap()` function, which will plot a heatmap from the
+passing the dataframe to the :code:`heatmap()` function, which will plot a heatmap from the
 matrix of the correlation coefficients computed by using the Pearson Coefficient, the Kruskal-Wallis
 Test and Cramer's V between each two of the columns (for numerical-numerical, categorical-numerical and
 categorical-categorical associations, respectively).
@@ -92,19 +92,17 @@ This will automatically choose different methods for different types of data, ho
 are configurable.
 
 .. ipython:: python
-    :okwarning:
 
     @savefig corr_heatmap_1.png
-    fl.plot.two_column_heatmap(df)
+    fl.plot.heatmap(df)
 
 
 Let's try generating a heatmap of the same dataset, but using some non-linear metrics
 for numerical-numerical and numerical-categorical associations for added precision.
 
 .. ipython:: python
-    :okwarning:
 
     from fairlens.metrics import distance_nn_correlation, distance_cn_correlation, cramers_v
 
     @savefig corr_heatmap_2.png
-    fl.plot.two_column_heatmap(df, distance_nn_correlation, distance_cn_correlation, cramers_v)
+    fl.plot.heatmap(df, distance_nn_correlation, distance_cn_correlation, cramers_v)
