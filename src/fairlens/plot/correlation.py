@@ -45,5 +45,5 @@ def heatmap(
     if "linewidth" not in kwargs:
         kwargs["linewidth"] = 0.5
 
-    sns.heatmap(corr_matrix, **kwargs)
+    sns.heatmap(corr_matrix, vmin=0, vmax=1, square=True, **kwargs)
     plt.tight_layout()

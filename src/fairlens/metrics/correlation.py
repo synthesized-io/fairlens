@@ -23,7 +23,8 @@ def cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
             Second categorical series to analyze.
 
     Returns:
-        float: Value of the statistic.
+        float:
+            Value of the statistic.
     """
 
     if len(sr_a.value_counts()) == 1:
@@ -49,17 +50,56 @@ def cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
 
 
 def pearson(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    """Metric that calculates Pearson's correlation coefficent for numerical-numerical
+    """Calculates the Pearson's correlation coefficent for numerical-numerical
     pairs of series, used in heatmap generation.
 
     Args:
-        sr_a (pd.Series): First numerical series to analyze.
-        sr_b (pd.Series): Second numerical series to analyze.
+        sr_a (pd.Series):
+            First numerical series to analyze.
+        sr_b (pd.Series):
+            Second numerical series to analyze.
 
     Returns:
-        float: Value of the coefficient.
+        float:
+            Value of the coefficient.
     """
-    return abs(sr_a.corr(sr_b))
+
+    return sr_a.corr(sr_b, method="pearson")
+
+
+def kendall_tau(sr_a: pd.Series, sr_b: pd.Series) -> float:
+    """Calculates the Kendall Tau correlation coefficent for pairs of series.
+
+    Args:
+        sr_a (pd.Series):
+            First numerical series to analyze.
+        sr_b (pd.Series):
+            Second numerical series to analyze.
+
+    Returns:
+        float:
+            Value of the coefficient.
+    """
+
+    return sr_a.corr(sr_b, method="kendall")
+
+
+def spearman(sr_a: pd.Series, sr_b: pd.Series) -> float:
+    """Calculates the Spearman Rank correlation coefficent for pairs of series.
+
+    Args:
+        sr_a (pd.Series):
+            First numerical series to analyze.
+        sr_b (pd.Series):
+            Second numerical series to analyze.
+
+    Returns:
+        float:
+            Value of the coefficient.
+    """
+
+
+    return sr_a.corr(sr_b, method="spearman")
 
 
 def r2_mcfadden(sr_a: pd.Series, sr_b: pd.Series) -> float:
@@ -78,6 +118,7 @@ def r2_mcfadden(sr_a: pd.Series, sr_b: pd.Series) -> float:
     Returns:
         float: Value of the pseudo-R2 McFadden score.
     """
+
     x = sr_b.to_numpy().reshape(-1, 1)
     x = StandardScaler().fit_transform(x)
     y = sr_a.to_numpy()
@@ -147,7 +188,8 @@ def kruskal_wallis_boolean(sr_a: pd.Series, sr_b: pd.Series, p_cutoff: float = 0
             The maximum admitted p-value for the distributions to be considered independent.
 
     Returns:
-        bool: Bool value representing whether or not the two series are correlated.
+        bool:
+            Bool value representing whether or not the two series are correlated.
     """
 
     sr_a = sr_a.astype("category").cat.codes
