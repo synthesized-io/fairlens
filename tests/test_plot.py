@@ -24,7 +24,7 @@ def test_mult_distr_plot_compas():
 
 
 def test_mult_distr_plot_adult():
-    mult_distr_plot(dfa, "class", ["age", "marital-status", "relationship", "race", "sex"])
+    mult_distr_plot(dfa, "income", ["age", "marital-status", "relationship", "race", "gender"])
 
 
 def test_mult_distr_plot_german():
