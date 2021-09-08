@@ -7,13 +7,6 @@ on:
       - main
 
 jobs:
-  pre-commit:
-    runs-on: ubuntu-latest
-    steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-python@v2
-    - uses: pre-commit/action@v2.0.0
-
   checks:
     runs-on: ubuntu-latest
     strategy:
@@ -25,7 +18,13 @@ jobs:
         - 3.9
     name: Check Python ${{ matrix.python-version }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v2.3.4
+      if: ${{ github.event_name == 'pull_request' }}
+      with:
+        ref: ${{ github.head_ref }}
+
+    - uses: actions/checkout@v2.3.4
+      if: ${{ github.event_name == 'push' }}
 
     - name: Setup Python ${{ matrix.python-version }}
       uses: actions/setup-python@v2
@@ -38,8 +37,22 @@ jobs:
     - name: Install
       run: python -m pip install -e .[test]
 
-    - name: Test
-      run: python -m pytest
+    - name: Unit tests
+      run: |
+        pytest -v --junitxml=test-results/junit.xml  --cov=src/fairlens --cov-report=xml:coverage-reports/cobertura.xml --cov-branch
+        sed -ie 's#/home/runner/work/fairlens/fairlens#/github/workspace#g' coverage-reports/cobertura.xml
+      env:
+        SYNTHESIZED_KEY: ${{ secrets.SYNTHESIZED_KEY }}
+
+    - name: SonarCloud Scan
+      if: ${{ matrix.python-version }} == '3.7'
+      uses: SonarSource/sonarcloud-github-action@master
+      with:
+        projectBaseDir: .
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # Needed to get PR information, if any
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+
 
   build-docs:
     runs-on: ubuntu-latest
