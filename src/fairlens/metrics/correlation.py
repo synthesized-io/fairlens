@@ -60,40 +60,6 @@ def pearson(sr_a: pd.Series, sr_b: pd.Series) -> float:
     return sr_a.corr(sr_b, method="pearson")
 
 
-def kendall_tau(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    """Calculates the Kendall Tau correlation coefficent for pairs of series.
-
-    Args:
-        sr_a (pd.Series):
-            First numerical series to analyze.
-        sr_b (pd.Series):
-            Second numerical series to analyze.
-
-    Returns:
-        float:
-            Value of the coefficient.
-    """
-
-    return sr_a.corr(sr_b, method="kendall")
-
-
-def spearman(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    """Calculates the Spearman Rank correlation coefficent for pairs of series.
-
-    Args:
-        sr_a (pd.Series):
-            First numerical series to analyze.
-        sr_b (pd.Series):
-            Second numerical series to analyze.
-
-    Returns:
-        float:
-            Value of the coefficient.
-    """
-
-    return sr_a.corr(sr_b, method="spearman")
-
-
 def r2_mcfadden(sr_a: pd.Series, sr_b: pd.Series) -> float:
     """Metric used for categorical-numerical continuous. It trains two multinomial logistic
     regression models on the data, one using the numerical series as the feature and the other
@@ -153,7 +119,6 @@ def kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
             p-value is the probability that the two columns are not correlated.
     """
 
-    sr_a = sr_a.astype("category").cat.codes
     groups = sr_b.groupby(sr_a)
     arrays = [groups.get_group(category) for category in sr_a.unique()]
 
@@ -161,6 +126,7 @@ def kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
     try:
         _, p_val = ss.kruskal(*args, nan_policy="omit")
     except ValueError:
+        # TODO: Warning
         return 0
 
     return p_val
