@@ -27,31 +27,19 @@ def cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
             Value of the statistic.
     """
 
-    table_orig = pd.crosstab(sr_a.astype(str), sr_b.astype(str))
-    table = np.asarray(table_orig, dtype=np.float64)
+    if sr_a.nunique() == 1 or sr_b.nunique() == 1:
+        return 0
 
-    if table.min() == 0:
-        table[table == 0] = 0.5
+    confusion_matrix = pd.crosstab(sr_a, sr_b)
 
-    n = table.sum()
-    row = table.sum(1) / n
-    col = table.sum(0) / n
-
-    row = pd.Series(data=row, index=table_orig.index)
-    col = pd.Series(data=col, index=table_orig.columns)
-
-    itab = np.outer(row, col)
-    probs = pd.DataFrame(data=itab, index=table_orig.index, columns=table_orig.columns)
-
-    fit = table.sum() * probs
-    expected = fit.to_numpy()
-
-    real = table
-    r, c = real.shape
-    n = np.sum(real)
-    v = np.sum((real - expected) ** 2 / (expected * n * min(r - 1, c - 1))) ** 0.5
-
-    return v
+    chi2 = ss.chi2_contingency(confusion_matrix, correction=(confusion_matrix.shape[0] != 2))[0]
+    n = sum(confusion_matrix.sum())
+    phi2 = chi2 / n
+    r, k = confusion_matrix.shape
+    phi2corr = max(0, phi2 - ((k - 1) * (r - 1)) / (n - 1))
+    rcorr = r - ((r - 1) ** 2) / (n - 1)
+    kcorr = k - ((k - 1) ** 2) / (n - 1)
+    return np.sqrt(phi2corr / min((kcorr - 1), (rcorr - 1)))
 
 
 def pearson(sr_a: pd.Series, sr_b: pd.Series) -> float:
