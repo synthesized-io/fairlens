@@ -2,7 +2,7 @@
 name: Feature Request
 description: Propose a new feature for development
 title: "[FEATURE] <title>"
-labels: "[status:triage]"
+labels: [status:triage]
 body:
 - type: checkboxes
   attributes:
