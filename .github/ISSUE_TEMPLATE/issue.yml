@@ -2,7 +2,7 @@
 name: General Issue
 description: Raise a general issue for the project
 title: "[ISSUE] <title>"
-labels: [status:triage]
+labels: "status:triage"
 body:
 - type: checkboxes
   attributes:
