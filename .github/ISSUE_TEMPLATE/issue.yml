@@ -22,8 +22,8 @@ body:
       - Documentation
       - Improvement
       - Feature
-    validations:
-      required: true
+  validations:
+    required: true
 - type: textarea
   attributes:
     label: Describe the issue
