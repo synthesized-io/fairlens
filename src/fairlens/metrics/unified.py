@@ -147,7 +147,7 @@ def correlation_matrix(
         df[col] = utils.infer_dtype(df[col])
 
         if df[col].dtype.kind == "O":
-            df[col] = pd.factorize(df[col])[0]
+            df[col] = pd.Series(pd.factorize(df[col], na_sentinel=-1)[0]).replace(-1, np.nan)
 
     df = df.append(pd.DataFrame({col: [i] for i, col in enumerate(df.columns)}))
 
@@ -179,14 +179,16 @@ def _correlation_matrix_helper(
     sr_a = pd.Series(a[:-1])
     sr_b = pd.Series(b[:-1])
 
+    df = pd.DataFrame({"a": sr_a, "b": sr_b}).dropna().reset_index()
+
     if a_type.is_continuous() and b_type.is_continuous():
-        return num_num_metric(sr_a, sr_b)
+        return num_num_metric(df["a"], df["b"])
 
     elif b_type.is_continuous():
-        return cat_num_metric(sr_a, sr_b)
+        return cat_num_metric(df["a"], df["b"])
 
     elif a_type.is_continuous():
-        return cat_num_metric(sr_b, sr_a)
+        return cat_num_metric(df["b"], df["a"])
 
     else:
-        return cat_cat_metric(sr_a, sr_b)
+        return cat_cat_metric(df["a"], df["b"])

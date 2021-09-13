@@ -1,6 +1,15 @@
 import pandas as pd
+import pytest
 
-from fairlens.metrics.correlation import distance_cn_correlation, distance_nn_correlation
+from fairlens import utils
+from fairlens.metrics.correlation import (
+    cramers_v,
+    distance_cn_correlation,
+    distance_nn_correlation,
+    kruskal_wallis,
+    pearson,
+)
+from fairlens.metrics.unified import correlation_matrix
 from fairlens.sensitive.correlation import find_column_correlation, find_sensitive_correlations
 
 pair_race = "race", "Ethnicity"
@@ -8,6 +17,8 @@ pair_age = "age", "Age"
 pair_marital = "marital", "Family Status"
 pair_gender = "gender", "Gender"
 pair_nationality = "nationality", "Nationality"
+
+epsilon = 1e-6
 
 
 def test_correlation():
@@ -133,3 +144,38 @@ def test_cn_unequal_series_corr():
     sr_b = pd.Series([100, 200, 99, 101, 201, 199, 299, 300, 301, 500, 501, 505, 10, 12, 1001, 1050])
 
     assert distance_cn_correlation(sr_a, sr_b) > 0.7
+
+
+@pytest.mark.parametrize("dataset", ["titanic", "german_credit_data"])
+def test_correlation_matrix(dataset):
+    df = pd.read_csv(f"datasets/{dataset}.csv")
+    num_num_metric = pearson
+    cat_num_metric = kruskal_wallis
+    cat_cat_metric = cramers_v
+
+    matrix = correlation_matrix(
+        df, num_num_metric=num_num_metric, cat_num_metric=cat_num_metric, cat_cat_metric=cat_cat_metric
+    ).to_numpy()
+
+    for i, r in enumerate(df.columns):
+        for j, c in enumerate(df.columns):
+            sr_a = utils.infer_dtype(df[r])
+            sr_b = utils.infer_dtype(df[c])
+            a_type = utils.infer_distr_type(sr_a)
+            b_type = utils.infer_distr_type(sr_b)
+
+            d = pd.DataFrame({"a": sr_a, "b": sr_b}).dropna().reset_index()
+
+            if a_type.is_continuous() and b_type.is_continuous():
+                corr = num_num_metric(d["a"], d["b"])
+
+            elif b_type.is_continuous():
+                corr = cat_num_metric(d["a"], d["b"])
+
+            elif a_type.is_continuous():
+                corr = cat_num_metric(d["b"], d["a"])
+
+            else:
+                corr = cat_cat_metric(d["a"], d["b"])
+
+            assert matrix[i][j] - corr < epsilon
