@@ -379,7 +379,6 @@ def _countplot(
     saturation: float = 0.75,
     dodge: bool = True,
     ax: Axes = None,
-    **kwargs
 ) -> Axes:
     """Adaptation of seaborn.countplot"""
 
@@ -431,6 +430,6 @@ def _countplot(
     if ax is None:
         ax = plt.gca()
 
-    plotter.plot(ax, kwargs)
+    plotter.plot(ax)
 
     return ax
