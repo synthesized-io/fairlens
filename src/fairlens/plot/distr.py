@@ -430,6 +430,6 @@ def _countplot(
     if ax is None:
         ax = plt.gca()
 
-    plotter.plot(ax)
+    plotter.plot(ax, {})
 
     return ax
