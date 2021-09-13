@@ -24,6 +24,7 @@ def test_distr_plot():
 
 def test_attr_distr_plot():
     attr_distr_plot(dfc, "RawScore", "Sex")
+    attr_distr_plot(dfc, "RawScore", "Sex", distr_type=None, attr_distr_type=None)
     attr_distr_plot(dfc, "RawScore", "Ethnicity", separate=True)
 
 
