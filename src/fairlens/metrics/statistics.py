@@ -4,20 +4,20 @@ This module contains statistical measures for analyzing target variable distribu
 
 import functools
 import operator
-from typing import Any, List, Mapping, Union
+from typing import Any, List, Mapping, Sequence, Union
 
 import pandas as pd
-from scipy.stats import entropy, moment
+from scipy.stats import describe, entropy
 
 from .. import utils
 
 
 def _mean_numerical(x: pd.Series) -> float:
-    return moment(x, moment=1, nan_policy="omit")
+    return describe(x).mean
 
 
 def _variance_numerical(x: pd.Series) -> float:
-    return moment(x, moment=2, nan_policy="omit")
+    return describe(x).variance
 
 
 def _mean_datetime(x: pd.Series) -> pd.Timedelta:
@@ -36,7 +36,7 @@ def _variance_datetime(x: pd.Series) -> pd.Timedelta:
 
 
 def _mode_categorical(x: pd.Series) -> Any:
-    return x.value_counts(sort=True)[1]
+    return x.value_counts(sort=True).index[0]
 
 
 def _variance_square_sum(x: pd.Series) -> float:
@@ -54,14 +54,14 @@ def _means_multinomial(x: pd.Series) -> pd.Series:
 
 def _variances_multinomial(x: pd.Series) -> pd.Series:
     probs = x.value_counts(normalize=True, sort=False)
-    vars = [prob * (1 - prob) for prob in probs]
+    vars = pd.Series([prob * (1 - prob) for prob in probs], index=probs.index)
     return vars
 
 
 def sensitive_group_analysis(
     df: pd.DataFrame,
     target_attr: str,
-    groups: List[Union[Mapping[str, List[Any]], pd.Series]],
+    groups: Sequence[Union[Mapping[str, List[Any]], pd.Series]],
     categorical_mode: str = "multinomial",
 ) -> pd.DataFrame:
     """This function produces a summary of the first two central moments of the distributions created
@@ -99,8 +99,8 @@ def sensitive_group_analysis(
     # We create two dataframes, one for means and one for variances, where the column names refer to
     # the categorical variables and the indexes refer to the corresponding groups.
     if categorical_mode == "multinomial":
-        means_df = pd.DataFrame(means, index=groups, columns=df[target_attr].value_counts(sort=False))
-        variances_df = pd.DataFrame(vars, index=groups, columns=df[target_attr].value_counts(sort=False))
+        means_df = pd.DataFrame(means, means.index, columns=df[target_attr].value_counts(sort=False))
+        variances_df = pd.DataFrame(vars, vars.index, columns=df[target_attr].value_counts(sort=False))
 
         return means_df.append(variances_df)
 
@@ -117,9 +117,9 @@ def compute_distribution_mean(x: pd.Series, categorical_mode: str = "multinomial
         x (pd.Series):
             The series representing the distribution for which the mean will be calculated
         categorical_mode (str, optional):
-            Allows the user to choose which method will be used for computing the variance for categorical
-            (and implicitly, binary) series. Can be "square", "entropy" or "multinomial". Defaults to
-            "multinomial".
+            Allows the user to choose which method will be used for computing the first moment for categorical
+            (and implicitly, binary) series. Can be "square", "entropy" which will use the mode or "multinomial",
+            which returns the probability of each variable occuring.
 
     Returns:
         Union[float, pd.Series]:
