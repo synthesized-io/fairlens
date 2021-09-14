@@ -53,6 +53,9 @@ extensions = [
     "IPython.sphinxext.ipython_console_highlighting",
     "IPython.sphinxext.ipython_directive",
     "sphinx_panels",
+    "sphinxcontrib.bibtex",
+    "nbsphinx",
+    "nbsphinx_link",
 ]
 
 autosummary_generate = True
@@ -63,13 +66,15 @@ autodoc_default_options = {"exclude-members": "__weakref__,__dict__,__init_subcl
 
 panels_add_bootstrap_css = False
 
+bibtex_bibfiles = ["refs.bib"]
+
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ["_templates"]
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
 
 
 # -- Options for HTML output -------------------------------------------------
@@ -95,7 +100,11 @@ html_theme_options = {
     "external_links": [
         {"name": "Synthesized", "url": "https://synthesized.io"},
     ],
+    "google_analytics_id": "UA-130210493-1",
+    "navbar_start": ["navbar-logo", "version.html"],
 }
+
+html_sidebars = {"**": ["search-field.html", "sidebar-nav-bs.html"]}
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
@@ -105,6 +114,8 @@ html_css_files = [
     "css/custom.css",
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css",
 ]
+
+mathjax_path = "https://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML"
 
 # Customization
 html_logo = "_static/FairLens_196x51.png"

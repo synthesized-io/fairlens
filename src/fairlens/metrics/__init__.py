@@ -19,6 +19,15 @@ from .distance import (  # isort:skip
     HellingerDistance,
 )
 
+from .correlation import (  # isort:skip
+    cramers_v,
+    distance_cn_correlation,
+    distance_nn_correlation,
+    r2_mcfadden,
+    kruskal_wallis,
+    kruskal_wallis_boolean,
+)
+
 from .significance import (  # isort:skip
     binom_test,
     binominal_proportion_p_value,
@@ -46,6 +55,12 @@ __all__ = [
     "JensenShannonDivergence",
     "Norm",
     "HellingerDistance",
+    "cramers_v",
+    "distance_cn_correlation",
+    "distance_nn_correlation",
+    "r2_mcfadden",
+    "kruskal_wallis",
+    "kruskal_wallis_boolean",
     "binom_test",
     "binominal_proportion_p_value",
     "binominal_proportion_interval",

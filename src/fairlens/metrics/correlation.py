@@ -206,6 +206,8 @@ def distance_cn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
             The correlation coefficient.
     """
 
+    warnings.filterwarnings(action="ignore", category=UserWarning)
+
     sr_a = sr_a.astype("category").cat.codes
     groups = sr_b.groupby(sr_a)
     arrays = [groups.get_group(category) for category in sr_a.unique()]
