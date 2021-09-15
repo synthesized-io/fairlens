@@ -3,16 +3,20 @@ Collection of helper methods which can be used as to interface metrics.
 """
 
 import multiprocessing as mp
-from typing import Any, Callable, List, Mapping, Optional, Tuple, Type, Union
+from collections import namedtuple
+from typing import Any, Callable, List, Mapping, Optional, Tuple, Union
 
 import pandas as pd
+from synthesized_insight.metrics.statistical_tests import BootstrapTest, KolmogorovSmirnovDistanceTest, PermutationTest
 
 from .. import utils
 from .correlation import cramers_v, kruskal_wallis, pearson
 from .distance import BinomialDistance, DistanceMetric, EarthMoversDistance, KolmogorovSmirnovDistance
 
+DistanceResult = namedtuple("DistanceResult", ("distance", "p_value"))
 
-def auto_distance(column: pd.Series) -> Type[DistanceMetric]:
+
+def auto_distance(column: pd.Series) -> str:
     """Return a suitable statistical distance metric based on the distribution of the data.
 
     Args:
@@ -20,17 +24,17 @@ def auto_distance(column: pd.Series) -> Type[DistanceMetric]:
             The input data in a pd.Series.
 
     Returns:
-        Type[DistanceMetric]:
-            The class of the distance metric.
+        str:
+            The id of the distance metric.
     """
 
     distr_type = utils.infer_distr_type(column)
     if distr_type.is_continuous():
-        return KolmogorovSmirnovDistance
+        return KolmogorovSmirnovDistance._get_id()
     elif distr_type.is_binary():
-        return BinomialDistance
+        return BinomialDistance._get_id()
 
-    return EarthMoversDistance
+    return EarthMoversDistance._get_id()
 
 
 def stat_distance(
@@ -39,9 +43,11 @@ def stat_distance(
     group1: Union[Mapping[str, List[Any]], pd.Series],
     group2: Union[Mapping[str, List[Any]], pd.Series],
     mode: str = "auto",
-    p_value: bool = False,
+    test: str = "default",
+    alternative: str = "two-sided",
+    cl: float = 0.95,
     **kwargs,
-) -> Tuple[float, ...]:
+) -> Tuple[float, Optional[float]]:
     """Computes the statistical distance between two probability distributions ie. group 1 and group 2, with respect
     to the target attribute. The distance metric can be chosen through the mode parameter. If mode is set to "auto",
     the most suitable metric depending on the target attributes' distribution is chosen.
@@ -63,18 +69,23 @@ def stat_distance(
             a predicate itself, i.e. pandas series consisting of bools which can be used as a predicate
             to index a subgroup from the dataframe.
             Examples: {"Sex": ["Male"]}, df["Sex"] == "Female"
-        mode (str):
+        mode (str, optional):
             Which distance metric to use. Can be the names of classes from `fairlens.metrics`, or their
             id() strings. If set to "auto", the method automatically picks a suitable metric based on the
             distribution of the target attribute. Defaults to "auto".
-        p_value (bool):
-            Returns the a suitable p-value for the metric if it exists. Defaults to False.
+        test (str, optional):
+            The statistical test to use to compute the p-value. Can take values
+            ["default", "bootstrap", "permutation"]. If set to "default", returns any p-value
+            for the metric specified by `mode`. Defaults to "default"
+        alternative (str, optional):
+            The alternative hypothesis for the test. Can take values ["two-sided", "greater", "less"].
+            Defaults to "two-sided".
         **kwargs:
             Keyword arguments for the distance metric. Passed to the __init__ function of distance metrics.
 
     Returns:
-        Tuple[float, ...]:
-            The distance as a float, and the p-value if p_value is set to True and can be computed.
+        Tuple[float, Optional[float]]:
+            The distance as a float, the p-value as a float.
 
     Examples:
         >>> df = pd.read_csv("datasets/compas.csv")
@@ -87,30 +98,40 @@ def stat_distance(
         (0.0816143577815524, 0.02693435054772131)
     """
 
+    if test not in ["default", "bootstrap", "permutation"]:
+        raise ValueError('Invalid value for test. Valid values: ["default", "bootstrap", "permutation"]')
+
+    if alternative not in ["two-sided", "greater", "less"]:
+        raise ValueError('Invalid value for alternative. Valid values: ["two-sided", "greater", "less"]')
+
     # Parse group arguments into pandas series'
     pred1, pred2 = tuple(utils.get_predicates_mult(df, [group1, group2]))
     group1 = df[pred1][target_attr]
     group2 = df[pred2][target_attr]
 
-    # Choose the distance metric
+    # Choose the metric
     if mode == "auto":
-        dist_class = auto_distance(df[target_attr])
-    elif mode in DistanceMetric._class_dict:
-        dist_class = DistanceMetric._class_dict[mode]
-    else:
-        raise ValueError(f"Invalid mode. Valid modes include:\n{DistanceMetric._class_dict.keys()}")
+        mode = auto_distance(df[target_attr])
 
+    if mode not in DistanceMetric._class_dict:
+        raise ValueError(f"Invalid value for mode. Valid values:\n{DistanceMetric._class_dict.keys()}")
+
+    dist_class = DistanceMetric._class_dict[mode]
     metric = dist_class(**kwargs)
-    d = metric(group1, group2)
 
-    if d is None:
+    d, p = None, None
+
+    if test == "bootstrap":
+        d, p = BootstrapTest(metric, alternative=alternative)
+    elif test == "permutation":
+        d, p = PermutationTest(metric, alternative=alternative)
+    elif test == "default" and mode == "ks_distance":
+        d, p = KolmogorovSmirnovDistanceTest(metric, alternative=alternative)
+
+    if d is None or p is None:
         raise ValueError("Incompatible data inside both series")
 
-    if p_value:
-        p = metric.p_value(group1, group2)
-        return (d, p)
-
-    return (d,)
+    return DistanceResult(distance=d, p_value=p)
 
 
 def correlation_matrix(
