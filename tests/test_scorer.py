@@ -1,4 +1,5 @@
 import pandas as pd
+import pytest
 
 from fairlens.scorer import FairnessScorer, calculate_score
 
@@ -64,3 +65,16 @@ def test_distribution_score():
     score = calculate_score(df_dist)
 
     assert score * df_dist["Counts"].sum() == (df_dist["Distance"] * df_dist["Counts"]).sum()
+
+
+def test_group_statistics():
+    fscorer = FairnessScorer(dfc, "RawScore", ["Ethnicity", "Sex"])
+    df_stats = fscorer.compare_group_statistics(
+        group_mode="manual",
+        categorical_mode="entropy",
+        groups=[{"Ethnicity": ["African-American", "Caucasian"]}, {"Sex": ["Female"]}],
+    )
+    assert df_stats["Means"][0] == pytest.approx(-0.6976, rel=1e-3)
+    assert df_stats["Means"][1] == pytest.approx(-0.9831, rel=1e-3)
+    assert df_stats["Variances"][0] == pytest.approx(0.7178, rel=1e-3)
+    assert df_stats["Variances"][1] == pytest.approx(0.5894, rel=1e-3)

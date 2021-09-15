@@ -245,6 +245,58 @@ class FairnessScorer:
         print(df_dist[:max_rows].to_string(index=False))
         print(f"\nWeighted Mean Statistical Distance: {score}")
 
+    def compare_group_statistics(
+        self,
+        group_mode: str = "auto",
+        categorical_mode: str = "entropy",
+        groups: List[Union[Mapping[str, List[Any]], pd.Series]] = None,
+        max_comb: int = 4,
+    ) -> pd.DataFrame:
+        """Generate a report of statistical measures (mean variance) of the target distributions with respect to
+        each combination of the sensitive attributes by default, or with respect to the groups passed as input if
+        mode is set to "manual". The sensitive or input group combinations will have a maximum length of separate
+        groups.
+
+        Args:
+            group_mode (str, optional):
+                If set to "auto", the function will consider combinations of pre-detected sensitive attributes,
+                similar to distribution_score. If set to "manual", the groups have to be provided by the user.
+                Defaults to "auto".
+            categorical_mode (str, optional):
+                Decides which measures to be used if the target attribute is categorical. Defaults to "entropy".
+            groups (List[Union[Mapping[str, List[Any]], pd.Series]], optional):
+                List of groups to be compared, ignored if mode is set to "auto". Defaults to None.
+
+        Returns:
+            pd.DataFrame:
+                Dataframe containing data on the first two central moments of the target distributions, by group.
+        """
+
+        df = self.df
+        target_attr = self.target_attr
+        group_all = pd.Series([True] * len(df))
+
+        if group_mode == "manual":
+            if groups is None:
+                raise ValueError('Input groups cannot be None when group mode is set to "manual"')
+            else:
+                groups.append(group_all)
+                return sensitive_group_analysis(df, target_attr, groups, categorical_mode=categorical_mode)
+        elif group_mode == "auto":
+            sensitive_attrs = self.sensitive_attrs
+            max_comb = min(max_comb, len(sensitive_attrs))
+            auto_groups = [group_all]
+
+            for k in range(1, max_comb + 1):
+                for sensitive_attr in combinations(sensitive_attrs, k):
+                    unique = df[list(sensitive_attr)].drop_duplicates()
+                    for _, row in unique.iterrows():
+                        sensitive_group = {attr: [value] for attr, value in row.to_dict().items()}
+                        auto_groups.append(utils.get_predicates_mult(df, [sensitive_group])[0])
+            return sensitive_group_analysis(df, target_attr, auto_groups, categorical_mode=categorical_mode)
+        else:
+            raise ValueError('Invalid group mode chosen! Please choose "manual" or use the "auto" default.')
+
 
 def calculate_score(df_dist: pd.DataFrame) -> float:
     """Calculate the weighted mean pairwise statistical distance.
@@ -259,59 +311,6 @@ def calculate_score(df_dist: pd.DataFrame) -> float:
     """
 
     return (df_dist["Distance"].abs() * df_dist["Counts"]).sum() / df_dist["Counts"].sum()
-
-
-def compare_group_statistics(
-    self,
-    group_mode: str = "auto",
-    categorical_mode: str = "entropy",
-    groups: List[Union[Mapping[str, List[Any]], pd.Series]] = None,
-    max_comb: int = 4,
-) -> pd.DataFrame:
-    """Generate a report of statistical measures (mean variance) of the target distributions with respect to
-    each combination of the sensitive attributes by default, or with respect to the groups passed as input if
-    mode is set to "manual". The sensitive or input group combinations will have a maximum length of separate
-    groups.
-
-    Args:
-        group_mode (str, optional):
-            If set to "auto", the function will consider combinations of pre-detected sensitive attributes,
-            similar to distribution_score. If set to "manual", the groups have to be provided by the user.
-            Defaults to "auto".
-        categorical_mode (str, optional):
-            Decides which measures to be used if the target attribute is categorical. Defaults to "entropy".
-        groups (List[Union[Mapping[str, List[Any]], pd.Series]], optional):
-            List of groups to be compared, ignored if mode is set to "auto". Defaults to None.
-
-    Returns:
-        pd.DataFrame:
-            Dataframe containing data on the first two central moments of the target distributions, by group.
-    """
-
-    df = self.df
-    target_attr = self.target_attr
-    group_all = pd.Series([True] * len(df))
-
-    if group_mode == "manual":
-        if groups is None:
-            raise ValueError('Input groups cannot be None when group mode is set to "manual"')
-        else:
-            groups.append(group_all)
-            return sensitive_group_analysis(df, target_attr, groups, categorical_mode=categorical_mode)
-    elif group_mode == "auto":
-        sensitive_attrs = self.sensitive_attrs
-        max_comb = min(max_comb, len(sensitive_attrs))
-        auto_groups = [group_all]
-
-        for k in range(1, max_comb + 1):
-            for sensitive_attr in combinations(sensitive_attrs, k):
-                unique = df[list(sensitive_attr)].drop_duplicates()
-                for _, row in unique.iterrows():
-                    sensitive_group = {attr: [value] for attr, value in row.to_dict().items()}
-                    auto_groups.append(utils.get_predicates_mult(df, [sensitive_group])[0])
-        return sensitive_group_analysis(df, target_attr, auto_groups, categorical_mode=categorical_mode)
-    else:
-        raise ValueError('Invalid group mode chosen! Please choose "manual" or use the "auto" default.')
 
 
 def _calculate_distance(
