@@ -54,8 +54,8 @@ def _means_multinomial(x: pd.Series) -> pd.Series:
 
 def _variances_multinomial(x: pd.Series) -> pd.Series:
     probs = x.value_counts(normalize=True, sort=False)
-    vars = pd.Series([prob * (1 - prob) for prob in probs], index=probs.index)
-    return vars
+    variances = pd.Series([prob * (1 - prob) for prob in probs], index=probs.index)
+    return variances
 
 
 def sensitive_group_analysis(
@@ -99,7 +99,9 @@ def sensitive_group_analysis(
         sr_type = "categorical"
 
     means = [compute_distribution_mean(distr, x_type=sr_type, categorical_mode=categorical_mode) for distr in distrs]
-    vars = [compute_distribution_variance(distr, x_type=sr_type, categorical_mode=categorical_mode) for distr in distrs]
+    variances = [
+        compute_distribution_variance(distr, x_type=sr_type, categorical_mode=categorical_mode) for distr in distrs
+    ]
 
     # In the case of the multinomial mode of analysis for the categorical variable, the output results from
     # the corresponding functions for the mean and variance will output series instead of floats (as they
@@ -108,11 +110,11 @@ def sensitive_group_analysis(
     # the categorical variables and the indexes refer to the corresponding groups.
     if target_type.is_categorical() and categorical_mode == "multinomial":
         means_df = pd.DataFrame(means, means.index, columns=df[target_attr].value_counts(sort=False))
-        variances_df = pd.DataFrame(vars, vars.index, columns=df[target_attr].value_counts(sort=False))
+        variances_df = pd.DataFrame(variances, variances.index, columns=df[target_attr].value_counts(sort=False))
 
         return means_df.append(variances_df)
 
-    results = {"Means": means, "Variances": vars}
+    results = {"Means": means, "Variances": variances}
 
     return pd.DataFrame(results, index=groups)
 
