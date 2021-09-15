@@ -1,0 +1,41 @@
+---
+name: Feature Request
+description: Propose a new feature for development
+title: "[FEATURE] <title>"
+labels: "status:triage"
+body:
+- type: checkboxes
+  attributes:
+    label: Is there an existing issue for this?
+    description: Please search to see if an issue already exists for the feature you want to request or a similar one.
+    options:
+    - label: I have searched the existing issues
+      required: true
+- type: textarea
+  attributes:
+    label: Is your feature request related to a problem?
+    description: A clear and concise description of what the problem or possible improvement is.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Describe the solution you would like
+    description: A clear and concise description of what you want to happen or to be implemented.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Describe alternatives you have considered
+    description: A clear and concise description of any alternative solutions or implementations you've considered.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Additional context
+    description: |
+      Links? References? Anything that could give us more context about the feature you want added!
+
+      Tip: You can attach images by clicking this area to highlight it and then dragging files in.
+  validations:
+    required: false
+...
