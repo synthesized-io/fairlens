@@ -285,14 +285,14 @@ class FairnessScorer:
         elif group_mode == "auto":
             sensitive_attrs = self.sensitive_attrs
             max_comb = min(max_comb, len(sensitive_attrs))
-            auto_groups = [group_all]
+            auto_groups = []
 
             for k in range(1, max_comb + 1):
                 for sensitive_attr in combinations(sensitive_attrs, k):
                     unique = df[list(sensitive_attr)].drop_duplicates()
                     for _, row in unique.iterrows():
                         sensitive_group = {attr: [value] for attr, value in row.to_dict().items()}
-                        auto_groups.append(utils.get_predicates_mult(df, [sensitive_group])[0])
+                        auto_groups.append(sensitive_group)
             return sensitive_group_analysis(df, target_attr, auto_groups, categorical_mode=categorical_mode)
         else:
             raise ValueError('Invalid group mode chosen! Please choose "manual" or use the "auto" default.')
