@@ -89,16 +89,24 @@ def sensitive_group_analysis(
 
     preds = utils.get_predicates_mult(df, groups)
     distrs = [df[pred][target_attr] for pred in preds]
+    target_type = utils.infer_distr_type(df[target_attr])
 
-    means = [compute_distribution_mean(distr, categorical_mode=categorical_mode) for distr in distrs]
-    vars = [compute_distribution_variance(distr, categorical_mode=categorical_mode) for distr in distrs]
+    if target_type.is_continuous():
+        sr_type = "continuous"
+    elif target_type.is_datetime():
+        sr_type = "datetime"
+    else:
+        sr_type = "categorical"
+
+    means = [compute_distribution_mean(distr, x_type=sr_type, categorical_mode=categorical_mode) for distr in distrs]
+    vars = [compute_distribution_variance(distr, x_type=sr_type, categorical_mode=categorical_mode) for distr in distrs]
 
     # In the case of the multinomial mode of analysis for the categorical variable, the output results from
     # the corresponding functions for the mean and variance will output series instead of floats (as they
     # compute a mean and variance for each of the nominal variables).
     # We create two dataframes, one for means and one for variances, where the column names refer to
     # the categorical variables and the indexes refer to the corresponding groups.
-    if categorical_mode == "multinomial":
+    if target_type.is_categorical() and categorical_mode == "multinomial":
         means_df = pd.DataFrame(means, means.index, columns=df[target_attr].value_counts(sort=False))
         variances_df = pd.DataFrame(vars, vars.index, columns=df[target_attr].value_counts(sort=False))
 
@@ -109,7 +117,9 @@ def sensitive_group_analysis(
     return pd.DataFrame(results, index=groups)
 
 
-def compute_distribution_mean(x: pd.Series, categorical_mode: str = "multinomial") -> Union[float, pd.Series]:
+def compute_distribution_mean(
+    x: pd.Series, x_type: str, categorical_mode: str = "multinomial"
+) -> Union[float, pd.Series]:
     """This function computes the mean (means) of a given distribution, based on the type of its underlying
     data. Supports binary, date-like, numerical and categorical data for the distribution.
 
@@ -127,16 +137,11 @@ def compute_distribution_mean(x: pd.Series, categorical_mode: str = "multinomial
             of the given distribution.
     """
 
-    x_type = utils.infer_distr_type(x)
-
-    if x_type.is_continuous():
+    if x_type == "continuous":
         return _mean_numerical(x)
-
-    if x_type.is_datetime():
+    elif x_type == "datetime":
         return _mean_datetime(x)
-
-    # We consider a binary distribution to be categorical in essence.
-    if categorical_mode == "square":
+    elif categorical_mode == "square":
         return _mode_categorical(x)
     elif categorical_mode == "entropy":
         return _mode_categorical(x)
@@ -146,7 +151,9 @@ def compute_distribution_mean(x: pd.Series, categorical_mode: str = "multinomial
         return None
 
 
-def compute_distribution_variance(x: pd.Series, categorical_mode: str = "multinomial") -> Union[float, pd.Series]:
+def compute_distribution_variance(
+    x: pd.Series, x_type: str, categorical_mode: str = "multinomial"
+) -> Union[float, pd.Series]:
     """This function computes the variances (variances) of a given distribution, based on the type of its underlying
     data. Supports binary, date-like, numerical and categorical data for the distribution.
 
@@ -164,16 +171,11 @@ def compute_distribution_variance(x: pd.Series, categorical_mode: str = "multino
             of the given distribution.
     """
 
-    x_type = utils.infer_distr_type(x)
-
-    if x_type.is_continuous():
+    if x_type == "continuous":
         return _variance_numerical(x)
-
-    if x_type.is_datetime():
+    elif x_type == "datetime":
         return _variance_datetime(x)
-
-    # We consider a binary distribution to be categorical in essence.
-    if categorical_mode == "square":
+    elif categorical_mode == "square":
         return _variance_square_sum(x)
     elif categorical_mode == "entropy":
         return _variance_entropy(x)
