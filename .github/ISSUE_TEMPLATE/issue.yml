@@ -1,7 +1,7 @@
 ---
 name: General Issue
 description: Raise a general issue for the project
-title: "[ISSUE] <title>"
+title: "<title>"
 labels: "status:triage"
 body:
 - type: checkboxes
@@ -17,11 +17,10 @@ body:
     description: How would you best classify the scope of this issue, using the categories below?
     multiple: true
     options:
-      - Bug
       - CI/CD
       - Documentation
       - Improvement
-      - Feature
+      - Maintainance/Refactor
   validations:
     required: true
 - type: textarea
