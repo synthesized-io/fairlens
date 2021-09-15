@@ -12,6 +12,21 @@ FairLens is a tool to help people assess the fairness of datasets and models in 
    :card: + intro-card text-center
 
    ---
+   :fa:`balance-scale,text-black fa-4x,style=fa`
+
+   Fairness and Bias
+   ^^^^^^^^^^^^^^^^^
+
+   Learn more about fairness and bias in data science and machine learning, and how we measure it in FairLens.
+
+   +++
+
+   .. link-button:: user_guide/fairness
+      :type: ref
+      :text: Go
+      :classes: btn-block btn-secondary
+
+   ---
    :fa:`book,text-black fa-4x,style=fa`
 
    User Guide

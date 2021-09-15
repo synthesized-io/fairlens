@@ -241,10 +241,9 @@ class FairnessScorer:
         df_dist["Distance"] = df_dist["Distance"].map("{:.3f}".format)
         df_dist["P-Value"] = df_dist["P-Value"].map("{:.2e}".format)
 
-        print(f"Sensitive Attributes: {self.sensitive_attrs}")
-        print("Most skewed demographics:")
+        print(f"Sensitive Attributes: {self.sensitive_attrs}\n")
         print(df_dist[:max_rows].to_string(index=False))
-        print(f"\nWeighted Mean Statistical Distance: {score}\n")
+        print(f"\nWeighted Mean Statistical Distance: {score}")
 
 
 def calculate_score(df_dist: pd.DataFrame) -> float:

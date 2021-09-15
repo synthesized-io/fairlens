@@ -52,6 +52,4 @@ following methods.
 
 .. ipython:: python
 
-  from fairlens.metrics import resampling_p_value
-
   fl.metrics.resampling_p_value(t_observed, t_distribution, alternative="two-sided")

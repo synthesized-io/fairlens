@@ -20,7 +20,7 @@ Report Generation
 
 The fairness scorer supports three different methods for report generation.
 
-The :code:`plot_distribution` method produces plots of the distribution of the target variable in each subgroup
+The :code:`plot_distributions` method produces plots of the distribution of the target variable in each subgroup
 in a column, for each column. This is useful for understanding the different distributions of protected groups
 and identifying any inherent biases present in a dataset.
 
@@ -33,6 +33,9 @@ and identifying any inherent biases present in a dataset.
   df.info()
 
   fscorer = fl.FairnessScorer(df, "RawScore", ["Ethnicity", "Sex"])
+
+  @savefig fairness_scorer.png
+  fscorer.plot_distributions()
 
 
 The :code:`demographic_report` estimates the extent to which the distribution of the target column is independent
