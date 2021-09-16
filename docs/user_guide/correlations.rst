@@ -32,8 +32,16 @@ Let's first look at how we would go about detecting correlations inside a datafr
     import fairlens as fl
 
     columns = ["gender", "random", "score"]
-    data = [["male", 10, 50], ["female", 20, 80], ["male", 20, 60], ["female", 10, 90]]
-
+    data = [
+        ["male", 10, 60],
+        ["female", 10, 80],
+        ["male", 10, 60],
+        ["female", 10, 80],
+        ["male", 9, 59],
+        ["female", 11, 80],
+        ["male", 12, 61],
+        ["female", 10, 83],
+    ]
     df = pd.DataFrame(data, columns=columns)
 
 Here the score seems to be correlated with gender, with females leaning towards somewhat higher scores.
