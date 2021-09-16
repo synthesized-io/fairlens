@@ -1,0 +1,54 @@
+---
+name: General Issue
+description: Raise a general issue for the project
+title: "[ISSUE] <title>"
+labels: "status:triage"
+body:
+- type: checkboxes
+  attributes:
+    label: Is there an existing issue for this?
+    description: Please search to see if an issue already exists that is similar or describes your own.
+    options:
+    - label: I have searched the existing issues
+      required: true
+- type: dropdown
+  attributes:
+    label: Issue Type
+    description: How would you best classify the scope of this issue, using the categories below?
+    multiple: true
+    options:
+      - Bug
+      - CI/CD
+      - Documentation
+      - Improvement
+      - Feature
+  validations:
+    required: true
+- type: textarea
+  attributes:
+    label: Describe the issue
+    description: A clear and concise description of what the issue is.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Describe a solution you would like
+    description: A clear and concise description of the changes you would require for the issue to be resolved.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Describe alternatives you have considered
+    description: A clear and concise description of any alternative solutions or steps that can resolve the issue.
+  validations:
+    required: false
+- type: textarea
+  attributes:
+    label: Additional context
+    description: |
+      Links? References? Anything that could give us more context about the issue you have raised and that might help us resolve it!
+
+      Tip: You can attach images by clicking this area to highlight it and then dragging files in.
+  validations:
+    required: false
+...
