@@ -1,6 +1,5 @@
 import numpy as np
 import pandas as pd
-from pyemd import emd_samples
 
 from fairlens.metrics.distance import BinomialDistance
 from fairlens.metrics.distance import EarthMoversDistance as EMD
@@ -41,11 +40,6 @@ def test_stat_distance():
 def test_stat_distance_auto():
     res = stat_distance(df, target_attr, pred1, pred2, mode="auto")[0]
     assert stat_distance(df, target_attr, pred1, pred2, mode="ks_distance")[0] == res
-
-
-def test_auto_binning():
-    res = emd_samples(group1, group2)
-    assert stat_distance(df, target_attr, pred1, pred2, mode="emd")[0] == res
 
 
 def test_mean_distance():

@@ -8,7 +8,7 @@ from typing import Dict, Optional, Type, Union
 
 import numpy as np
 import pandas as pd
-import pyemd
+from scipy.stats import wasserstein_distance
 from synthesized_insight.metrics import HellingerDistance as HD
 from synthesized_insight.metrics import JensenShannonDivergence as JSD
 from synthesized_insight.metrics import KolmogorovSmirnovDistanceTest, KruskalWallisTest
@@ -224,19 +224,12 @@ class EarthMoversDistance(CategoricalDistanceMetric):
     def distance(self, x: pd.Series, y: pd.Series) -> float:
         (p, q), bin_edges = utils.zipped_hist((x, y), bin_edges=self.bin_edges, ret_bins=True)
 
-        distance_matrix = 1 - np.eye(len(p))
+        if bin_edges is None:
+            bin_centers = np.arange(len(p))
+        else:
+            bin_centers = (np.array(bin_edges[:-1]) + np.array(bin_edges[1:])) / 2
 
-        if bin_edges is not None:
-            # Use pair-wise euclidean distances between bin centers for scale data
-            bin_centers = np.mean([bin_edges[:-1], bin_edges[1:]], axis=0)
-            xx, yy = np.meshgrid(bin_centers, bin_centers)
-            distance_matrix = np.abs(xx - yy)
-
-        p = np.array(p).astype(np.float64)
-        q = np.array(q).astype(np.float64)
-        distance_matrix = distance_matrix.astype(np.float64)
-
-        return pyemd.emd(p, q, distance_matrix)
+        return wasserstein_distance(bin_centers, bin_centers, u_weights=p, v_weights=q)
 
     @property
     def id(self) -> str:
