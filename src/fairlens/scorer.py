@@ -266,6 +266,8 @@ class FairnessScorer:
                 Decides which measures to be used if the target attribute is categorical. Defaults to "entropy".
             groups (List[Union[Mapping[str, List[Any]], pd.Series]], optional):
                 List of groups to be compared, ignored if mode is set to "auto". Defaults to None.
+            max_comb (int):
+                The maximum depth of the group combinations for which the statistics are generated. Defaults to 4.
 
         Returns:
             pd.DataFrame:

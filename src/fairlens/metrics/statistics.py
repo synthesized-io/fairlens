@@ -80,6 +80,10 @@ def sensitive_group_analysis(
             a predicate itself, i.e. pandas series consisting of bools which can be used as a predicate
             to index a subgroup from the dataframe.
             Examples of valid groups: {"Sex": ["Male"]}, df["Sex"] == "Female"
+        categorical_mode (str):
+            Allows the user to choose which method will be used for computing the first moment for categorical
+            (and implicitly, binary) series. Can be "square", "entropy" which will use the mode or "multinomial",
+            which returns the probability of each variable occuring. Defaults to "multinomial".
 
     Returns:
         pd.DataFrame:
@@ -128,10 +132,13 @@ def compute_distribution_mean(
     Args:
         x (pd.Series):
             The series representing the distribution for which the mean will be calculated
+        x_type (str):
+            This is the underlying type of the target attribute distribution and is passed to avoid errors caused
+            by very specific groping.
         categorical_mode (str, optional):
             Allows the user to choose which method will be used for computing the first moment for categorical
             (and implicitly, binary) series. Can be "square", "entropy" which will use the mode or "multinomial",
-            which returns the probability of each variable occuring.
+            which returns the probability of each variable occuring. Defaults to "multinomial".
 
     Returns:
         Union[float, pd.Series]:
@@ -162,10 +169,13 @@ def compute_distribution_variance(
     Args:
         x (pd.Series):
             The series representing the distribution for which the variance will be calculated
+        x_type (str):
+            This is the underlying type of the target attribute distribution and is passed to avoid errors caused
+            by very specific groping.
         categorical_mode (str, optional):
-            Allows the user to choose which method will be used for computing the variance for categorical
-            (and implicitly, binary) series. Can be "square", "entropy" or "multinomial". Defaults to
-            "multinomial".
+            Allows the user to choose which method will be used for computing the first moment for categorical
+            (and implicitly, binary) series. Can be "square", "entropy" which will use the mode or "multinomial",
+            which returns the probability of each variable occuring. Defaults to "multinomial".
 
     Returns:
         Union[float, pd.Series]:
