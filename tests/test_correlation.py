@@ -32,6 +32,14 @@ def test_correlation():
         ["female", 11, 80],
         ["male", 12, 61],
         ["female", 10, 83],
+        ["male", 10, 60],
+        ["female", 10, 80],
+        ["male", 10, 60],
+        ["female", 10, 80],
+        ["male", 9, 59],
+        ["female", 11, 80],
+        ["male", 12, 61],
+        ["female", 10, 83],
     ]
     df = pd.DataFrame(data, columns=col_names)
     res = {"score": [pair_gender]}
@@ -75,11 +83,18 @@ def test_common_correlation():
         ["carribean", 40, 10, 2000, "single", 10, 90, 220],
         ["indo-european", 42, 10, 2500, "widowed", 10, 120, 200],
         ["arabian", 19, 10, 2200, "married", 10, 60, 115],
+        ["arabian", 21, 10, 2000, "married", 10, 60, 120],
+        ["carribean", 20, 10, 3000, "single", 10, 90, 130],
+        ["indo-european", 41, 10, 1900, "widowed", 10, 120, 210],
+        ["carribean", 40, 10, 2000, "single", 10, 90, 220],
+        ["indo-european", 42, 10, 2500, "widowed", 10, 120, 200],
+        ["arabian", 19, 10, 2200, "married", 10, 60, 115],
     ]
     df = pd.DataFrame(data, columns=col_names)
     res = {
         "corr1": [pair_race, pair_age, pair_marital],
-        "corr2": [pair_age],
+        "corr2": [pair_race, pair_age, pair_marital],
+        "entries": [pair_age],
     }
     assert find_sensitive_correlations(df) == res
 
@@ -108,14 +123,20 @@ def test_series_correlation():
         ["carribean", 40, 10, 2000, "single", 10],
         ["indo-european", 42, 10, 2500, "widowed", 10],
         ["arabian", 19, 10, 2200, "married", 10],
+        ["arabian", 21, 10, 2000, "married", 10],
+        ["carribean", 20, 10, 3000, "single", 10],
+        ["indo-european", 41, 10, 1900, "widowed", 10],
+        ["carribean", 40, 10, 2000, "single", 10],
+        ["indo-european", 42, 10, 2500, "widowed", 10],
+        ["arabian", 19, 10, 2200, "married", 10],
     ]
     df = pd.DataFrame(data, columns=col_names)
-    s1 = pd.Series([60, 90, 120, 90, 120, 60])
-    s2 = pd.Series([120, 130, 210, 220, 200, 115])
-    res1 = [pair_race, pair_marital]
-    res2 = [pair_age]
-    assert set(find_column_correlation(s1, df, corr_cutoff=0.9)) == set(res1)
-    assert set(find_column_correlation(s2, df, corr_cutoff=0.9)) == set(res2)
+    s1 = pd.Series([60, 90, 120, 90, 120, 60, 60, 90, 120, 90, 120, 60])
+    s2 = pd.Series([120, 130, 210, 220, 200, 115, 120, 130, 210, 220, 200, 115])
+    res1 = [pair_age, pair_race, pair_marital]
+    res2 = [pair_age, pair_race, pair_marital]
+    assert set(find_column_correlation(s1, df)) == set(res1)
+    assert set(find_column_correlation(s2, df)) == set(res2)
 
 
 def test_basic_nn_distance_corr():
