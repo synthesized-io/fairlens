@@ -43,6 +43,13 @@ jobs:
         sed -ie 's#/home/runner/work/fairlens/fairlens#/github/workspace#g' coverage-reports/cobertura.xml
       env:
         SYNTHESIZED_KEY: ${{ secrets.SYNTHESIZED_KEY }}
+    
+    - name: Upload Codecov report
+      uses: codecov/codecov-action@v1.5.2
+      with:
+        files: coverage-reports/cobertura.xml
+        flags: unittests
+        fail_ci_if_error: false
 
     - name: SonarCloud Scan
       if: ${{ matrix.python-version }} == '3.7'
