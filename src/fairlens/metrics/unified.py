@@ -7,6 +7,8 @@ from collections import namedtuple
 from typing import Any, Callable, List, Mapping, Optional, Tuple, Union
 
 import pandas as pd
+from synthesized_insight.check import Check, ColumnCheck
+from synthesized_insight.metrics.base import TwoColumnMetric
 from synthesized_insight.metrics.statistical_tests import BootstrapTest, KolmogorovSmirnovDistanceTest, PermutationTest
 
 from .. import utils
@@ -16,25 +18,15 @@ from .distance import BinomialDistance, DistanceMetric, EarthMoversDistance, Kol
 DistanceResult = namedtuple("DistanceResult", ("distance", "p_value"))
 
 
-def auto_distance(column: pd.Series) -> str:
-    """Return a suitable statistical distance metric based on the distribution of the data.
+class _OptimisticCheck(ColumnCheck):
+    def continuous(self, sr: pd.Series) -> bool:
+        return True
 
-    Args:
-        column (pd.Series):
-            The input data in a pd.Series.
+    def categorical(self, sr: pd.Series) -> bool:
+        return True
 
-    Returns:
-        str:
-            The id of the distance metric.
-    """
 
-    distr_type = utils.infer_distr_type(column)
-    if distr_type.is_continuous():
-        return KolmogorovSmirnovDistance._get_id()
-    elif distr_type.is_binary():
-        return BinomialDistance._get_id()
-
-    return EarthMoversDistance._get_id()
+check = _OptimisticCheck()
 
 
 def stat_distance(
@@ -45,7 +37,6 @@ def stat_distance(
     mode: str = "auto",
     test: str = "default",
     alternative: str = "two-sided",
-    cl: float = 0.95,
     **kwargs,
 ) -> Tuple[float, Optional[float]]:
     """Computes the statistical distance between two probability distributions ie. group 1 and group 2, with respect
@@ -117,21 +108,46 @@ def stat_distance(
         raise ValueError(f"Invalid value for mode. Valid values:\n{DistanceMetric._class_dict.keys()}")
 
     dist_class = DistanceMetric._class_dict[mode]
-    metric = dist_class(**kwargs)
+    distance_metric = dist_class(**kwargs)
+    metric = _MetricAdaptor(distance_metric)
 
     d, p = None, None
 
     if test == "bootstrap":
-        d, p = BootstrapTest(metric, alternative=alternative)
+        d, p = BootstrapTest(metric, alternative=alternative, check=check)(group1, group2)
     elif test == "permutation":
-        d, p = PermutationTest(metric, alternative=alternative)
+        d, p = PermutationTest(metric, alternative=alternative, check=check)(group1, group2)
     elif test == "default" and mode == "ks_distance":
-        d, p = KolmogorovSmirnovDistanceTest(metric, alternative=alternative)
+        d, p = KolmogorovSmirnovDistanceTest(alternative=alternative, check=check)(group1, group2)
+    else:
+        d = distance_metric(group1, group2)
+        p = None
 
-    if d is None or p is None:
+    if d is None:
         raise ValueError("Incompatible data inside both series")
 
     return DistanceResult(distance=d, p_value=p)
+
+
+def auto_distance(column: pd.Series) -> str:
+    """Return a suitable statistical distance metric based on the distribution of the data.
+
+    Args:
+        column (pd.Series):
+            The input data in a pd.Series.
+
+    Returns:
+        str:
+            The id of the distance metric.
+    """
+
+    distr_type = utils.infer_distr_type(column)
+    if distr_type.is_continuous():
+        return KolmogorovSmirnovDistance._get_id()
+    elif distr_type.is_binary():
+        return BinomialDistance._get_id()
+
+    return EarthMoversDistance._get_id()
 
 
 def correlation_matrix(
@@ -213,3 +229,17 @@ def _correlation_matrix_helper(
 
     else:
         return cat_cat_metric(sr_a, sr_b)
+
+
+class _MetricAdaptor(TwoColumnMetric):
+    def __init__(self, metric: DistanceMetric):
+        self.metric = metric
+
+    def __call__(self, sr_a: pd.Series, sr_b: pd.Series):
+        return self.metric(sr_a, sr_b)
+
+    def check_column_types(cls, sr_a: pd.Series, sr_b: pd.Series, check: Check):
+        return True
+
+    def _compute_metric(self, sr_a: pd.Series, sr_b: pd.Series):
+        return self.metric.distance(sr_a, sr_b)

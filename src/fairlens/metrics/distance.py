@@ -3,34 +3,21 @@ Collection of metrics, tests that measure the distance, or similarity, between t
 """
 
 import inspect
-from abc import abstractmethod
+from abc import ABC, abstractmethod
 from typing import Dict, Optional, Type, Union
 
 import numpy as np
 import pandas as pd
 import pyemd
-from synthesized_insight import ColumnCheck
 from synthesized_insight.metrics import HellingerDistance as HD
 from synthesized_insight.metrics import JensenShannonDivergence as JSD
 from synthesized_insight.metrics import KolmogorovSmirnovDistanceTest, KruskalWallisTest
 from synthesized_insight.metrics import KullbackLeiblerDivergence as KLD
-from synthesized_insight.metrics import TwoColumnMetric
 
 from .. import utils
 
 
-class _OptimisticCheck(ColumnCheck):
-    def continuous(self, sr: pd.Series) -> bool:
-        return True
-
-    def categorical(self, sr: pd.Series) -> bool:
-        return True
-
-
-check = _OptimisticCheck()
-
-
-class DistanceMetric(TwoColumnMetric):
+class DistanceMetric(ABC):
     """
     Base class for distance metrics that compare samples from two distributions.
 
@@ -199,7 +186,7 @@ class KolmogorovSmirnovDistance(ContinuousDistanceMetric):
     """
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
-        return KolmogorovSmirnovDistanceTest(check=check)(x, y)[0]
+        return KolmogorovSmirnovDistanceTest()._compute_test(x, y)[0]
 
     @property
     def id(self) -> str:
@@ -212,7 +199,7 @@ class KruskalWallis(ContinuousDistanceMetric):
     """
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
-        return KruskalWallisTest(check=check)(x, y)[0]
+        return KruskalWallisTest()._compute_test(x, y)[0]
 
     @property
     def id(self) -> str:
@@ -262,7 +249,7 @@ class KullbackLeiblerDivergence(CategoricalDistanceMetric):
     """
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
-        return KLD(check=check)(x, y)
+        return KLD()._compute_metric(x, y)
 
     @property
     def id(self) -> str:
@@ -275,7 +262,7 @@ class JensenShannonDivergence(CategoricalDistanceMetric):
     """
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
-        return JSD(check=check)(x, y)
+        return JSD()._compute_metric(x, y)
 
     @property
     def id(self) -> str:
@@ -312,7 +299,7 @@ class HellingerDistance(CategoricalDistanceMetric):
     """
 
     def distance(self, x: pd.Series, y: pd.Series) -> float:
-        return HD(check=check)(x, y)
+        return HD()._compute_metric(x, y)
 
     @property
     def id(self) -> str:
