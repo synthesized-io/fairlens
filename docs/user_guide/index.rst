@@ -11,6 +11,13 @@ User Guide
 
 .. toctree::
   :glob:
+  :caption: Tutorials
+
+  adult
+  compas
+
+.. toctree::
+  :glob:
   :caption: User Guides
 
   metrics
