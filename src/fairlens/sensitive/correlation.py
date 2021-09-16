@@ -7,6 +7,7 @@ from typing import Callable, Dict, List, Optional, Tuple, Union
 
 import pandas as pd
 
+from .. import utils
 from ..metrics import correlation as cm
 from ..sensitive import detection as dt
 
@@ -148,18 +149,17 @@ def find_column_correlation(
 def _compute_series_correlation(
     sr_a: pd.Series, sr_b: pd.Series, corr_cutoff: float = 0.75, p_cutoff: float = 0.1
 ) -> bool:
-    a_categorical = sr_a.map(type).eq(str).all()
-    b_categorical = sr_b.map(type).eq(str).all()
+    a_type = utils.infer_distr_type(sr_a)
+    b_type = utils.infer_distr_type(sr_b)
 
-    if a_categorical and b_categorical:
-        # If both columns are categorical, we use Cramer's V.
-        if cm.cramers_v(sr_a, sr_b) > corr_cutoff:
-            return True
-    elif not a_categorical and b_categorical:
-        # If just one column is categorical, we can group by it and use Kruskal-Wallis H Test.
-        return cm.kruskal_wallis_boolean(sr_b, sr_a, p_cutoff=p_cutoff)
-    elif a_categorical and not b_categorical:
+    if a_type.is_continuous() and b_type.is_continuous():
+        return cm.pearson(sr_a, sr_b) > corr_cutoff
+
+    elif b_type.is_continuous():
         return cm.kruskal_wallis_boolean(sr_a, sr_b, p_cutoff=p_cutoff)
 
-    # If both columns are numeric, we use standard Pearson correlation and the correlation cutoff.
-    return cm.pearson(sr_a, sr_b) > corr_cutoff
+    elif a_type.is_continuous():
+        return cm.kruskal_wallis_boolean(sr_b, sr_a, p_cutoff=p_cutoff)
+
+    else:
+        return cm.cramers_v(sr_a, sr_b) > corr_cutoff
