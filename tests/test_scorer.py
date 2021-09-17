@@ -64,3 +64,26 @@ def test_distribution_score():
     score = calculate_score(df_dist)
 
     assert score * df_dist["Counts"].sum() == (df_dist["Distance"] * df_dist["Counts"]).sum()
+
+
+def test_pairwise_compas():
+    fscorer = FairnessScorer(dfc, "RawScore", ["Ethnicity", "Sex"])
+    df_dist = fscorer.pairwise_score()
+
+    assert (df_dist["Distance"] > 0).all()
+
+def test_pairwise_adult():
+    fscorer = FairnessScorer(dfa, "class", ["race", "sex"])
+    df_dist = fscorer.pairwise_score(metric="binomial")
+
+    assert (df_dist["Distance"] != 0).all()
+
+
+def test_dendrogram_compas():
+    fscorer = FairnessScorer(dfc, "RawScore", ["Ethnicity", "Sex"])
+    fscorer.plot_dendrogram(0.01)
+
+
+def test_dendrogram_adult():
+    fscorer = FairnessScorer(dfa, "class", ["race", "sex"])
+    fscorer.plot_dendrogram(0.01)
