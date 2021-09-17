@@ -90,8 +90,8 @@ class FairnessScorer:
         p_value: bool = False,
         max_comb: Optional[int] = None,
     ) -> pd.DataFrame:
-        """Returns a dataframe consisting of all unique sub-groups and their statistical distance to the rest
-        of the population w.r.t. the target variable.
+        """Returns a dataframe consisting of all unique sub-groups and their statistical distances of
+        the target variable computed based on the `metric` and `method` parameters.
 
         Args:
             metric (str, optional):
@@ -99,10 +99,10 @@ class FairnessScorer:
                 the distribution of the target variable. Defaults to "auto".
             method (str, optional):
                 The method used to apply the metric to the sub-group. Can take values
-                ["dist_to_all", dist_to_rest"] which correspond to measuring the distance
-                between the subgroup distribution and the overall distribution, or the
-                overall distribution without the subgroup, respectively.
-                Defaults to "dist_to_all".
+                ["dist_to_all", dist_to_rest", "pairwise"] which correspond to measuring
+                the distance between the subgroup distribution and the overall distribution, or the
+                overall distribution without the subgroup, or alternatively measuring the distance
+                between all possible pairs of subgroups, respectively. Defaults to "dist_to_all".
             p_value (bool, optional):
                 Whether or not to compute a p-value for the distances.
             max_comb (Optional[int], optional):
@@ -111,7 +111,6 @@ class FairnessScorer:
         """
 
         df = self.df[self.sensitive_attrs + [self.target_attr]].copy()
-        sensitive_attrs = self.sensitive_attrs
 
         # Bin continuous sensitive attributes
         for attr, distr_type in zip(self.sensitive_attrs, self.sensitive_distr_types):
@@ -123,62 +122,21 @@ class FairnessScorer:
         if self.distr_type.is_binary():
             df.loc[:, self.target_attr] = pd.factorize(df[self.target_attr])[0]
 
-        if len(sensitive_attrs) == 0 or len(df) == 0 or len(df.dropna()) == 0:
+        if len(self.sensitive_attrs) == 0 or len(df) == 0 or len(df.dropna()) == 0:
             return 0.0, pd.DataFrame([], columns=["Group", "Distance", "Proportion", "Counts"])
 
         # Find all combinations of sensitive attributes
-        combs = _all_sensitive_combs(df, sensitive_attrs, max_comb=max_comb)
+        combs = _all_sensitive_combs(df, self.sensitive_attrs, max_comb=max_comb)
 
         # Computes scores for each sensitive value in a data frame, for each combination of sensitive attributes
-        df_dists = [_calculate_distance(df, self.target_attr, comb, metric, method, p_value) for comb in combs]
+        if method == "pairwise":
+            df_dists = [_calculate_distance_pair(df, self.target_attr, comb, metric, p_value) for comb in combs]
+        else:
+            df_dists = [_calculate_distance(df, self.target_attr, comb, metric, method, p_value) for comb in combs]
+
         df_dist = pd.concat(df_dists, ignore_index=True)
 
-        return df_dist.reset_index(drop=True)
-
-    def pairwise_score(
-        self,
-        metric: str = "auto",
-        p_value: bool = False,
-        max_comb: Optional[int] = None,
-    ):
-        """Returns a dataframe consisting of the statistical distances between each pair of sub-groups.
-
-        Args:
-            metric (str, optional):
-                Choose the metric to use. Defaults to automatically chosen metric depending on
-                the distribution of the target variable.
-            p_value (bool, optional):
-                Whether or not to compute a p-value for the distances.
-            max_comb (Optional[int], optional):
-                Max number of combinations of sensitive attributes to be considered.
-                If None all combinations are considered. Defaults to 4.
-        """
-
-        df = self.df[self.sensitive_attrs + [self.target_attr]].copy()
-        sensitive_attrs = self.sensitive_attrs
-
-        # Bin continuous sensitive attributes
-        for attr, distr_type in zip(self.sensitive_attrs, self.sensitive_distr_types):
-            if distr_type.is_continuous() or distr_type.is_datetime():
-                col = utils.infer_dtype(df[attr])
-                df.loc[:, attr] = utils._bin_as_string(col, distr_type.value, prefix=True)
-
-        # Convert binary attributes to 0s and 1s
-        if self.distr_type.is_binary():
-            df.loc[:, self.target_attr] = pd.factorize(df[self.target_attr])[0]
-
-        if len(sensitive_attrs) == 0 or len(df) == 0 or len(df.dropna()) == 0:
-            return 0.0, pd.DataFrame([], columns=["Group", "Distance", "Proportion", "Counts"])
-
-        # Find all combinations of sensitive attributes
-        combs = _all_sensitive_combs(df, sensitive_attrs, max_comb=max_comb)
-
-        # Computes distances between each pair of sensitive values in a data frame,
-        # for each combination of sensitive attributes
-        df_dists = [_calculate_distance_pair(df, self.target_attr, comb, metric, p_value) for comb in combs]
-        df_dist = pd.concat(df_dists, ignore_index=True)
-
-        return df_dist.reset_index(drop=True)
+        return df_dist
 
     def plot_dendrogram(self, threshold: float, metric: str = "auto", ax: Optional[Axes] = None) -> Axes:
         """Hierarchically clusters the sensitive subgroups using the metric and plots
@@ -202,7 +160,6 @@ class FairnessScorer:
             ax = plt.gca()
 
         df = self.df[self.sensitive_attrs + [self.target_attr]].copy()
-        sensitive_attrs = self.sensitive_attrs
 
         # Bin continuous sensitive attributes
         for attr, distr_type in zip(self.sensitive_attrs, self.sensitive_distr_types):
@@ -214,11 +171,11 @@ class FairnessScorer:
         if self.distr_type.is_binary():
             df.loc[:, self.target_attr] = pd.factorize(df[self.target_attr])[0]
 
-        if len(sensitive_attrs) == 0 or len(df) == 0 or len(df.dropna()) == 0:
-            return
+        if len(self.sensitive_attrs) == 0 or len(df) == 0 or len(df.dropna()) == 0:
+            return ax
 
         groups = []
-        for vs in [[{attr: [val]} for val in df[attr].unique()] for attr in sensitive_attrs]:
+        for vs in [[{attr: [val]} for val in df[attr].unique()] for attr in self.sensitive_attrs]:
             groups.extend(vs)
 
         dist_matrix = np.zeros((len(groups), len(groups)))
@@ -359,7 +316,7 @@ class FairnessScorer:
 
 
 def calculate_score(df_dist: pd.DataFrame) -> float:
-    """Calculate the weighted mean pairwise statistical distance.
+    """Calculate the weighted mean of statistical distances.
 
     Args:
         df_dist (pd.DataFrame):
@@ -452,6 +409,7 @@ def _calculate_distance_pair(
                     "Distance": distance,
                     "Positive Counts": len(df[pred1]),
                     "Negative Counts": len(df[pred2]),
+                    "Counts": len(df[pred1]) + len(df[pred2]),
                     "P-Value": p,
                 }
             )
