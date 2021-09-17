@@ -180,17 +180,18 @@ class FairnessScorer:
 
         return df_dist.reset_index(drop=True)
 
-    def plot_dendrogram(self, metric: str = "auto", ax: Optional[Axes] = None) -> Axes:
+    def plot_dendrogram(self, threshold: float, metric: str = "auto", ax: Optional[Axes] = None) -> Axes:
         """Hierarchically clusters the sensitive subgroups using the metric and plots
         the resulting tree in a dendrogram.
 
         Args:
+            threshold (float, optional):
+                The linkage distance threshold, above which clusters will not be merged.
             metric (str, optional):
                 Choose the metric to use. If set to "auto" chooses the metric depending on
                 the distribution of the target variable. Defaults to "auto".
             ax (Optional[matplotlib.axes.Axes], optional):
-                ax (Optional[matplotlib.axes.Axes], optional):
-                    An axis to plot the figure on. Set to plt.gca() if None. Defaults to None.
+                An axis to plot the figure on. Set to plt.gca() if None. Defaults to None.
 
         Returns:
             Axes:
@@ -227,11 +228,15 @@ class FairnessScorer:
                 dist_matrix[i][j] = abs(stat_distance(df, self.target_attr, g1, g2, mode=metric)[0])
 
         model = AgglomerativeClustering(
-            distance_threshold=0.1, affinity="precomputed", n_clusters=None, linkage="average", compute_full_tree=True
+            n_clusters=None,
+            distance_threshold=threshold,
+            affinity="precomputed",
+            linkage="average",
+            compute_full_tree=True,
         )
         model = model.fit(dist_matrix)
 
-        # Create Dendogram
+        # Create Dendrogram
         counts = np.zeros(model.children_.shape[0])
         n_samples = len(model.labels_)
         for i, merge in enumerate(model.children_):
@@ -247,7 +252,7 @@ class FairnessScorer:
 
         # Plot the corresponding dendrogram
         group_names = [list(group.values())[0][0] for group in groups]
-        dendrogram(linkage_matrix, labels=group_names, ax=ax)
+        _ = dendrogram(linkage_matrix, labels=group_names, ax=ax)
         ax.tick_params(axis="x", labelrotation=90)
 
         return ax
