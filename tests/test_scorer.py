@@ -72,6 +72,7 @@ def test_pairwise_compas():
 
     assert (df_dist["Distance"] > 0).all()
 
+
 def test_pairwise_adult():
     fscorer = FairnessScorer(dfa, "class", ["race", "sex"])
     df_dist = fscorer.pairwise_score(metric="binomial")
