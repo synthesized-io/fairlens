@@ -194,9 +194,8 @@ class FairnessScorer:
                 An axis to plot the figure on. Set to plt.gca() if None. Defaults to None.
 
         Returns:
-            Axes:
-                matplotlib.axes.Axes:
-                    The matplotlib axis containing the plot.
+            matplotlib.axes.Axes:
+                The matplotlib axis containing the plot.
         """
 
         if ax is None:
