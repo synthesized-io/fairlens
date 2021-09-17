@@ -239,13 +239,8 @@ class FairnessScorer:
         counts = np.zeros(model.children_.shape[0])
         n_samples = len(model.labels_)
         for i, merge in enumerate(model.children_):
-            current_count = 0
-            for child_idx in merge:
-                if child_idx < n_samples:
-                    current_count += 1  # leaf node
-                else:
-                    current_count += counts[child_idx - n_samples]
-            counts[i] = current_count
+            current_counts = [1 if child_idx < n_samples else counts[child_idx - n_samples] for child_idx in merge]
+            counts[i] = sum(current_counts)
 
         linkage_matrix = np.column_stack([model.children_, model.distances_, counts]).astype(float)
 
