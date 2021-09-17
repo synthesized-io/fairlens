@@ -133,7 +133,7 @@ def attr_distr_plot(
     normalize: bool = False,
     cmap: Optional[Sequence[Tuple[float, float, float]]] = None,
     ax: Optional[Axes] = None,
-) -> Optional[Axes]:
+) -> Union[Axes, Sequence[Axes]]:
     """Plot the distribution of the target attribute with respect to all the unique values in the column `attr`.
 
     Args:
@@ -211,6 +211,9 @@ def attr_distr_plot(
         fig.tight_layout()
         plt.subplots_adjust(hspace=0.3)
 
+        min_ylim = max_ylim = 0
+        axes = []
+
         for i, (group, title) in enumerate(zip(groups, labels)):
             ax_ = fig.add_subplot(r, c, i + 1)
             distr_plot(
@@ -226,8 +229,14 @@ def attr_distr_plot(
                 ax=ax_,
             )
             plt.title(title)
+            min_ylim = min(min_ylim, ax_.get_ylim()[0])
+            max_ylim = max(max_ylim, ax_.get_ylim()[1])
+            axes.append(ax_)
 
-        return None
+        for ax_ in axes:
+            ax_.set_ylim(min_ylim, max_ylim)
+
+        return axes
 
     distr_plot(
         df_,
