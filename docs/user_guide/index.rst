@@ -6,7 +6,6 @@ User Guide
   :glob:
   :caption: Getting Started
 
-  fairness
   quickstart
 
 .. toctree::
