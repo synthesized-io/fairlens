@@ -12,10 +12,10 @@ jobs:
     strategy:
       matrix:
         python-version:
-        - '3.6'
-        - '3.7'
-        - '3.8'
-        - '3.9'
+        - 3.6
+        - 3.7
+        - 3.8
+        - 3.9
 
     name: Check Python ${{ matrix.python-version }}
     steps:
@@ -46,7 +46,7 @@ jobs:
         SYNTHESIZED_KEY: ${{ secrets.SYNTHESIZED_KEY }}
 
     - name: Upload Codecov report
-      if: ${{ matrix.python-version }} == '3.7'
+      if: ${{ matrix.python-version == 3.7 }}
       uses: codecov/codecov-action@v1.5.2
       with:
         files: coverage-reports/cobertura.xml
@@ -54,7 +54,7 @@ jobs:
         fail_ci_if_error: false
 
     - name: SonarCloud Scan
-      if: ${{ matrix.python-version }} == '3.7'
+      if: ${{ matrix.python-version == 3.7 }}
       uses: SonarSource/sonarcloud-github-action@master
       with:
         projectBaseDir: .
