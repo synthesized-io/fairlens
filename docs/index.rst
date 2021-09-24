@@ -59,23 +59,6 @@ FairLens is a tool to help people assess the fairness of datasets and models in 
       :text: Go
       :classes: btn-block btn-secondary
 
-   ---
-   :fa:`users,text-black fa-4x,style=fa`
-
-   Contributing
-   ^^^^^^^^^^^^
-
-   Saw a typo in the documentation? Want to improve
-   existing functionalities? The contributing guidelines will guide
-   you through the process of improving FairLens.
-
-   +++
-
-   .. link-button:: contributing
-      :type: ref
-      :text: Go
-      :classes: btn-block btn-secondary
-
 .. toctree::
    :maxdepth: 3
    :hidden:
@@ -84,3 +67,39 @@ FairLens is a tool to help people assess the fairness of datasets and models in 
    user_guide/index
    reference/index
    contributing
+
+
+.. overview panel
+.. ---
+.. :fa:`balance-scale,text-black fa-4x,style=fa`
+
+.. Fairness and Bias
+.. ^^^^^^^^^^^^^^^^^
+
+.. An introduction to fairness and bias in data science. Learn more about how you can assess the fairness of
+.. your machine learning pipeline.
+
+.. +++
+
+.. .. link-button:: user_guide/fairness
+..    :type: ref
+..    :text: Go
+..    :classes: btn-block btn-secondary
+
+.. contribution panel
+.. ---
+.. :fa:`users,text-black fa-4x,style=fa`
+
+.. Contributing
+.. ^^^^^^^^^^^^
+
+.. Saw a typo in the documentation? Want to improve
+.. existing functionalities? The contributing guidelines will guide
+.. you through the process of improving FairLens.
+
+.. +++
+
+.. .. link-button:: contributing
+..    :type: ref
+..    :text: Go
+..    :classes: btn-block btn-secondary
