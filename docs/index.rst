@@ -64,6 +64,7 @@ FairLens is a tool to help people assess the fairness of datasets and models in 
    :hidden:
    :titlesonly:
 
+   user_guide/fairness.rst
    user_guide/index
    reference/index
    contributing
