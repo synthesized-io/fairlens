@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import pytest
 
-from fairlens.metrics.distance import BinomialDistance, MeanDistance
+from fairlens.metrics.distance import MeanDistance
 from fairlens.metrics.significance import binominal_proportion_p_value as bin_prop
 from fairlens.metrics.significance import bootstrap_binned_statistic as bootstrap_binned
 from fairlens.metrics.significance import bootstrap_statistic as bootstrap
@@ -19,9 +19,9 @@ group2 = {"Ethnicity": ["African-American"]}
 
 def test_binomial():
     assert abs(bin_prop(0.2, 0.1, 10) - (1 - (0.9 ** 10 + 0.9 ** 9))) < epsilon
-    assert BinomialDistance().p_value(pd.Series([1, 1]), pd.Series([0, 0])) == 0
-    assert BinomialDistance().p_value(pd.Series([1, 0]), pd.Series([1, 0])) == 1
-    assert BinomialDistance().p_value(pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 1, 0])) == 0.625
+    assert bin_prop(1, 0, 2) == 0
+    assert bin_prop(0.5, 0.5, 2) == 1
+    assert bin_prop(0.75, 0.5, 4) == 0.625
 
 
 def test_bootstrap():
