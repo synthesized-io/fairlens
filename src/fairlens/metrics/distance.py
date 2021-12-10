@@ -307,12 +307,12 @@ class EarthMoversDistance(CategoricalDistanceMetric):
         q_sum = q.sum()
 
         if p_sum == 0 and q_sum == 0:
-            return 0.
+            return 0.0
         elif p_sum == 0 or q_sum == 0:
-            return 1.
+            return 1.0
 
         # normalise counts for consistency with scipy.stats.wasserstein
-        with np.errstate(divide='ignore', invalid='ignore'):
+        with np.errstate(divide="ignore", invalid="ignore"):
             p_normalised = np.nan_to_num(p / p_sum).astype(np.float64)
             q_normalised = np.nan_to_num(q / q_sum).astype(np.float64)
 
@@ -323,7 +323,7 @@ class EarthMoversDistance(CategoricalDistanceMetric):
             distance = 0.5 * np.sum(np.abs(p_normalised - q_normalised))
         else:
             # otherwise, use pair-wise euclidean distances between bin centers for scale data
-            bin_centers = bin_edges[:-1] + np.diff(bin_edges) / 2.
+            bin_centers = bin_edges[:-1] + np.diff(bin_edges) / 2.0
             distance = wasserstein_distance(bin_centers, bin_centers, u_weights=p_normalised, v_weights=q_normalised)
 
         return distance
