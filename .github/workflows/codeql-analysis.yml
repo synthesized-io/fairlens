@@ -7,8 +7,6 @@ on:
   pull_request:
     # The branches below must be a subset of the branches above
     branches: [ main ]
-  schedule:
-    - cron: '37 3 * * 3'
 
 jobs:
   analyze:
@@ -27,8 +25,8 @@ jobs:
     - name: Initialize CodeQL
       uses: github/codeql-action/init@v1
       with:
-        languages: 'python'
-        source-root: 'src/fairlens'
+        languages: python
+        config-file: ./.github/codeql-config.yml
 
     - name: Perform CodeQL Analysis
       uses: github/codeql-action/analyze@v1
