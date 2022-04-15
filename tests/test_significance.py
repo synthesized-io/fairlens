@@ -18,7 +18,7 @@ group2 = {"Ethnicity": ["African-American"]}
 
 
 def test_binomial():
-    assert abs(bin_prop(0.2, 0.1, 10) - (1 - (0.9 ** 10 + 0.9 ** 9))) < epsilon
+    assert abs(bin_prop(0.2, 0.1, 10) - (1 - (0.9**10 + 0.9**9))) < epsilon
     assert BinomialDistance().p_value(pd.Series([1, 1]), pd.Series([0, 0])) == 0
     assert BinomialDistance().p_value(pd.Series([1, 0]), pd.Series([1, 0])) == 1
     assert BinomialDistance().p_value(pd.Series([1, 0, 1, 1]), pd.Series([1, 0, 1, 0])) == 0.625

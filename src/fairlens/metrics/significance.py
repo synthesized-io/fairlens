@@ -76,8 +76,8 @@ def binominal_proportion_interval(
         high = beta.ppf(1 - alpha / 2, k + 1, n - k)
 
     elif method == "agresti-coull":
-        n_ = n + z ** 2
-        p_ = 1 / n_ * (k + z ** 2 / 2)
+        n_ = n + z**2
+        p_ = 1 / n_ * (k + z**2 / 2)
         low = p_ - z * np.sqrt(p_ * (1 - p_) / n_)
         high = p_ + z * np.sqrt(p_ * (1 - p_) / n_)
 
