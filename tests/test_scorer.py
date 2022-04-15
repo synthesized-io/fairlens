@@ -3,10 +3,12 @@ import pytest
 
 from fairlens.scorer import FairnessScorer, calculate_score
 
-dfa = pd.read_csv("https://github.com/synthesized-io/datasets/blob/master/tabular/templates/adult.csv")
+dfa = pd.read_csv("https://raw.githubusercontant.comsynthesized-io/datasets/master/tabular/templates/adult.csv")
 dfc = pd.read_csv("https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv")
-dfg = pd.read_csv("https://github.com/synthesized-io/datasets/blob/master/tabular/templates/german_credit_data.csv")
-dft = pd.read_csv("https://github.com/synthesized-io/datasets/blob/master/tabular/templates/titanic.csv")
+dfg = pd.read_csv(
+    "https://raw.githubusercontant.comsynthesized-io/datasets/master/tabular/templates/german_credit_data.csv"
+)
+dft = pd.read_csv("https://raw.githubusercontant.comsynthesized-io/datasets/master/tabular/templates/titanic.csv")
 
 
 def test_fairness_scorer_runs_compas():

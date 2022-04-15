@@ -5,12 +5,14 @@ from fairlens.sensitive.detection import _detect_name, detect_names_df
 MOCK_CONFIG_PATH = "src/fairlens/sensitive/configs/config_mock.json"
 ENGB_CONFIG_PATH = "src/fairlens/sensitive/configs/config_engb.json"
 
-df_adult = pd.read_csv("https://github.com/synthesized-io/datasets/blob/master/tabular/templates/adult.csv")
+df_adult = pd.read_csv("https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/templates/adult.csv")
 df_compas = pd.read_csv("https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv")
 df_german = pd.read_csv(
-    "https://github.com/synthesized-io/datasets/blob/master/tabular/templates/german_credit_data.csv"
+    "https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/templates/german_credit_data.csv"
 )
-df_titanic = pd.read_csv("https://github.com/synthesized-io/datasets/blob/master/tabular/templates/titanic.csv")
+df_titanic = pd.read_csv(
+    "https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/templates/titanic.csv"
+)
 
 
 def test_detect_name():

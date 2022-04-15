@@ -3,10 +3,12 @@ import seaborn as sns
 
 from fairlens.plot.distr import attr_distr_plot, distr_plot, mult_distr_plot
 
-dfa = pd.read_csv("https://github.com/synthesized-io/datasets/blob/master/tabular/templates/adult.csv")
+dfa = pd.read_csv("https://raw.githubusercontant.comsynthesized-io/datasets/master/tabular/templates/adult.csv")
 dfc = pd.read_csv("https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv")
-dfg = pd.read_csv("https://github.com/synthesized-io/datasets/blob/master/tabular/templates/german_credit_data.csv")
-dft = pd.read_csv("https://github.com/synthesized-io/datasets/blob/master/tabular/templates/titanic.csv")
+dfg = pd.read_csv(
+    "https://raw.githubusercontant.comsynthesized-io/datasets/master/tabular/templates/german_credit_data.csv"
+)
+dft = pd.read_csv("https://raw.githubusercontant.comsynthesized-io/datasets/master/tabular/templates/titanic.csv")
 
 
 def test_distr_plot():
