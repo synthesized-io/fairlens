@@ -28,7 +28,7 @@ Below we show an assessment of fairness on a subset of Propublica's COMPAS datas
   import pandas as pd
   import fairlens as fl
 
-  df = pd.read_csv("../datasets/compas.csv")
+  df = pd.read_csv("https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv")
   df.info()
 
   fscorer = fl.FairnessScorer(df, "RawScore")

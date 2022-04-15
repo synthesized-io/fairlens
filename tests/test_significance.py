@@ -11,7 +11,7 @@ from fairlens.metrics.significance import permutation_statistic as perm_stat
 from fairlens.metrics.significance import resampling_interval, resampling_p_value
 
 epsilon = 1e-5
-df = pd.read_csv("datasets/compas.csv")
+df = pd.read_csv("https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv")
 target_attr = "RawScore"
 group1 = {"Ethnicity": ["Caucasian"]}
 group2 = {"Ethnicity": ["African-American"]}

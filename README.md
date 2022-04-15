@@ -28,7 +28,7 @@ import pandas as pd
 import fairlens as fl
 
 # Load in the data
-df = pd.read_csv("datasets/compas.csv")
+df = pd.read_csv("https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv")
 
 # Automatically generate a report
 fscorer = fl.FairnessScorer(

@@ -24,7 +24,7 @@ we can do the following.
   import pandas as pd
   import fairlens as fl
 
-  df = pd.read_csv("../datasets/compas.csv")
+  df = pd.read_csv("https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv")
 
   group1 = df[df["Sex"] == "Male"]["RawScore"]
   group2 = df[df["Sex"] == "Female"]["RawScore"]

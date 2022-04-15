@@ -84,7 +84,7 @@ the data and check what columns in contains.
 
 .. ipython:: python
 
-    df = pd.read_csv("../datasets/german_credit_data.csv")
+    df = pd.read_csv("https://github.com/synthesized-io/datasets/blob/master/tabular/templates/german_credit_data.csv")
     df
 
 We can generate a correlation heatmap to get a rough idea of any potentially hidden correlations.
