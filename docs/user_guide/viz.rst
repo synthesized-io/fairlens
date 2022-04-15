@@ -17,7 +17,7 @@ First we will import the required packages and load the compas dataset.
 
   fl.plot.use_style()
 
-  df = pd.read_csv("../datasets/compas.csv")
+  df = pd.read_csv("https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv")
   df.info()
 
 

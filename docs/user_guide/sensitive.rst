@@ -62,7 +62,7 @@ dataset:
 
 .. ipython:: python
 
-    df = pd.read_csv("../datasets/compas.csv")
+    df = pd.read_csv("https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv")
     df.head()
 
     # Apply shallow detection algorithm.
@@ -74,7 +74,7 @@ the sensitive columns to have random names.
 
 .. ipython:: python
 
-    df_deep = pd.read_csv("../datasets/compas.csv")
+    df_deep = pd.read_csv("https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv")
     df_deep = df_deep.rename(columns={"Ethnicity": "A", "Language": "Random", "MaritalStatus": "B", "Sex": "C"})
 
     # Apply deep detection algorithm.

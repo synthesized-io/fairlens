@@ -3,7 +3,7 @@ import pandas as pd
 
 from fairlens import utils
 
-dfc = pd.read_csv("datasets/compas.csv")
+dfc = pd.read_csv("https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv")
 
 
 def test_zipped_hist():

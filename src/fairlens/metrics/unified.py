@@ -77,7 +77,9 @@ def stat_distance(
             The distance as a float, and the p-value if p_value is set to True and can be computed.
 
     Examples:
-        >>> df = pd.read_csv("datasets/compas.csv")
+        >>> df = pd.read_csv(
+        ...     "https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv"
+        ... )
         >>> group1 = {"Ethnicity": ["African-American", "African-Am"]}
         >>> group2 = {"Ethnicity": ["Caucasian"]}
         >>> group3 = {"Ethnicity": ["Asian"]}

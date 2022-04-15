@@ -6,6 +6,7 @@ build/
 dist/
 *.swp
 src/fairlens/version.py
+src/_version.py
 
 docs/_build/*
 docs/savefig/*

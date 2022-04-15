@@ -12,6 +12,7 @@ User Guide
   :glob:
   :caption: Tutorials
 
+  adult
   compas
 
 .. toctree::
