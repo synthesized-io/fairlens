@@ -1,6 +1,15 @@
 import pandas as pd
+import pytest
 
-from fairlens.metrics.correlation import distance_cn_correlation, distance_nn_correlation
+from fairlens import utils
+from fairlens.metrics.correlation import (
+    cramers_v,
+    distance_cn_correlation,
+    distance_nn_correlation,
+    kruskal_wallis,
+    pearson,
+)
+from fairlens.metrics.unified import correlation_matrix
 from fairlens.sensitive.correlation import find_column_correlation, find_sensitive_correlations
 
 pair_race = "race", "Ethnicity"
@@ -9,10 +18,20 @@ pair_marital = "marital", "Family Status"
 pair_gender = "gender", "Gender"
 pair_nationality = "nationality", "Nationality"
 
+epsilon = 1e-6
+
 
 def test_correlation():
     col_names = ["gender", "random", "score"]
     data = [
+        ["male", 10, 60],
+        ["female", 10, 80],
+        ["male", 10, 60],
+        ["female", 10, 80],
+        ["male", 9, 59],
+        ["female", 11, 80],
+        ["male", 12, 61],
+        ["female", 10, 83],
         ["male", 10, 60],
         ["female", 10, 80],
         ["male", 10, 60],
@@ -64,11 +83,18 @@ def test_common_correlation():
         ["carribean", 40, 10, 2000, "single", 10, 90, 220],
         ["indo-european", 42, 10, 2500, "widowed", 10, 120, 200],
         ["arabian", 19, 10, 2200, "married", 10, 60, 115],
+        ["arabian", 21, 10, 2000, "married", 10, 60, 120],
+        ["carribean", 20, 10, 3000, "single", 10, 90, 130],
+        ["indo-european", 41, 10, 1900, "widowed", 10, 120, 210],
+        ["carribean", 40, 10, 2000, "single", 10, 90, 220],
+        ["indo-european", 42, 10, 2500, "widowed", 10, 120, 200],
+        ["arabian", 19, 10, 2200, "married", 10, 60, 115],
     ]
     df = pd.DataFrame(data, columns=col_names)
     res = {
         "corr1": [pair_race, pair_age, pair_marital],
-        "corr2": [pair_age],
+        "corr2": [pair_race, pair_age, pair_marital],
+        "entries": [pair_age],
     }
     assert find_sensitive_correlations(df) == res
 
@@ -97,14 +123,20 @@ def test_series_correlation():
         ["carribean", 40, 10, 2000, "single", 10],
         ["indo-european", 42, 10, 2500, "widowed", 10],
         ["arabian", 19, 10, 2200, "married", 10],
+        ["arabian", 21, 10, 2000, "married", 10],
+        ["carribean", 20, 10, 3000, "single", 10],
+        ["indo-european", 41, 10, 1900, "widowed", 10],
+        ["carribean", 40, 10, 2000, "single", 10],
+        ["indo-european", 42, 10, 2500, "widowed", 10],
+        ["arabian", 19, 10, 2200, "married", 10],
     ]
     df = pd.DataFrame(data, columns=col_names)
-    s1 = pd.Series([60, 90, 120, 90, 120, 60])
-    s2 = pd.Series([120, 130, 210, 220, 200, 115])
-    res1 = [pair_race, pair_marital]
-    res2 = [pair_age]
-    assert set(find_column_correlation(s1, df, corr_cutoff=0.9)) == set(res1)
-    assert set(find_column_correlation(s2, df, corr_cutoff=0.9)) == set(res2)
+    s1 = pd.Series([60, 90, 120, 90, 120, 60, 60, 90, 120, 90, 120, 60])
+    s2 = pd.Series([120, 130, 210, 220, 200, 115, 120, 130, 210, 220, 200, 115])
+    res1 = [pair_age, pair_race, pair_marital]
+    res2 = [pair_age, pair_race, pair_marital]
+    assert set(find_column_correlation(s1, df)) == set(res1)
+    assert set(find_column_correlation(s2, df)) == set(res2)
 
 
 def test_basic_nn_distance_corr():
@@ -133,3 +165,38 @@ def test_cn_unequal_series_corr():
     sr_b = pd.Series([100, 200, 99, 101, 201, 199, 299, 300, 301, 500, 501, 505, 10, 12, 1001, 1050])
 
     assert distance_cn_correlation(sr_a, sr_b) > 0.7
+
+
+@pytest.mark.parametrize("dataset", ["titanic", "german_credit_data"])
+def test_correlation_matrix(dataset):
+    df = pd.read_csv(f"datasets/{dataset}.csv")
+    num_num_metric = pearson
+    cat_num_metric = kruskal_wallis
+    cat_cat_metric = cramers_v
+
+    matrix = correlation_matrix(
+        df, num_num_metric=num_num_metric, cat_num_metric=cat_num_metric, cat_cat_metric=cat_cat_metric
+    ).to_numpy()
+
+    for i, r in enumerate(df.columns):
+        for j, c in enumerate(df.columns):
+            sr_a = utils.infer_dtype(df[r])
+            sr_b = utils.infer_dtype(df[c])
+            a_type = utils.infer_distr_type(sr_a)
+            b_type = utils.infer_distr_type(sr_b)
+
+            d = pd.DataFrame({"a": sr_a, "b": sr_b}).dropna().reset_index()
+
+            if a_type.is_continuous() and b_type.is_continuous():
+                corr = num_num_metric(d["a"], d["b"])
+
+            elif b_type.is_continuous():
+                corr = cat_num_metric(d["a"], d["b"])
+
+            elif a_type.is_continuous():
+                corr = cat_num_metric(d["b"], d["a"])
+
+            else:
+                corr = cat_cat_metric(d["a"], d["b"])
+
+            assert matrix[i][j] - corr < epsilon

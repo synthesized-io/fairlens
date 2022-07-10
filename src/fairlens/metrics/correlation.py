@@ -11,6 +11,9 @@ import scipy.stats as ss
 from sklearn import linear_model
 from sklearn.preprocessing import LabelEncoder, OneHotEncoder, StandardScaler
 
+EPSILON = 1e-6
+MIN_MEAN_SAMPLE_SIZE = 20
+
 
 def cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
     """Metric that calculates the corrected Cramer's V statistic for categorical-categorical
@@ -23,43 +26,50 @@ def cramers_v(sr_a: pd.Series, sr_b: pd.Series) -> float:
             Second categorical series to analyze.
 
     Returns:
-        float: Value of the statistic.
+        float:
+            Value of the statistic.
     """
 
-    if len(sr_a.value_counts()) == 1:
-        return 0
-    if len(sr_b.value_counts()) == 1:
-        return 0
-    else:
-        confusion_matrix = pd.crosstab(sr_a, sr_b)
+    if sr_a.equals(sr_b):
+        return 1
 
-        if confusion_matrix.shape[0] == 2:
-            correct = False
-        else:
-            correct = True
+    confusion_matrix = pd.crosstab(sr_a, sr_b)
+    r, k = confusion_matrix.shape
+    n = confusion_matrix.to_numpy().sum()
 
-        chi2 = ss.chi2_contingency(confusion_matrix, correction=correct)[0]
-        n = sum(confusion_matrix.sum())
-        phi2 = chi2 / n
-        r, k = confusion_matrix.shape
-        phi2corr = max(0, phi2 - ((k - 1) * (r - 1)) / (n - 1))
-        rcorr = r - ((r - 1) ** 2) / (n - 1)
-        kcorr = k - ((k - 1) ** 2) / (n - 1)
-        return np.sqrt(phi2corr / min((kcorr - 1), (rcorr - 1)))
+    if r < 2 or k < 2:
+        return 0
+
+    chi2 = ss.chi2_contingency(confusion_matrix, correction=(confusion_matrix.shape[0] != 2))[0]
+    phi2 = chi2 / n
+
+    phi2corr = phi2 - ((k - 1) * (r - 1)) / (n - 1)
+
+    if phi2corr <= EPSILON:
+        return 0
+
+    rcorr = r - ((r - 1) ** 2) / (n - 1)
+    kcorr = k - ((k - 1) ** 2) / (n - 1)
+
+    return np.sqrt(phi2corr / min((kcorr - 1), (rcorr - 1)))
 
 
 def pearson(sr_a: pd.Series, sr_b: pd.Series) -> float:
-    """Metric that calculates Pearson's correlation coefficent for numerical-numerical
+    """Calculates the Pearson's correlation coefficent for numerical-numerical
     pairs of series, used in heatmap generation.
 
     Args:
-        sr_a (pd.Series): First numerical series to analyze.
-        sr_b (pd.Series): Second numerical series to analyze.
+        sr_a (pd.Series):
+            First numerical series to analyze.
+        sr_b (pd.Series):
+            Second numerical series to analyze.
 
     Returns:
-        float: Value of the coefficient.
+        float:
+            Value of the coefficient.
     """
-    return abs(sr_a.corr(sr_b))
+
+    return sr_a.corr(sr_b, method="pearson")
 
 
 def r2_mcfadden(sr_a: pd.Series, sr_b: pd.Series) -> float:
@@ -78,6 +88,7 @@ def r2_mcfadden(sr_a: pd.Series, sr_b: pd.Series) -> float:
     Returns:
         float: Value of the pseudo-R2 McFadden score.
     """
+
     x = sr_b.to_numpy().reshape(-1, 1)
     x = StandardScaler().fit_transform(x)
     y = sr_a.to_numpy()
@@ -120,15 +131,16 @@ def kruskal_wallis(sr_a: pd.Series, sr_b: pd.Series) -> float:
             p-value is the probability that the two columns are not correlated.
     """
 
-    sr_a = sr_a.astype("category").cat.codes
     groups = sr_b.groupby(sr_a)
-    arrays = [groups.get_group(category) for category in sr_a.unique()]
-
-    args = [group.array for group in arrays]
-    try:
-        _, p_val = ss.kruskal(*args, nan_policy="omit")
-    except ValueError:
+    if len(groups) < 2:
         return 0
+
+    args = [groups.get_group(category).array for category in sr_a.unique()]
+
+    if np.mean([len(values) for values in args]) <= MIN_MEAN_SAMPLE_SIZE:
+        return 0
+
+    _, p_val = ss.kruskal(*args, nan_policy="omit")
 
     return p_val
 
@@ -147,7 +159,8 @@ def kruskal_wallis_boolean(sr_a: pd.Series, sr_b: pd.Series, p_cutoff: float = 0
             The maximum admitted p-value for the distributions to be considered independent.
 
     Returns:
-        bool: Bool value representing whether or not the two series are correlated.
+        bool:
+            Bool value representing whether or not the two series are correlated.
     """
 
     sr_a = sr_a.astype("category").cat.codes
@@ -180,8 +193,6 @@ def distance_nn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
         float:
             The correlation coefficient.
     """
-
-    warnings.filterwarnings(action="ignore", category=UserWarning)
 
     if sr_a.size < sr_b.size:
         sr_a = sr_a.append(pd.Series(sr_a.mean()).repeat(sr_b.size - sr_a.size), ignore_index=True)

@@ -1,6 +1,7 @@
 import pandas as pd
 import seaborn as sns
 
+from fairlens.plot.correlation import heatmap
 from fairlens.plot.distr import attr_distr_plot, distr_plot, mult_distr_plot
 
 dfa = pd.read_csv("datasets/adult.csv")
@@ -42,3 +43,15 @@ def test_mult_distr_plot_german():
 
 def test_mult_distr_plot_titanic():
     mult_distr_plot(dft, "Survived", ["Sex", "Age"])
+
+
+def test_heatmap_adult():
+    heatmap(dfa)
+
+
+def test_heatmap_german():
+    heatmap(dfg)
+
+
+def test_heatmap_titanic():
+    heatmap(dft)

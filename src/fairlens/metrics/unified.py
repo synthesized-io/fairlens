@@ -2,9 +2,9 @@
 Collection of helper methods which can be used as to interface metrics.
 """
 
-import multiprocessing as mp
-from typing import Any, Callable, List, Mapping, Optional, Tuple, Type, Union
+from typing import Any, Callable, List, Mapping, Tuple, Type, Union
 
+import numpy as np
 import pandas as pd
 
 from .. import utils
@@ -118,8 +118,6 @@ def correlation_matrix(
     num_num_metric: Callable[[pd.Series, pd.Series], float] = pearson,
     cat_num_metric: Callable[[pd.Series, pd.Series], float] = kruskal_wallis,
     cat_cat_metric: Callable[[pd.Series, pd.Series], float] = cramers_v,
-    columns_x: Optional[List[str]] = None,
-    columns_y: Optional[List[str]] = None,
 ) -> pd.DataFrame:
     """This function creates a correlation matrix out of a dataframe, using a correlation metric for each
     possible type of pair of series (i.e. numerical-numerical, categorical-numerical, categorical-categorical).
@@ -135,60 +133,62 @@ def correlation_matrix(
         cat_cat_metric (Callable[[pd.Series, pd.Series], float], optional):
             The correlation metric used for categorical-categorical series pairs. Defaults to corrected Cramer's V
             statistic.
-        columns_x (Optional[List[str]]):
-            The column names that determine the rows of the matrix.
-        columns_y (Optional[List[str]]):
-            The column names that determine the columns of the matrix.
 
     Returns:
         pd.DataFrame:
             The correlation matrix to be used in heatmap generation.
     """
 
-    if columns_x is None:
-        columns_x = df.columns
+    df = df.copy()
 
-    if columns_y is None:
-        columns_y = df.columns
+    distr_types = [utils.infer_distr_type(df[col]) for col in df.columns]
 
-    pool = mp.Pool(mp.cpu_count())
+    for col in df.columns:
+        df[col] = utils.infer_dtype(df[col])
 
-    series_list = [
-        pd.Series(
-            pool.starmap(
-                _correlation_matrix_helper,
-                [(df[col_x], df[col_y], num_num_metric, cat_num_metric, cat_cat_metric) for col_x in columns_x],
-            ),
-            index=columns_x,
-            name=col_y,
+        if df[col].dtype.kind == "O":
+            df[col] = pd.Series(pd.factorize(df[col], na_sentinel=-1)[0]).replace(-1, np.nan)
+
+    df = df.append(pd.DataFrame({col: [i] for i, col in enumerate(df.columns)}))
+
+    def corr(a: np.ndarray, b: np.ndarray):
+        return _correlation_matrix_helper(
+            a,
+            b,
+            distr_types=distr_types,
+            num_num_metric=num_num_metric,
+            cat_num_metric=cat_num_metric,
+            cat_cat_metric=cat_cat_metric,
         )
-        for col_y in columns_y
-    ]
 
-    pool.close()
-
-    return pd.concat(series_list, axis=1, keys=[series.name for series in series_list])
+    return df.corr(method=corr)
 
 
 def _correlation_matrix_helper(
-    sr_a: pd.Series,
-    sr_b: pd.Series,
+    a: np.ndarray,
+    b: np.ndarray,
+    distr_types: List[utils.DistrType],
     num_num_metric: Callable[[pd.Series, pd.Series], float] = pearson,
     cat_num_metric: Callable[[pd.Series, pd.Series], float] = kruskal_wallis,
     cat_cat_metric: Callable[[pd.Series, pd.Series], float] = cramers_v,
 ) -> float:
 
-    a_type = utils.infer_distr_type(sr_a)
-    b_type = utils.infer_distr_type(sr_b)
+    a_type = distr_types[int(a[-1])]
+    b_type = distr_types[int(b[-1])]
+
+    sr_a = pd.Series(a[:-1])
+    sr_b = pd.Series(b[:-1])
+
+    df = pd.DataFrame({"a": sr_a, "b": sr_b}).dropna().reset_index()
 
     if a_type.is_continuous() and b_type.is_continuous():
-        return num_num_metric(sr_a, sr_b)
+        return num_num_metric(df["a"], df["b"])
 
     elif b_type.is_continuous():
-        return cat_num_metric(sr_a, sr_b)
+        return cat_num_metric(df["a"], df["b"])
 
     elif a_type.is_continuous():
-        return cat_num_metric(sr_b, sr_a)
+        return cat_num_metric(df["b"], df["a"])
 
     else:
-        return cat_cat_metric(sr_a, sr_b)
+        return cat_cat_metric(df["a"], df["b"])
