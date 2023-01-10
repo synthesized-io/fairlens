@@ -65,7 +65,9 @@ def distr_plot(
             The matplotlib axis containing the plot.
 
     Examples:
-        >>> df = pd.read_csv("datasets/compas.csv")
+        >>> df = pd.read_csv(
+        ...     "https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv"
+        ... )
         >>> g1 = {"Ethnicity": ["African-American"]}
         >>> g2 = {"Ethnicity": ["Caucasian"]}
         >>> distr_plot(df, "RawScore", [g1, g2])
@@ -177,7 +179,9 @@ def attr_distr_plot(
             The matplotlib axes containing the plot if `separate` is False, otherwise None.
 
     Examples:
-        >>> df = pd.read_csv("datasets/compas.csv")
+        >>> df = pd.read_csv(
+        ...    "https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv"
+        ... )
         >>> attr_distr_plot(df, "RawScore", "Ethnicity")
         >>> plt.show()
 
@@ -318,7 +322,9 @@ def mult_distr_plot(
             will be used. Defaults to None.
 
     Examples:
-        >>> df = pd.read_csv("datasets/compas.csv")
+        >>> df = pd.read_csv(
+        ...     "https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv"
+        ... )
         >>> mult_distr_plot(df, "RawScore", ["Ethnicity", "Sex", "MaritalStatus", "Language", "DateOfBirth"])
         >>> plt.show()
 

@@ -13,7 +13,7 @@ from fairlens.metrics.distance import MeanDistance as Mean
 from fairlens.metrics.distance import Norm
 from fairlens.metrics.unified import stat_distance
 
-df = pd.read_csv("datasets/compas.csv")
+df = pd.read_csv("https://raw.githubusercontent.com/synthesized-io/datasets/master/tabular/biased/compas.csv")
 pred1 = df["Ethnicity"] == "Caucasian"
 pred2 = df["Ethnicity"] == "African-American"
 target_attr = "RawScore"
