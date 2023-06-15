@@ -4,6 +4,7 @@ from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
 
 import numpy as np
 import pandas as pd
+from pandas.api.types import is_bool_dtype
 
 
 class DistrType(Enum):
@@ -314,7 +315,7 @@ def get_predicates_mult(
         if isinstance(group, dict):
             remaining_groups.append((i, group))
         else:
-            if not isinstance(group, pd.Series) or group.dtype != "bool":
+            if not isinstance(group, pd.Series) or not is_bool_dtype(group):
                 raise ValueError(
                     "Invalid group detected. Groups must be either dictionaries or pandas series' of bools."
                 )
