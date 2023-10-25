@@ -8,7 +8,6 @@ from typing import Dict, Optional, Type, Union
 
 import numpy as np
 import pandas as pd
-import pyemd
 from scipy.spatial.distance import jensenshannon
 from scipy.stats import entropy, kruskal, ks_2samp, wasserstein_distance
 

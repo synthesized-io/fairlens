@@ -184,9 +184,11 @@ def distance_nn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
     warnings.filterwarnings(action="ignore", category=UserWarning)
 
     if sr_a.size < sr_b.size:
-        sr_a = sr_a.append(pd.Series(sr_a.mean()).repeat(sr_b.size - sr_a.size), ignore_index=True)
+        new_serie = pd.Series(sr_a.mean()).repeat(sr_b.size - sr_a.size)
+        sr_a = pd.concat([sr_a, new_serie], ignore_index=True)
     elif sr_a.size > sr_b.size:
-        sr_b = sr_b.append(pd.Series(sr_b.mean()).repeat(sr_a.size - sr_b.size), ignore_index=True)
+        new_serie = pd.Series(sr_b.mean()).repeat(sr_a.size - sr_b.size)
+        sr_b = pd.concat([sr_b, new_serie], ignore_index=True)
 
     return dcor.distance_correlation(sr_a, sr_b)
 
@@ -222,9 +224,11 @@ def distance_cn_correlation(sr_a: pd.Series, sr_b: pd.Series) -> float:
 
             # Handle groups with a different number of elements.
             if sr_i.size < sr_j.size:
-                sr_i = sr_i.append(sr_i.sample(sr_j.size - sr_i.size, replace=True), ignore_index=True)
+                new_serie = sr_i.sample(sr_j.size - sr_i.size, replace=True)
+                sr_i = pd.concat([sr_i, new_serie], ignore_index=True)
             elif sr_i.size > sr_j.size:
-                sr_j = sr_j.append(sr_j.sample(sr_i.size - sr_j.size, replace=True), ignore_index=True)
+                new_serie = sr_j.sample(sr_i.size - sr_j.size, replace=True)
+                sr_j = pd.concat([sr_j, new_serie], ignore_index=True)
             total += dcor.distance_correlation(sr_i, sr_j)
 
     total /= n * (n - 1) / 2

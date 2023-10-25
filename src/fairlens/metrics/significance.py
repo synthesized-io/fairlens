@@ -14,7 +14,7 @@ from typing import Callable, Optional, Tuple
 
 import numpy as np
 import pandas as pd
-from scipy.stats import beta, binom_test, norm
+from scipy.stats import beta, binomtest, norm
 
 
 def binominal_proportion_p_value(p_obs: float, p_null: float, n: int, alternative: str = "two-sided") -> float:
@@ -36,8 +36,9 @@ def binominal_proportion_p_value(p_obs: float, p_null: float, n: int, alternativ
             The p-value under the null hypothesis.
     """
 
-    k = np.ceil(p_obs * n)
-    return binom_test(k, n, p_null, alternative)
+    k = int(np.ceil(p_obs * n))
+    result =  binomtest(k, n, p_null, alternative)
+    return result.pvalue
 
 
 def binominal_proportion_interval(

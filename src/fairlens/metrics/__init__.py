@@ -29,7 +29,7 @@ from .correlation import (  # isort:skip
 )
 
 from .significance import (  # isort:skip
-    binom_test,
+    binomtest,
     binominal_proportion_p_value,
     binominal_proportion_interval,
     bootstrap_binned_statistic,
@@ -61,7 +61,7 @@ __all__ = [
     "r2_mcfadden",
     "kruskal_wallis",
     "kruskal_wallis_boolean",
-    "binom_test",
+    "binomtest",
     "binominal_proportion_p_value",
     "binominal_proportion_interval",
     "bootstrap_binned_statistic",
