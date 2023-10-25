@@ -6,8 +6,13 @@ User Guide
   :glob:
   :caption: Getting Started
 
-  fairness
   quickstart
+
+.. toctree::
+  :glob:
+  :caption: Tutorials
+
+  compas
 
 .. toctree::
   :glob:

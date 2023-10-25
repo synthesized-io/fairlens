@@ -1,4 +1,4 @@
-![FairLens Logo](docs/_static/FairLens_759x196.png)
+<img width=60% src="https://raw.githubusercontent.com/synthesized-io/fairlens/main/docs/_static/FairLens_759x196.png">
 
 [![Open In Colab](https://colab.research.google.com/assets/colab-badge.svg)][sdk_colab_url]
 [![Documentation Status](https://readthedocs.org/projects/fairlens/badge/?version=latest)][documentation_url]
@@ -8,6 +8,8 @@
 [![Python version](https://img.shields.io/badge/python-3.6%20%7C%203.7%20%7C%203.8%20%7C%203.9-blue.svg)](https://pypi.org/project/fairlens/)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
+[![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=synthesized-io_fairlens&metric=sqale_rating&token=4df8d79db869c4f81a2225da446ca06d3b83d4be)](https://sonarcloud.io/dashboard?id=synthesized-io_fairlens)
+[![codecov](https://codecov.io/gh/synthesized-io/fairlens/branch/main/graph/badge.svg?token=0EWTY95MU0)](https://codecov.io/gh/synthesized-io/fairlens)
 ![GitHub Repo stars](https://img.shields.io/github/stars/synthesized-io/fairlens?style=social)
 
 # FairLens
@@ -68,16 +70,13 @@ See some of our previous blog posts for our take on bias and fairness in ML:
 
 ## Core Features
 
-Some of the main features of Fairlens are:
+- **Bias Measurement** - Metrics and tests to measure the extent and significance of bias in data using statistical distances and metrics. See the [overview](https://fairlens.readthedocs.io/en/stable/user_guide/fairness.html) for more details.
 
-- **Measuring Bias** - FairLens can be used to measure the extent and significance of biases in datasets using a wide range of statistical distances and metrics.
+- **Sensitive Attribute and Proxy Detection** - Methods to identify legally protected features, and measure hidden correlations between these features and others.
 
-- **Sensitive Attribute and Proxy Detection** -  Data Scientists may be unaware of protected or sensitive attributes in their data, and potentially hidden correlations between these columns and other non-protected columns in their data. FairLens can quickly identify sensitive columns and flag hidden correlations and the non-sensitive proxies.
+- **Visualization Tools** - Tools to visualize the distributions of different types of variables or columns in sensitive sub groups.
 
-- **Visualization Tools** - FairLens has a range of tools that be used to generate meaningful and descriptive diagrams of different distributions in the dataset before delving further in to quantify them. For instance, FairLens can be used to visualize the distribution of a target with respect to different sensitive demographics, or a correlation heatmap.
-
-- **Fairness Scorer** - The fairness scorer is a simple tool which data scientists can use to get started with FairLens. It is designed to just take in a dataset and a target variable and to automatically generate a report highlighting hidden biases, correlations, and containing various diagrams.
-
+- **Fairness Assessment** - A streamlined way of assessing the fairness of an arbitrary dataset, and generating reports highlighting biases and hidden correlations.
 
 The goal of FairLens is to enable data scientists to gain a deeper understanding of their data, and helps to to ensure fair and ethical use of data in analysis and machine learning tasks. The insights gained from FairLens can be harnessed by the [Bias Mitigation](https://www.synthesized.io/post/synthesized-mitigates-bias-in-data) feature of the [Synthesized](https://synthesized.io) platform, which is able to automagically remove bias using the power of synthetic data.
 
@@ -101,5 +100,5 @@ The repository's current roadmap is maintained as a Github project [here](https:
 This project is licensed under the terms of the [BSD 3](https://github.com/synthesized-io/fairlens/blob/main/LICENSE.md) license.
 
 
-[documentation_url]: https://fairlens.readthedocs.io/en/latest/
+[documentation_url]: https://fairlens.readthedocs.io/en/stable/
 [sdk_colab_url]: https://colab.research.google.com/github/synthesized-io/synthesized-notebooks/blob/master/synthesized-sdk.ipynb

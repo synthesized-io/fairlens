@@ -10,7 +10,7 @@ The functions, `resampling_p_value`, `resampling_interval` can be use these dist
 carry out p-value tests or obtain a confidence interval.
 """
 
-from typing import Callable, Optional, Tuple
+from typing import Any, Callable, List, Mapping, Optional, Tuple, Union
 
 import numpy as np
 import pandas as pd
@@ -75,8 +75,8 @@ def binominal_proportion_interval(
         high = beta.ppf(1 - alpha / 2, k + 1, n - k)
 
     elif method == "agresti-coull":
-        n_ = n + z ** 2
-        p_ = 1 / n_ * (k + z ** 2 / 2)
+        n_ = n + z**2
+        p_ = 1 / n_ * (k + z**2 / 2)
         low = p_ - z * np.sqrt(p_ * (1 - p_) / n_)
         high = p_ + z * np.sqrt(p_ * (1 - p_) / n_)
 
@@ -253,3 +253,40 @@ def resampling_interval(t_obs: float, t_distribution: pd.Series, cl: float = 0.9
     delta = t_distribution - t_obs
     d1, d2 = np.percentile(delta, percentiles)
     return t_obs + d1, t_obs + d2
+
+
+def brunner_munzel_test(
+    df: pd.DataFrame,
+    target_attr: str,
+    group1: Union[Mapping[str, List[Any]], pd.Series],
+    group2: Union[Mapping[str, List[Any]], pd.Series],
+) -> Tuple[float, float]:
+    """Compute the non-parametric Brunner-Munzel test of the hypothesis that the probability
+    of getting large values in the target attribute distributions (determined by the input
+    groups of interest) is equal, without requiring equivariance.
+
+    Args:
+        df (pd.DataFrame):
+            The input datafame.
+        target_attr (str):
+            The target attribute in the dataframe from which the distributions are formed.
+        group1 (Union[Mapping[str, List[Any]], pd.Series]):
+            The first group of interest. Each group can be a mapping / dict from attribute to value or
+            a predicate itself, i.e. pandas series consisting of bools which can be used as a predicate
+            to index a subgroup from the dataframe.
+            Examples: {"Sex": ["Male"]}, df["Sex"] == "Female"
+        group2 (Union[Mapping[str, List[Any]], pd.Series]):
+            The second group of interest. Each group can be a mapping / dict from attribute to value or
+            a predicate itself, i.e. pandas series consisting of bools which can be used as a predicate
+            to index a subgroup from the dataframe.
+            Examples: {"Sex": ["Male"]}, df["Sex"] == "Female"
+
+    Returns:
+        Tuple[float, float]:
+            A tuple consisting of the Brunner-Munzel statistic and p-value associated with the significance
+            of the observed difference.
+    """
+    pred_a, pred_b = tuple(utils.get_predicates_mult(df, [group1, group2]))
+    sr_a = df[pred_a][target_attr]
+    sr_b = df[pred_b][target_attr]
+    return brunnermunzel(sr_a, sr_b, nan_policy="omit")

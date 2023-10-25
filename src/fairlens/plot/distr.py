@@ -4,15 +4,18 @@ Visualize distributions of data.
 
 import itertools
 from math import ceil
-from typing import Any, List, Mapping, Optional, Sequence, Tuple, Union
+from typing import Any, Dict, List, Mapping, Optional, Sequence, Tuple, Union
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
+from seaborn.categorical import _CountPlotter
 
 from .. import utils
+
+LABEL_THRESH = 5
 
 
 def distr_plot(
@@ -90,15 +93,20 @@ def distr_plot(
     if show_curve is None:
         show_curve = distr_type in ["continuous", "datetime"]
 
-    shrink = int(show_hist)
-    stat = "probability" if normalize else "count"
+    kwargs: Dict[str, Any] = {}
+    if not show_hist:
+        kwargs["alpha"] = 0
+        kwargs["edgecolor"] = "#00000000"
+
+    if normalize:
+        kwargs["stat"] = "probability"
 
     if distr_type == "continuous":
         _, bins = utils.zipped_hist((df[target_attr],), ret_bins=True, distr_type=distr_type)
     elif distr_type == "datetime":
         bins = utils.fd_opt_bins(column)  # TODO: Look at seaborn log scaling in more detail
     elif column.dtype in ["int64", "float64"]:
-        bins = np.arange(0, column.max() + 1.5) - 0.5
+        bins = np.arange(column.min(), column.max() + 1.5) - 0.5
         ax.set_xticks(bins + 0.5)
     else:
         bins = "auto"
@@ -106,7 +114,7 @@ def distr_plot(
     plt.xlabel(target_attr)
 
     for pred in preds:
-        sns.histplot(column[pred], bins=bins, color=next(palette), kde=show_curve, shrink=shrink, stat=stat, ax=ax)
+        sns.histplot(column[pred], bins=bins, color=next(palette), kde=show_curve, ax=ax, **kwargs)
 
     if shade and not show_hist:
         _shade_area(ax, cmap, alpha=0.3)
@@ -183,6 +191,9 @@ def attr_distr_plot(
 
     col = utils.infer_dtype(df_[attr])
 
+    if distr_type is None:
+        distr_type = utils.infer_distr_type(df_[target_attr]).value
+
     if attr_distr_type is None:
         attr_distr_type = utils.infer_distr_type(col).value
 
@@ -223,6 +234,16 @@ def attr_distr_plot(
             plt.title(title)
 
         return None
+
+    if distr_type == "binary":
+        _countplot(x=df_[attr], hue=df_[target_attr], palette=cmap, normalize=normalize)
+        plt.title(attr)
+
+        if df_[attr].nunique() > LABEL_THRESH:
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+
+        return ax
 
     distr_plot(
         df_,
@@ -342,3 +363,73 @@ def _shade_area(ax: Axes, cmap: Sequence[Tuple[float, float, float]], alpha: flo
     for line in ax.lines:
         xy = line.get_xydata()
         ax.fill_between(xy[:, 0], xy[:, 1], color=next(palette), alpha=alpha)
+
+
+def _countplot(
+    x: Any = None,
+    y: Any = None,
+    hue: Any = None,
+    data: Any = None,
+    normalize: bool = False,
+    order: List[str] = None,
+    hue_order: List[str] = None,
+    orient: Optional[str] = None,
+    color: Any = None,
+    palette: Any = None,
+    saturation: float = 0.75,
+    dodge: bool = True,
+    ax: Axes = None,
+) -> Axes:
+    """Adaptation of seaborn.countplot"""
+
+    def prob(a):
+        return len(a) / len(x)
+
+    estimator = prob if normalize else len
+    ci = None
+    n_boot = 0
+    units = None
+    seed = None
+    errcolor = None
+    errwidth = None
+    capsize = None
+
+    if x is None and y is not None:
+        orient = "h"
+        x = y
+    elif y is None and x is not None:
+        orient = "v"
+        y = x
+    elif x is not None and y is not None:
+        raise ValueError("Cannot pass values for both `x` and `y`")
+
+    plotter = _CountPlotter(
+        x=x,
+        y=y,
+        hue=hue,
+        data=data,
+        order=order,
+        hue_order=hue_order,
+        estimator=estimator,
+        ci=ci,
+        n_boot=n_boot,
+        units=units,
+        seed=seed,
+        orient=orient,
+        color=color,
+        palette=palette,
+        saturation=saturation,
+        errcolor=errcolor,
+        errwidth=errwidth,
+        capsize=capsize,
+        dodge=dodge,
+    )
+
+    plotter.value_label = "probability" if normalize else "count"
+
+    if ax is None:
+        ax = plt.gca()
+
+    plotter.plot(ax, {})
+
+    return ax
