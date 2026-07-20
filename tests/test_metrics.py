@@ -45,7 +45,7 @@ def test_stat_distance_auto():
 
 def test_auto_binning():
     res = emd_samples(group1, group2)
-    assert stat_distance(df, target_attr, pred1, pred2, mode="emd")[0] == res
+    assert np.isclose(res, stat_distance(df, target_attr, pred1, pred2, mode="emd")[0], atol=1e-4)
 
 
 def test_mean_distance():

@@ -1,0 +1,8 @@
+name: "CodeQL Python Config"
+
+disable-default-queries: true
+
+source-root: src/fairlens
+
+queries:
+  - uses: security-and-quality

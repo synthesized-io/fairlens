@@ -11,8 +11,11 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 from matplotlib.axes import Axes
+from seaborn.categorical import _CountPlotter
 
 from .. import utils
+
+LABEL_THRESH = 5
 
 
 def distr_plot(
@@ -188,6 +191,9 @@ def attr_distr_plot(
 
     col = utils.infer_dtype(df_[attr])
 
+    if distr_type is None:
+        distr_type = utils.infer_distr_type(df_[target_attr]).value
+
     if attr_distr_type is None:
         attr_distr_type = utils.infer_distr_type(col).value
 
@@ -228,6 +234,16 @@ def attr_distr_plot(
             plt.title(title)
 
         return None
+
+    if distr_type == "binary":
+        _countplot(x=df_[attr], hue=df_[target_attr], palette=cmap, normalize=normalize)
+        plt.title(attr)
+
+        if df_[attr].nunique() > LABEL_THRESH:
+            plt.xticks(rotation=45)
+            plt.tight_layout()
+
+        return ax
 
     distr_plot(
         df_,
@@ -347,3 +363,73 @@ def _shade_area(ax: Axes, cmap: Sequence[Tuple[float, float, float]], alpha: flo
     for line in ax.lines:
         xy = line.get_xydata()
         ax.fill_between(xy[:, 0], xy[:, 1], color=next(palette), alpha=alpha)
+
+
+def _countplot(
+    x: Any = None,
+    y: Any = None,
+    hue: Any = None,
+    data: Any = None,
+    normalize: bool = False,
+    order: List[str] = None,
+    hue_order: List[str] = None,
+    orient: Optional[str] = None,
+    color: Any = None,
+    palette: Any = None,
+    saturation: float = 0.75,
+    dodge: bool = True,
+    ax: Axes = None,
+) -> Axes:
+    """Adaptation of seaborn.countplot"""
+
+    def prob(a):
+        return len(a) / len(x)
+
+    estimator = prob if normalize else len
+    ci = None
+    n_boot = 0
+    units = None
+    seed = None
+    errcolor = None
+    errwidth = None
+    capsize = None
+
+    if x is None and y is not None:
+        orient = "h"
+        x = y
+    elif y is None and x is not None:
+        orient = "v"
+        y = x
+    elif x is not None and y is not None:
+        raise ValueError("Cannot pass values for both `x` and `y`")
+
+    plotter = _CountPlotter(
+        x=x,
+        y=y,
+        hue=hue,
+        data=data,
+        order=order,
+        hue_order=hue_order,
+        estimator=estimator,
+        ci=ci,
+        n_boot=n_boot,
+        units=units,
+        seed=seed,
+        orient=orient,
+        color=color,
+        palette=palette,
+        saturation=saturation,
+        errcolor=errcolor,
+        errwidth=errwidth,
+        capsize=capsize,
+        dodge=dodge,
+    )
+
+    plotter.value_label = "probability" if normalize else "count"
+
+    if ax is None:
+        ax = plt.gca()
+
+    plotter.plot(ax, {})
+
+    return ax

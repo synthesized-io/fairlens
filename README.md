@@ -9,7 +9,7 @@
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 [![Code style: black](https://img.shields.io/badge/code%20style-black-000000.svg)](https://github.com/psf/black)
 [![Maintainability Rating](https://sonarcloud.io/api/project_badges/measure?project=synthesized-io_fairlens&metric=sqale_rating&token=4df8d79db869c4f81a2225da446ca06d3b83d4be)](https://sonarcloud.io/dashboard?id=synthesized-io_fairlens)
-[![Coverage](https://sonarcloud.io/api/project_badges/measure?project=synthesized-io_fairlens&metric=coverage&token=4df8d79db869c4f81a2225da446ca06d3b83d4be)](https://sonarcloud.io/dashboard?id=synthesized-io_fairlens)
+[![codecov](https://codecov.io/gh/synthesized-io/fairlens/branch/main/graph/badge.svg?token=0EWTY95MU0)](https://codecov.io/gh/synthesized-io/fairlens)
 ![GitHub Repo stars](https://img.shields.io/github/stars/synthesized-io/fairlens?style=social)
 
 # FairLens

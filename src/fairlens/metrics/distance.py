@@ -8,9 +8,8 @@ from typing import Dict, Optional, Type, Union
 
 import numpy as np
 import pandas as pd
-import pyemd
 from scipy.spatial.distance import jensenshannon
-from scipy.stats import entropy, kruskal, ks_2samp
+from scipy.stats import entropy, kruskal, ks_2samp, wasserstein_distance
 
 from .. import utils
 from ..metrics import significance as pv
@@ -304,19 +303,30 @@ class EarthMoversDistance(CategoricalDistanceMetric):
     """
 
     def distance_pdf(self, p: pd.Series, q: pd.Series, bin_edges: Optional[np.ndarray]) -> float:
-        distance_matrix = 1 - np.eye(len(p))
+        p_sum = p.sum()
+        q_sum = q.sum()
 
-        if bin_edges is not None:
-            # Use pair-wise euclidean distances between bin centers for scale data
-            bin_centers = np.mean([bin_edges[:-1], bin_edges[1:]], axis=0)
-            xx, yy = np.meshgrid(bin_centers, bin_centers)
-            distance_matrix = np.abs(xx - yy)
+        if p_sum == 0 and q_sum == 0:
+            return 0.0
+        elif p_sum == 0 or q_sum == 0:
+            return 1.0
 
-        p = np.array(p).astype(np.float64)
-        q = np.array(q).astype(np.float64)
-        distance_matrix = distance_matrix.astype(np.float64)
+        # normalise counts for consistency with scipy.stats.wasserstein
+        with np.errstate(divide="ignore", invalid="ignore"):
+            p_normalised = np.nan_to_num(p / p_sum).astype(np.float64)
+            q_normalised = np.nan_to_num(q / q_sum).astype(np.float64)
 
-        return pyemd.emd(p, q, distance_matrix)
+        if bin_edges is None:
+            # if bins not given, histograms are assumed to be counts of nominal categories,
+            # and therefore distances betwen bins are meaningless. Set to all distances to
+            # unity to model this.
+            distance = 0.5 * np.sum(np.abs(p_normalised - q_normalised))
+        else:
+            # otherwise, use pair-wise euclidean distances between bin centers for scale data
+            bin_centers = bin_edges[:-1] + np.diff(bin_edges) / 2.0
+            distance = wasserstein_distance(bin_centers, bin_centers, u_weights=p_normalised, v_weights=q_normalised)
+
+        return distance
 
     @property
     def id(self) -> str:
