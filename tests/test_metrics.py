@@ -2,15 +2,13 @@ import numpy as np
 import pandas as pd
 from pyemd import emd_samples
 
-from fairlens.metrics.distance import BinomialDistance
+from fairlens.metrics.distance import BinomialDistance, HellingerDistance, Norm
 from fairlens.metrics.distance import EarthMoversDistance as EMD
-from fairlens.metrics.distance import HellingerDistance
 from fairlens.metrics.distance import JensenShannonDivergence as JS
 from fairlens.metrics.distance import KolmogorovSmirnovDistance as KS
 from fairlens.metrics.distance import KruskalWallis as KW
 from fairlens.metrics.distance import KullbackLeiblerDivergence as KL
 from fairlens.metrics.distance import MeanDistance as Mean
-from fairlens.metrics.distance import Norm
 from fairlens.metrics.unified import stat_distance
 
 df = pd.read_csv("datasets/compas.csv")
